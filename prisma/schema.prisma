@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                        String                     @id @default(uuid()) @db.Uuid
+  email                     String                     @unique @db.VarChar(255)
+  passwordHash              String                     @db.VarChar(255)
+  role                      UserRole
+  name                      String?                    @db.VarChar(255)
+  createdById               String?                    @db.Uuid
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  adminNotificationReceipts AdminNotificationReceipt[]
+  studentProfile            Student?
+  createdBy                 User?                      @relation("UserCreatedUsers", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers              User[]                     @relation("UserCreatedUsers")
+
+  @@index([role])
+  @@index([createdById])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model Student {
+  id                 String              @id @default(uuid()) @db.Uuid
+  userId             String              @unique @db.Uuid
+  internshipStatus   InternshipStatus    @default(pending)
+  prefix             String?             @db.VarChar(50)
+  firstName          String?             @db.VarChar(120)
+  lastName           String?             @db.VarChar(120)
+  gender             Gender?
+  dateOfBirth        DateTime?           @db.Date
+  phoneNumber        String?             @db.VarChar(50)
+  address            String?             @db.Text
+  parentPhone        String?             @db.VarChar(50)
+  educationLevel     EducationLevel?
+  institution        String?             @db.VarChar(255)
+  faculty            String?             @db.VarChar(255)
+  major              String?             @db.VarChar(255)
+  coOpAdvisorName    String?             @db.VarChar(255)
+  coOpAdvisorPhone   String?             @db.VarChar(50)
+  submittedAt        DateTime?
+  lastStudentEditAt  DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  internshipRecord   Internship?
+  notificationEvents NotificationEvent[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files              UploadedFile[]
+
+  @@index([internshipStatus])
+  @@index([submittedAt])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model Internship {
+  id                String    @id @default(uuid()) @db.Uuid
+  studentId         String    @unique @db.Uuid
+  position          String?   @db.VarChar(255)
+  departmentUnit    String?   @db.VarChar(255)
+  supervisorName    String?   @db.VarChar(255)
+  startDate         DateTime? @db.Date
+  endDate           DateTime? @db.Date
+  additionalDetails String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([startDate])
+  @@index([endDate])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model UploadedFile {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @db.Uuid
+  fileName  String   @db.VarChar(255)
+  filePath  String   @db.VarChar(1024)
+  mimeType  String?  @db.VarChar(100)
+  sizeBytes Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model NotificationEvent {
+  id         String                     @id @default(uuid()) @db.Uuid
+  studentId  String?                    @db.Uuid
+  type       NotificationType
+  title      String                     @db.VarChar(255)
+  message    String                     @db.Text
+  targetPath String?                    @db.VarChar(512)
+  createdAt  DateTime                   @default(now())
+  updatedAt  DateTime                   @updatedAt
+  student    Student?                   @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  receipts   AdminNotificationReceipt[]
+
+  @@index([studentId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model AdminNotificationReceipt {
+  id                  String            @id @default(uuid()) @db.Uuid
+  notificationEventId String            @db.Uuid
+  adminUserId         String            @db.Uuid
+  isRead              Boolean           @default(false)
+  readAt              DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  notificationEvent   NotificationEvent @relation(fields: [notificationEventId], references: [id], onDelete: Cascade)
+  adminUser           User              @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationEventId, adminUserId])
+  @@index([adminUserId, isRead])
+  @@index([notificationEventId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+enum UserRole {
+  super_admin
+  admin
+  student
+}
+
+enum InternshipStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum Gender {
+  male
+  female
+  other
+  prefer_not_to_say
+}
+
+enum EducationLevel {
+  diploma
+  bachelor
+  master
+  doctorate
+  other
+}
+
+enum NotificationType {
+  form_submitted
+  form_updated_in_progress
+}

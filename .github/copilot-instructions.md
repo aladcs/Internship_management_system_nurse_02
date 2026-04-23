@@ -19,6 +19,18 @@ All implementation must follow:
 
 ---
 
+## ⚠️ Routing and Middleware Rules
+
+This project uses Next.js 16 App Router.
+
+* DO NOT use `middleware.ts`
+* Use `proxy.ts` instead for request interception and route protection
+* All authentication and RBAC checks must be implemented via `proxy.ts`
+
+Any usage of legacy middleware patterns is strictly forbidden.
+
+---
+
 ## ⚠️ Critical Development Rules
 
 * DO NOT use mock data
