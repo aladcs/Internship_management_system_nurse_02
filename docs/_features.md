@@ -248,22 +248,22 @@
 
 ### Route
 
-* [ ] `/intern/dashboard`
+* [x] `/intern/dashboard`
 
 ### UI
 
-* [ ] Cards:
+* [x] Cards:
 
   * total students
   * pending
   * in_progress
   * completed
-* [ ] recent activity
+* [x] recent activity
 
 ### Logic
 
-* [~] admin only
-* [ ] aggregate Prisma data
+* [x] admin only
+* [x] aggregate Prisma data
 
 ---
 

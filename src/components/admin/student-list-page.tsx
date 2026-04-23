@@ -483,7 +483,7 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <Link href="/intern/admin/students" className="flex items-center gap-3">
+            <Link href="/intern/dashboard" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
                   src="/nurse_logo.svg"
@@ -502,13 +502,12 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">
-              <span
-                className="rounded-full px-4 py-2 text-sm font-medium text-slate-400"
-                aria-disabled="true"
-                title="Dashboard will be added in its dedicated feature"
+              <Link
+                href="/intern/dashboard"
+                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 Dashboard
-              </span>
+              </Link>
               <Link
                 href="/intern/admin/students"
                 className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
@@ -569,12 +568,13 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
             </div>
 
             <nav className="mt-8 space-y-2">
-              <span
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-400"
-                aria-disabled="true"
+              <Link
+                href="/intern/dashboard"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Dashboard
-              </span>
+              </Link>
               <Link
                 href="/intern/admin/students"
                 className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)"
