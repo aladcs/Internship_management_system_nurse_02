@@ -171,30 +171,30 @@
 
 ### Route
 
-* [ ] `/intern/form`
+* [x] `/intern/form`
 
 ### Sections
 
-* [ ] Personal Info
-* [ ] Education
-* [ ] Internship Details
-* [ ] File Upload
+* [x] Personal Info
+* [x] Education
+* [x] Internship Details
+* [x] File Upload
 
 ### UI
 
-* [ ] Inputs
-* [ ] Upload zone
-* [ ] Submit button
+* [x] Inputs
+* [x] Upload zone
+* [x] Submit button
 
 ### Logic
 
-* [ ] save/update data
-* [ ] submit → status = pending
-* [ ] editable when:
+* [x] save/update data
+* [x] submit → status = pending
+* [x] editable when:
 
   * pending
   * in_progress
-* [ ] read-only when:
+* [x] read-only when:
 
   * completed
 
