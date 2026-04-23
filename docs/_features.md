@@ -204,15 +204,15 @@
 
 ### UI
 
-* [ ] drag & drop
-* [ ] file list
+* [x] drag & drop
+* [x] file list
 
 ### Logic
 
-* [ ] max 5 files
-* [ ] max 5MB/file
-* [ ] allowed types: PDF, JPG, PNG
-* [ ] store file path in DB
+* [x] max 5 files
+* [x] max 5MB/file
+* [x] allowed types: PDF, JPG, PNG
+* [x] store file path in DB
 
 ---
 

@@ -6,6 +6,10 @@ import { useActionState, useMemo, useRef, useState } from "react";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
 import { logoutAction, saveStudentFormAction } from "@/app/intern/form/actions";
 
+const MAX_FILE_COUNT = 5;
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+
 type ExistingFileItem = {
   id: string;
   name: string;
@@ -336,6 +340,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
   const [dragActive, setDragActive] = useState(false);
   const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [localFileError, setLocalFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const visibleExistingFiles = useMemo(
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
@@ -352,6 +357,24 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
     }
   }
 
+  function validateIncomingFiles(incomingFiles: File[], queuedFiles: File[]) {
+    if (visibleExistingFiles.length + queuedFiles.length + incomingFiles.length > MAX_FILE_COUNT) {
+      return `You can keep up to ${MAX_FILE_COUNT} files in total.`;
+    }
+
+    for (const file of incomingFiles) {
+      if (!ALLOWED_FILE_TYPES.has(file.type)) {
+        return "Only PDF, JPG, and PNG files are allowed.";
+      }
+
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        return "Each file must be 5 MB or smaller.";
+      }
+    }
+
+    return null;
+  }
+
   function mergeFiles(incomingFiles: File[]) {
     const mergedFiles = [...selectedFiles];
 
@@ -361,6 +384,18 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
       }
     });
 
+    const validationError = validateIncomingFiles(
+      mergedFiles.filter((file) => !selectedFiles.some((currentFile) => currentFile.name === file.name && currentFile.size === file.size)),
+      selectedFiles,
+    );
+
+    if (validationError) {
+      setLocalFileError(validationError);
+      syncInputFiles(selectedFiles);
+      return;
+    }
+
+    setLocalFileError(null);
     setSelectedFiles(mergedFiles);
     syncInputFiles(mergedFiles);
   }
@@ -379,11 +414,13 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
   function removeSelectedFile(index: number) {
     const nextFiles = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
 
+    setLocalFileError(null);
     setSelectedFiles(nextFiles);
     syncInputFiles(nextFiles);
   }
 
   function markExistingFileRemoved(fileId: string) {
+    setLocalFileError(null);
     setRemovedFileIds((currentFileIds) => (currentFileIds.includes(fileId) ? currentFileIds : [...currentFileIds, fileId]));
   }
 
@@ -414,7 +451,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
         </header>
 
         <main className="mx-auto flex min-h-[calc(100vh-81px)] max-w-3xl items-center px-4 py-10 sm:px-6 lg:px-8">
-          <section className="w-full rounded-[32px] border border-orange-200 bg-[#fff1e7] p-8 text-center shadow-xl shadow-orange-950/8 sm:p-10">
+          <section className="w-full rounded-4xl border border-orange-200 bg-[#fff1e7] p-8 text-center shadow-xl shadow-orange-950/8 sm:p-10">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-(--color-student) shadow-sm">
               <LockIcon />
             </div>
@@ -679,7 +716,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                 </p>
               </button>
 
-              <FieldError message={state.fieldErrors.files} />
+              <FieldError message={localFileError ?? state.fieldErrors.files} />
 
               {visibleExistingFiles.length > 0 ? (
                 <div className="mt-5 space-y-3">
