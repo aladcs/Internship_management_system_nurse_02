@@ -139,7 +139,7 @@ function StatCard({
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>
           {icon}
         </div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Live</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">สด</p>
       </div>
       <div className="mt-6 space-y-2">
         <p className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2rem]">{value}</p>
@@ -168,7 +168,7 @@ export function AdminDashboardPage({
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="Internship Management System"
+                  alt="ระบบจัดการฝึกงาน"
                   width={30}
                   height={30}
                   priority
@@ -176,9 +176,9 @@ export function AdminDashboardPage({
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
-                  Internship
+                  ระบบ
                 </p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
@@ -188,13 +188,13 @@ export function AdminDashboardPage({
                 className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
                 aria-current="page"
               >
-                Dashboard
+                แดชบอร์ด
               </Link>
               <Link
                 href="/intern/admin/students"
                 className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
-                Student List
+                รายชื่อนักศึกษา
               </Link>
             </nav>
           </div>
@@ -203,15 +203,15 @@ export function AdminDashboardPage({
             <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
 
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "Admin"}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
+              <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">ผู้ดูแล</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -220,7 +220,7 @@ export function AdminDashboardPage({
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="Open navigation menu"
+            aria-label="เปิดเมนูนำทาง"
           >
             <MenuIcon />
           </button>
@@ -235,14 +235,14 @@ export function AdminDashboardPage({
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "Admin"}</p>
+                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{currentUser.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="Close navigation menu"
+                aria-label="ปิดเมนูนำทาง"
               >
                 <span className="text-lg">×</span>
               </button>
@@ -255,14 +255,14 @@ export function AdminDashboardPage({
                 aria-current="page"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Dashboard
+                แดชบอร์ด
               </Link>
               <Link
                 href="/intern/admin/students"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Student List
+                รายชื่อนักศึกษา
               </Link>
             </nav>
 
@@ -274,7 +274,7 @@ export function AdminDashboardPage({
                   type="submit"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Logout
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
@@ -285,42 +285,42 @@ export function AdminDashboardPage({
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-            Admin Workspace
+            พื้นที่ผู้ดูแล
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-            Dashboard
+            แดชบอร์ด
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            Track student progress, watch current internship statuses, and review the latest notification activity from one place.
+            ติดตามความคืบหน้าของนักศึกษา ดูสถานะการฝึกงานปัจจุบัน และตรวจสอบการแจ้งเตือนล่าสุดได้จากที่เดียว
           </p>
         </div>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Total Students"
+            label="นักศึกษาทั้งหมด"
             value={stats.totalStudents}
-            hint="All student internship records in the system."
+            hint="ข้อมูลการฝึกงานของนักศึกษาทั้งหมดในระบบ"
             icon={<UsersIcon />}
             tone="bg-admin/12 text-(--color-admin)"
           />
           <StatCard
-            label="Pending"
+            label="รอดำเนินการ"
             value={stats.pendingStudents}
-            hint="Students waiting for admin review after submission."
+            hint="นักศึกษาที่รอผู้ดูแลตรวจสอบหลังส่งข้อมูลแล้ว"
             icon={<PendingIcon />}
             tone="bg-amber-100 text-amber-700"
           />
           <StatCard
-            label="In Progress"
+            label="กำลังดำเนินการ"
             value={stats.inProgressStudents}
-            hint="Active internships that can still receive updates."
+            hint="การฝึกงานที่ยังดำเนินอยู่และยังอัปเดตได้"
             icon={<ProgressIcon />}
             tone="bg-sky-100 text-sky-700"
           />
           <StatCard
-            label="Completed"
+            label="เสร็จสิ้น"
             value={stats.completedStudents}
-            hint="Closed records that are now read-only for students."
+            hint="ข้อมูลที่ปิดงานแล้วและนักศึกษาแก้ไขไม่ได้"
             icon={<CompleteIcon />}
             tone="bg-emerald-100 text-emerald-700"
           />
@@ -330,21 +330,21 @@ export function AdminDashboardPage({
           <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 xl:col-span-2">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
-                <h2 className="text-lg font-semibold tracking-tight text-slate-950">Recent Students</h2>
-                <p className="mt-1 text-sm text-slate-500">The most recently updated student records.</p>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-950">นักศึกษาล่าสุด</h2>
+                <p className="mt-1 text-sm text-slate-500">ข้อมูลนักศึกษาที่อัปเดตล่าสุด</p>
               </div>
               <Link
                 href="/intern/admin/students"
                 className="inline-flex items-center gap-1 text-sm font-medium text-(--color-admin) transition hover:opacity-80"
               >
-                View all
+                ดูทั้งหมด
                 <ArrowRightIcon />
               </Link>
             </div>
 
             {recentStudents.length === 0 ? (
               <div className="px-5 py-12 text-center text-sm text-slate-500 sm:px-6">
-                No students have been created yet.
+                ยังไม่มีการสร้างนักศึกษา
               </div>
             ) : (
               <div className="divide-y divide-slate-200">
@@ -380,8 +380,8 @@ export function AdminDashboardPage({
           <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
-                <h2 className="text-lg font-semibold tracking-tight text-slate-950">Notifications</h2>
-                <p className="mt-1 text-sm text-slate-500">Latest student submission and update events.</p>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-950">การแจ้งเตือน</h2>
+                <p className="mt-1 text-sm text-slate-500">รายการส่งข้อมูลและอัปเดตล่าสุดของนักศึกษา</p>
               </div>
               {unreadNotificationCount > 0 ? (
                 <form action={markAllNotificationsReadAction}>
@@ -389,7 +389,7 @@ export function AdminDashboardPage({
                     type="submit"
                     className="text-sm font-medium text-(--color-admin) transition hover:opacity-80"
                   >
-                    Mark all read
+                    อ่านทั้งหมดแล้ว
                   </button>
                 </form>
               ) : null}

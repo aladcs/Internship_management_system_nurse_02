@@ -6,18 +6,22 @@ import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Student Overview | Internship Management System",
-  description: "Student workspace for reviewing internship progress, personal details, and uploaded files.",
+  title: "ภาพรวมของนักศึกษา | ระบบจัดการฝึกงาน",
+  description: "พื้นที่ของนักศึกษาสำหรับดูความคืบหน้าการฝึกงาน ข้อมูลส่วนตัว และไฟล์ที่อัปโหลด",
 };
 
-const EMPTY_VALUE = "Not provided";
+const EMPTY_VALUE = "ยังไม่ได้ระบุ";
 
 function formatStatusLabel(status: StudentOverviewPageProps["student"]["status"]) {
   if (status === "in_progress") {
-    return "In Progress";
+    return "กำลังดำเนินการ";
   }
 
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (status === "pending") {
+    return "รอดำเนินการ";
+  }
+
+  return "เสร็จสิ้น";
 }
 
 function formatDate(value: Date | null | undefined) {
@@ -25,7 +29,7 @@ function formatDate(value: Date | null | undefined) {
     return EMPTY_VALUE;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("th-TH", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -37,7 +41,7 @@ function formatDateTime(value: Date | null | undefined) {
     return null;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("th-TH", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -49,10 +53,14 @@ function formatGender(value: string | null) {
     return EMPTY_VALUE;
   }
 
-  return value
-    .split("_")
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ");
+  const labels: Record<string, string> = {
+    male: "ชาย",
+    female: "หญิง",
+    other: "อื่น ๆ",
+    prefer_not_to_say: "ไม่ระบุ",
+  };
+
+  return labels[value] ?? EMPTY_VALUE;
 }
 
 function formatEducationLevel(value: string | null) {
@@ -60,10 +68,15 @@ function formatEducationLevel(value: string | null) {
     return EMPTY_VALUE;
   }
 
-  return value
-    .split("_")
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ");
+  const labels: Record<string, string> = {
+    diploma: "ประกาศนียบัตร",
+    bachelor: "ปริญญาตรี",
+    master: "ปริญญาโท",
+    doctorate: "ปริญญาเอก",
+    other: "อื่น ๆ",
+  };
+
+  return labels[value] ?? EMPTY_VALUE;
 }
 
 function formatFileSize(sizeBytes: number | null) {
@@ -218,57 +231,57 @@ export default async function InternOverviewPage() {
       hasStartedForm,
       completionNote:
         student.internshipStatus === "completed"
-          ? "Your internship record is complete and now read-only."
+          ? "ข้อมูลฝึกงานของคุณเสร็จสมบูรณ์และเป็นแบบอ่านอย่างเดียวแล้ว"
           : null,
       personal: [
-        { label: "Full name", value: getDisplayName(student) },
-        { label: "Email", value: student.user.email },
-        { label: "Phone number", value: student.phoneNumber || EMPTY_VALUE },
-        { label: "Gender", value: formatGender(student.gender) },
-        { label: "Date of birth", value: formatDate(student.dateOfBirth) },
-        { label: "Address", value: student.address || EMPTY_VALUE },
-        { label: "Parent phone", value: student.parentPhone || EMPTY_VALUE },
+        { label: "ชื่อ - นามสกุล", value: getDisplayName(student) },
+        { label: "อีเมล", value: student.user.email },
+        { label: "หมายเลขโทรศัพท์", value: student.phoneNumber || EMPTY_VALUE },
+        { label: "เพศ", value: formatGender(student.gender) },
+        { label: "วันเกิด", value: formatDate(student.dateOfBirth) },
+        { label: "ที่อยู่", value: student.address || EMPTY_VALUE },
+        { label: "เบอร์โทรผู้ปกครอง", value: student.parentPhone || EMPTY_VALUE },
       ],
       internship: [
         {
-          label: "Internship status",
+          label: "สถานะการฝึกงาน",
           value: formatStatusLabel(student.internshipStatus),
         },
         {
-          label: "Position",
+          label: "ตำแหน่ง",
           value: student.internshipRecord?.position || EMPTY_VALUE,
         },
         {
-          label: "Department / unit",
+          label: "แผนก / หน่วยงาน",
           value: student.internshipRecord?.departmentUnit || EMPTY_VALUE,
         },
         {
-          label: "Supervisor",
+          label: "ผู้ดูแล",
           value: student.internshipRecord?.supervisorName || EMPTY_VALUE,
         },
         {
-          label: "Start date",
+          label: "วันเริ่มต้น",
           value: formatDate(student.internshipRecord?.startDate),
         },
         {
-          label: "End date",
+          label: "วันสิ้นสุด",
           value: formatDate(student.internshipRecord?.endDate),
         },
       ],
       education: [
         {
-          label: "Education level",
+          label: "ระดับการศึกษา",
           value: formatEducationLevel(student.educationLevel),
         },
-        { label: "Institution", value: student.institution || EMPTY_VALUE },
-        { label: "Faculty", value: student.faculty || EMPTY_VALUE },
-        { label: "Major", value: student.major || EMPTY_VALUE },
+        { label: "สถาบัน", value: student.institution || EMPTY_VALUE },
+        { label: "คณะ", value: student.faculty || EMPTY_VALUE },
+        { label: "สาขาวิชา", value: student.major || EMPTY_VALUE },
         {
-          label: "Co-op advisor",
+          label: "อาจารย์ที่ปรึกษาสหกิจ",
           value: student.coOpAdvisorName || EMPTY_VALUE,
         },
         {
-          label: "Advisor phone",
+          label: "เบอร์โทรอาจารย์ที่ปรึกษา",
           value: student.coOpAdvisorPhone || EMPTY_VALUE,
         },
       ],
@@ -283,7 +296,7 @@ export default async function InternOverviewPage() {
       }),
       summary: {
         lastUpdatedLabel: formatDateTime(student.lastStudentEditAt ?? student.updatedAt) ?? EMPTY_VALUE,
-        submittedAtLabel: formatDateTime(student.submittedAt) ?? "Not submitted yet",
+        submittedAtLabel: formatDateTime(student.submittedAt) ?? "ยังไม่ได้ส่ง",
       },
     },
   };

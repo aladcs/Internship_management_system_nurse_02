@@ -61,14 +61,14 @@ function isPhoneNumber(value: string) {
 
 function parseDate(value: string, fieldName: keyof StudentFormValues, fieldErrors: StudentFormFieldErrors) {
   if (!value) {
-    fieldErrors[fieldName] = "This field is required.";
+    fieldErrors[fieldName] = "กรุณากรอกข้อมูลนี้";
     return null;
   }
 
   const parsed = new Date(`${value}T12:00:00.000Z`);
 
   if (Number.isNaN(parsed.getTime())) {
-    fieldErrors[fieldName] = "Enter a valid date.";
+    fieldErrors[fieldName] = "กรุณาระบุวันที่ให้ถูกต้อง";
     return null;
   }
 
@@ -170,82 +170,82 @@ export async function saveStudentFormAction(
   }
 
   if (!values.firstName) {
-    fieldErrors.firstName = "Enter your first name.";
+    fieldErrors.firstName = "กรุณากรอกชื่อ";
   }
 
   if (!values.lastName) {
-    fieldErrors.lastName = "Enter your last name.";
+    fieldErrors.lastName = "กรุณากรอกนามสกุล";
   }
 
   if (!values.gender || !GENDER_VALUES.includes(values.gender as Gender)) {
-    fieldErrors.gender = "Select your gender.";
+    fieldErrors.gender = "กรุณาเลือกเพศ";
   }
 
   const dateOfBirth = parseDate(values.dateOfBirth, "dateOfBirth", fieldErrors);
 
   if (!values.phoneNumber) {
-    fieldErrors.phoneNumber = "Enter your phone number.";
+    fieldErrors.phoneNumber = "กรุณากรอกหมายเลขโทรศัพท์";
   } else if (!isPhoneNumber(values.phoneNumber)) {
-    fieldErrors.phoneNumber = "Enter a valid phone number.";
+    fieldErrors.phoneNumber = "กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง";
   }
 
   if (!values.address) {
-    fieldErrors.address = "Enter your address.";
+    fieldErrors.address = "กรุณากรอกที่อยู่";
   }
 
   if (!values.parentPhone) {
-    fieldErrors.parentPhone = "Enter your parent phone number.";
+    fieldErrors.parentPhone = "กรุณากรอกเบอร์โทรผู้ปกครอง";
   } else if (!isPhoneNumber(values.parentPhone)) {
-    fieldErrors.parentPhone = "Enter a valid phone number.";
+    fieldErrors.parentPhone = "กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง";
   }
 
   if (!values.educationLevel || !EDUCATION_LEVEL_VALUES.includes(values.educationLevel as EducationLevel)) {
-    fieldErrors.educationLevel = "Select your education level.";
+    fieldErrors.educationLevel = "กรุณาเลือกระดับการศึกษา";
   }
 
   if (!values.institution) {
-    fieldErrors.institution = "Enter your institution.";
+    fieldErrors.institution = "กรุณากรอกสถาบันการศึกษา";
   }
 
   if (!values.faculty) {
-    fieldErrors.faculty = "Enter your faculty.";
+    fieldErrors.faculty = "กรุณากรอกคณะ";
   }
 
   if (!values.major) {
-    fieldErrors.major = "Enter your major.";
+    fieldErrors.major = "กรุณากรอกสาขาวิชา";
   }
 
   if (!values.coOpAdvisorName) {
-    fieldErrors.coOpAdvisorName = "Enter your co-op advisor name.";
+    fieldErrors.coOpAdvisorName = "กรุณากรอกชื่ออาจารย์ที่ปรึกษาสหกิจ";
   }
 
   if (!values.coOpAdvisorPhone) {
-    fieldErrors.coOpAdvisorPhone = "Enter your co-op advisor phone.";
+    fieldErrors.coOpAdvisorPhone = "กรุณากรอกเบอร์โทรอาจารย์ที่ปรึกษาสหกิจ";
   } else if (!isPhoneNumber(values.coOpAdvisorPhone)) {
-    fieldErrors.coOpAdvisorPhone = "Enter a valid phone number.";
+    fieldErrors.coOpAdvisorPhone = "กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง";
   }
 
   if (!values.position) {
-    fieldErrors.position = "Enter your internship position.";
+    fieldErrors.position = "กรุณากรอกตำแหน่งฝึกงาน";
   }
 
   if (!values.departmentUnit) {
-    fieldErrors.departmentUnit = "Enter the department or unit.";
+    fieldErrors.departmentUnit = "กรุณากรอกแผนกหรือหน่วยงาน";
   }
 
   if (!values.supervisorName) {
-    fieldErrors.supervisorName = "Enter your supervisor name.";
+    fieldErrors.supervisorName = "กรุณากรอกชื่อผู้ดูแล";
   }
 
   const startDate = parseDate(values.startDate, "startDate", fieldErrors);
   const endDate = parseDate(values.endDate, "endDate", fieldErrors);
 
   if (dateOfBirth && dateOfBirth > new Date()) {
-    fieldErrors.dateOfBirth = "Date of birth must be in the past.";
+    fieldErrors.dateOfBirth = "วันเกิดต้องเป็นวันที่ในอดีต";
   }
 
   if (startDate && endDate && endDate < startDate) {
-    fieldErrors.endDate = "End date must be on or after the start date.";
+    fieldErrors.endDate = "วันสิ้นสุดต้องไม่น้อยกว่าวันเริ่มต้น";
   }
 
   const removeFileIds = Array.from(
@@ -264,17 +264,17 @@ export async function saveStudentFormAction(
   const remainingExistingFileCount = student.files.filter((file) => !removeFileIds.includes(file.id)).length;
 
   if (remainingExistingFileCount + newFiles.length > MAX_FILE_COUNT) {
-    fieldErrors.files = `You can keep up to ${MAX_FILE_COUNT} files in total.`;
+    fieldErrors.files = `คุณสามารถเก็บไฟล์ได้รวมสูงสุด ${MAX_FILE_COUNT} ไฟล์`;
   }
 
   for (const file of newFiles) {
     if (!ALLOWED_FILE_TYPES.has(file.type)) {
-      fieldErrors.files = "Only PDF, JPG, and PNG files are allowed.";
+      fieldErrors.files = "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น";
       break;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      fieldErrors.files = "Each file must be 5 MB or smaller.";
+      fieldErrors.files = "แต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
       break;
     }
   }
@@ -282,7 +282,7 @@ export async function saveStudentFormAction(
   if (Object.keys(fieldErrors).length > 0) {
     return {
       status: "validation-error",
-      message: "Please fix the highlighted fields and try again.",
+      message: "กรุณาแก้ไขข้อมูลในช่องที่แสดงข้อผิดพลาดแล้วลองอีกครั้ง",
       fieldErrors,
       values,
     };
@@ -415,16 +415,16 @@ export async function saveStudentFormAction(
       await createNotificationEvent({
         studentId: student.id,
         type: "form_submitted",
-        title: "Student submitted internship form",
-        message: `${fullName} submitted the internship form for review.`,
+        title: "นักศึกษาส่งแบบฟอร์มฝึกงานแล้ว",
+        message: `${fullName} ส่งแบบฟอร์มฝึกงานเพื่อรอการตรวจสอบแล้ว`,
         targetPath: `/intern/admin/students/${student.id}`,
       });
     } else if (student.internshipStatus === "in_progress") {
       await createNotificationEvent({
         studentId: student.id,
         type: "form_updated_in_progress",
-        title: "Student updated internship form",
-        message: `${fullName} updated the internship record while status is in progress.`,
+        title: "นักศึกษาอัปเดตแบบฟอร์มฝึกงาน",
+        message: `${fullName} อัปเดตข้อมูลฝึกงานขณะที่สถานะเป็นกำลังดำเนินการ`,
         targetPath: `/intern/admin/students/${student.id}`,
       });
     }
@@ -453,7 +453,7 @@ export async function saveStudentFormAction(
 
     return {
       status: "error",
-      message: "Unable to save your internship form right now. Please try again.",
+      message: "ไม่สามารถบันทึกแบบฟอร์มฝึกงานได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง",
       fieldErrors: {},
       values,
     };

@@ -115,7 +115,7 @@ function EmptyIcon() {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("th-TH", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -140,7 +140,7 @@ function getInitials(name: string | null, email: string) {
 function ResultCount({ count }: { count: number }) {
   return (
     <p className="text-sm text-slate-500">
-      {count} {count === 1 ? "admin" : "admins"}
+      {count} {count === 1 ? "ผู้ดูแลระบบ" : "ผู้ดูแลระบบ"}
     </p>
   );
 }
@@ -154,7 +154,7 @@ function ActionButton({ children }: { children: React.ReactNode }) {
       disabled={pending}
       className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Saving..." : children}
+      {pending ? "กำลังบันทึก..." : children}
     </button>
   );
 }
@@ -168,7 +168,7 @@ function DeleteButton() {
       disabled={pending}
       className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Deleting..." : "Delete Admin"}
+      {pending ? "กำลังลบ..." : "ลบผู้ดูแลระบบ"}
     </button>
   );
 }
@@ -240,14 +240,14 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
   if (state.status === "created" && state.generatedPassword && state.admin) {
     return (
       <ModalFrame
-        title="Admin account created"
-        description="Store this generated password securely before closing. It is only shown once in this flow."
+        title="สร้างบัญชีผู้ดูแลระบบแล้ว"
+        description="กรุณาเก็บรหัสผ่านที่ระบบสร้างให้อย่างปลอดภัยก่อนปิดหน้าต่างนี้ เนื่องจากจะแสดงเพียงครั้งเดียวในขั้นตอนนี้"
       >
         <div className="space-y-5">
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-emerald-700">Generated password</p>
+                <p className="text-sm font-medium text-emerald-700">รหัสผ่านที่สร้างขึ้น</p>
                 <p className="mt-3 font-mono text-lg font-semibold tracking-[0.08em]">
                   {state.generatedPassword}
                 </p>
@@ -256,7 +256,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
                 type="button"
                 onClick={handleCopyPassword}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-100"
-                aria-label="Copy generated password"
+                aria-label="คัดลอกรหัสผ่านที่สร้างขึ้น"
               >
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
@@ -264,7 +264,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p className="font-medium text-slate-800">{state.admin.name ?? "Unnamed admin"}</p>
+            <p className="font-medium text-slate-800">{state.admin.name ?? "ผู้ดูแลระบบที่ยังไม่ระบุชื่อ"}</p>
             <p>{state.admin.email}</p>
           </div>
 
@@ -274,7 +274,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
               onClick={onClose}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
             >
-              Done
+              เสร็จสิ้น
             </button>
           </div>
         </div>
@@ -282,11 +282,11 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
     );
   }
 
-  const title = mode === "create" ? "Create admin" : "Edit admin";
+  const title = mode === "create" ? "สร้างผู้ดูแลระบบ" : "แก้ไขผู้ดูแลระบบ";
   const description =
     mode === "create"
-      ? "Add a new administrator account. The system will generate a password after save."
-      : "Update the selected administrator account.";
+      ? "เพิ่มบัญชีผู้ดูแลระบบใหม่ ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
+      : "อัปเดตข้อมูลบัญชีผู้ดูแลระบบที่เลือก";
 
   return (
     <ModalFrame title={title} description={description}>
@@ -296,14 +296,14 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
 
         <div className="space-y-2">
           <label htmlFor="admin-name" className="text-sm font-medium text-slate-700">
-            Name
+            ชื่อ
           </label>
           <input
             id="admin-name"
             name="name"
             defaultValue={state.values.name}
             className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
-            placeholder="Enter admin name"
+            placeholder="กรอกชื่อผู้ดูแลระบบ"
           />
           {state.fieldErrors.name ? (
             <p className="text-sm text-red-600">{state.fieldErrors.name}</p>
@@ -312,7 +312,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
 
         <div className="space-y-2">
           <label htmlFor="admin-email" className="text-sm font-medium text-slate-700">
-            Email
+            อีเมล
           </label>
           <input
             id="admin-email"
@@ -339,9 +339,9 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
             onClick={onClose}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            Cancel
+            ยกเลิก
           </button>
-          <ActionButton>{mode === "create" ? "Create Admin" : "Save Changes"}</ActionButton>
+          <ActionButton>{mode === "create" ? "สร้างผู้ดูแลระบบ" : "บันทึกการเปลี่ยนแปลง"}</ActionButton>
         </div>
       </form>
     </ModalFrame>
@@ -363,12 +363,12 @@ function DeleteAdminDialog({ admin, onClose, onDeleted }: DeleteDialogProps) {
 
   return (
     <ModalFrame
-      title="Delete admin"
-      description="This removes the administrator account from the system. This action cannot be undone."
+      title="ลบผู้ดูแลระบบ"
+      description="การดำเนินการนี้จะลบบัญชีผู้ดูแลระบบออกจากระบบและไม่สามารถย้อนกลับได้"
     >
       <div className="space-y-5">
         <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
-          <p className="font-medium">{admin.name ?? "Unnamed admin"}</p>
+          <p className="font-medium">{admin.name ?? "ผู้ดูแลระบบที่ยังไม่ระบุชื่อ"}</p>
           <p className="mt-1">{admin.email}</p>
         </div>
 
@@ -385,7 +385,7 @@ function DeleteAdminDialog({ admin, onClose, onDeleted }: DeleteDialogProps) {
             onClick={onClose}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            Cancel
+            ยกเลิก
           </button>
           <DeleteButton />
         </form>
@@ -401,10 +401,6 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminListItem | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState<AdminListItem | null>(null);
-
-  useEffect(() => {
-    setAdmins(initialAdmins);
-  }, [initialAdmins]);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredAdmins = admins.filter((admin) => {
@@ -454,7 +450,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="Internship Management System"
+                  alt="ระบบจัดการฝึกงาน"
                   width={30}
                   height={30}
                   priority
@@ -462,9 +458,9 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
-                  Internship
+                  ระบบ
                 </p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </a>
 
@@ -474,7 +470,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
                 aria-current="page"
               >
-                Admin List
+                รายชื่อผู้ดูแลระบบ
               </a>
             </nav>
           </div>
@@ -484,14 +480,14 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
               <p className="text-sm font-semibold text-slate-900">
                 {currentUser.name ?? "Super Admin"}
               </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Super Admin</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">ซูเปอร์แอดมิน</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -500,7 +496,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="Open navigation menu"
+            aria-label="เปิดเมนูนำทาง"
           >
             <MenuIcon />
           </button>
@@ -524,7 +520,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="Close navigation menu"
+                aria-label="ปิดเมนูนำทาง"
               >
                 <span className="text-lg">×</span>
               </button>
@@ -536,7 +532,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)"
                 aria-current="page"
               >
-                Admin List
+                รายชื่อผู้ดูแลระบบ
               </a>
             </nav>
 
@@ -546,7 +542,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                   type="submit"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Logout
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
@@ -558,14 +554,14 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-              Super Admin Workspace
+              พื้นที่ซูเปอร์แอดมิน
             </p>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Admin List
+                รายชื่อผู้ดูแลระบบ
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                Manage administrator accounts, generate passwords for new admins, and keep access limited to admin records only.
+                จัดการบัญชีผู้ดูแลระบบ สร้างรหัสผ่านสำหรับผู้ดูแลใหม่ และจำกัดการเข้าถึงเฉพาะข้อมูลผู้ดูแลเท่านั้น
               </p>
             </div>
           </div>
@@ -575,7 +571,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
             onClick={() => setCreateOpen(true)}
             className="inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-lg shadow-admin/25 transition hover:brightness-95"
           >
-            Create Admin
+            สร้างผู้ดูแลระบบ
           </button>
         </div>
 
@@ -589,7 +585,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
-                placeholder="Search by name or email"
+                placeholder="ค้นหาจากชื่อหรืออีเมล"
               />
             </label>
             <ResultCount count={filteredAdmins.length} />
@@ -601,17 +597,17 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 <EmptyIcon />
               </div>
               <h2 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">
-                No admins yet
+                ยังไม่มีผู้ดูแลระบบ
               </h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
-                Create the first admin account for the internship system. New accounts are created with the admin role and a generated password.
+                สร้างบัญชีผู้ดูแลระบบบัญชีแรกสำหรับระบบฝึกงาน บัญชีใหม่จะถูกสร้างพร้อมบทบาท admin และรหัสผ่านที่ระบบสร้างให้
               </p>
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
               >
-                Create Admin
+                สร้างผู้ดูแลระบบ
               </button>
             </div>
           ) : filteredEmptyState ? (
@@ -620,10 +616,10 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 <EmptyIcon />
               </div>
               <h2 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">
-                No matching admins
+                ไม่พบผู้ดูแลระบบที่ตรงกัน
               </h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
-                Adjust the search query to see the available administrator accounts.
+                ปรับคำค้นหาเพื่อดูบัญชีผู้ดูแลระบบที่มีอยู่
               </p>
             </div>
           ) : (
@@ -632,10 +628,10 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 <table className="min-w-full border-separate border-spacing-0">
                   <thead>
                     <tr className="bg-admin/7 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      <th className="px-6 py-4">Admin</th>
-                      <th className="px-6 py-4">Email</th>
-                      <th className="px-6 py-4">Created</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
+                      <th className="px-6 py-4">ผู้ดูแลระบบ</th>
+                      <th className="px-6 py-4">อีเมล</th>
+                      <th className="px-6 py-4">วันที่สร้าง</th>
+                      <th className="px-6 py-4 text-right">การดำเนินการ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -648,11 +644,11 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                             </div>
                             <div>
                               <p className="font-medium text-slate-900">
-                                {admin.name ?? "Unnamed admin"}
+                                {admin.name ?? "ผู้ดูแลระบบที่ยังไม่ระบุชื่อ"}
                               </p>
                               <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                                 <ShieldIcon />
-                                Admin
+                                ผู้ดูแลระบบ
                               </p>
                             </div>
                           </div>
@@ -669,7 +665,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                               type="button"
                               onClick={() => setEditingAdmin(admin)}
                               className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                              aria-label={`Edit ${admin.email}`}
+                              aria-label={`แก้ไข ${admin.email}`}
                             >
                               <EditIcon />
                             </button>
@@ -677,7 +673,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                               type="button"
                               onClick={() => setDeletingAdmin(admin)}
                               className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-red-500 transition hover:bg-red-50 hover:text-red-600"
-                              aria-label={`Delete ${admin.email}`}
+                              aria-label={`ลบ ${admin.email}`}
                             >
                               <TrashIcon />
                             </button>
@@ -699,11 +695,11 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                         </div>
                         <div>
                           <p className="font-medium text-slate-900">
-                            {admin.name ?? "Unnamed admin"}
+                            {admin.name ?? "ผู้ดูแลระบบที่ยังไม่ระบุชื่อ"}
                           </p>
                           <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                             <ShieldIcon />
-                            Admin
+                            ผู้ดูแลระบบ
                           </p>
                         </div>
                       </div>
@@ -712,7 +708,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                           type="button"
                           onClick={() => setEditingAdmin(admin)}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500"
-                          aria-label={`Edit ${admin.email}`}
+                          aria-label={`แก้ไข ${admin.email}`}
                         >
                           <EditIcon />
                         </button>
@@ -720,7 +716,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                           type="button"
                           onClick={() => setDeletingAdmin(admin)}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-500"
-                          aria-label={`Delete ${admin.email}`}
+                          aria-label={`ลบ ${admin.email}`}
                         >
                           <TrashIcon />
                         </button>
@@ -728,7 +724,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
                       <p>{admin.email}</p>
-                      <p>Created {formatDate(admin.createdAt)}</p>
+                      <p>สร้างเมื่อ {formatDate(admin.createdAt)}</p>
                     </div>
                   </article>
                 ))}

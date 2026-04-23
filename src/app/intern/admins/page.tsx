@@ -7,8 +7,8 @@ import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Admin List | Internship Management System",
-  description: "Super admin workspace for managing administrator accounts.",
+  title: "รายชื่อผู้ดูแลระบบ | ระบบจัดการฝึกงาน",
+  description: "พื้นที่ของ super admin สำหรับจัดการบัญชีผู้ดูแลระบบ",
 };
 
 function toAdminListItem(admin: {

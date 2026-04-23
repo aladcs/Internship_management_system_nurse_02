@@ -15,7 +15,7 @@ export type AdminNotificationSummary = {
 };
 
 function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("th-TH", {
     month: "short",
     day: "numeric",
     year: "numeric",

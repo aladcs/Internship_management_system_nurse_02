@@ -10,8 +10,8 @@ import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Student Form | Internship Management System",
-  description: "Student form for submitting and updating internship information.",
+  title: "แบบฟอร์มนักศึกษา | ระบบจัดการฝึกงาน",
+  description: "แบบฟอร์มสำหรับส่งและแก้ไขข้อมูลการฝึกงานของนักศึกษา",
 };
 
 function formatDateInput(value: Date | null | undefined) {
@@ -23,7 +23,7 @@ function formatDateInput(value: Date | null | undefined) {
 }
 
 function formatFileDate(value: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("th-TH", {
     month: "short",
     day: "numeric",
     year: "numeric",

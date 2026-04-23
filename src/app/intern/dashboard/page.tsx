@@ -7,20 +7,24 @@ import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Dashboard | Internship Management System",
-  description: "Admin dashboard for student counts, recent records, and notification activity.",
+  title: "แดชบอร์ด | ระบบจัดการฝึกงาน",
+  description: "แดชบอร์ดสำหรับผู้ดูแลเพื่อตรวจสอบจำนวนนักศึกษา รายการล่าสุด และการแจ้งเตือน",
 };
 
 function formatStatusLabel(status: AdminDashboardPageProps["recentStudents"][number]["status"]) {
   if (status === "in_progress") {
-    return "In Progress";
+    return "กำลังดำเนินการ";
   }
 
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (status === "pending") {
+    return "รอดำเนินการ";
+  }
+
+  return "เสร็จสิ้น";
 }
 
 function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("th-TH", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -98,7 +102,7 @@ export default async function InternDashboardPage() {
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatStatusLabel(student.internshipStatus),
-      meta: student.major?.trim() || `Updated ${formatDateTime(student.updatedAt)}`,
+      meta: student.major?.trim() || `อัปเดต ${formatDateTime(student.updatedAt)}`,
     })),
     notifications: notificationSummary.notifications,
   };

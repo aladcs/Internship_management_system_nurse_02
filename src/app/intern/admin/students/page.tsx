@@ -8,8 +8,8 @@ import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Student List | Internship Management System",
-  description: "Admin workspace for browsing and filtering student internship records.",
+  title: "รายชื่อนักศึกษา | ระบบจัดการฝึกงาน",
+  description: "พื้นที่ของผู้ดูแลสำหรับดูและกรองข้อมูลการฝึกงานของนักศึกษา",
 };
 
 function getStudentDisplayName(student: {

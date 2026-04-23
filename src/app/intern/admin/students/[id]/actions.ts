@@ -42,7 +42,7 @@ export async function updateStudentStatusAction(
     return {
       ...initialUpdateStudentStatusActionState,
       status: "error",
-      message: "The selected student record could not be found.",
+      message: "ไม่พบข้อมูลนักศึกษาที่เลือก",
     };
   }
 
@@ -61,7 +61,7 @@ export async function updateStudentStatusAction(
     return {
       ...initialUpdateStudentStatusActionState,
       status: "error",
-      message: "The selected student record could not be found.",
+      message: "ไม่พบข้อมูลนักศึกษาที่เลือก",
     };
   }
 
@@ -71,7 +71,7 @@ export async function updateStudentStatusAction(
     return {
       ...initialUpdateStudentStatusActionState,
       status: "error",
-      message: "This internship record is already completed.",
+      message: "ข้อมูลฝึกงานนี้เสร็จสมบูรณ์แล้ว",
       updatedStatus: student.internshipStatus,
     };
   }
@@ -97,8 +97,8 @@ export async function updateStudentStatusAction(
     status: "success",
     message:
       updatedStudent.internshipStatus === "completed"
-        ? "Student internship status marked as completed."
-        : "Student internship status moved to in progress.",
+        ? "อัปเดตสถานะการฝึกงานของนักศึกษาเป็นเสร็จสิ้นแล้ว"
+        : "อัปเดตสถานะการฝึกงานของนักศึกษาเป็นกำลังดำเนินการแล้ว",
     updatedStatus: updatedStudent.internshipStatus,
   };
 }

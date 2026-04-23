@@ -148,14 +148,6 @@ function AcademicIcon() {
   );
 }
 
-function formatStatusLabel(status: InternshipStatus) {
-  if (status === "in_progress") {
-    return "In Progress";
-  }
-
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
 function getStatusClasses(status: InternshipStatus) {
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
@@ -173,20 +165,20 @@ function getTimelineSteps(status: InternshipStatus): TimelineStep[] {
     return [
       {
         id: "submitted",
-        title: "Form Submitted",
-        description: "The student's internship information is on file.",
+        title: "ส่งแบบฟอร์มแล้ว",
+        description: "ข้อมูลการฝึกงานของนักศึกษาถูกบันทึกไว้แล้ว",
         tone: "complete",
       },
       {
         id: "review",
-        title: "Admin Review",
-        description: "The record has already moved through active review.",
+        title: "ตรวจสอบโดยผู้ดูแล",
+        description: "ข้อมูลนี้ผ่านการตรวจสอบแล้ว",
         tone: "complete",
       },
       {
         id: "completed",
-        title: "Completed",
-        description: "The internship record is finalized.",
+        title: "เสร็จสิ้น",
+        description: "ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว",
         tone: "complete",
       },
     ];
@@ -196,20 +188,20 @@ function getTimelineSteps(status: InternshipStatus): TimelineStep[] {
     return [
       {
         id: "submitted",
-        title: "Form Submitted",
-        description: "The student's internship details are already on file.",
+        title: "ส่งแบบฟอร์มแล้ว",
+        description: "รายละเอียดการฝึกงานของนักศึกษาถูกบันทึกไว้แล้ว",
         tone: "complete",
       },
       {
         id: "review",
-        title: "Admin Review",
-        description: "The internship is actively in progress and under admin tracking.",
+        title: "กำลังติดตามโดยผู้ดูแล",
+        description: "การฝึกงานกำลังดำเนินอยู่และอยู่ในการติดตามของผู้ดูแล",
         tone: "active",
       },
       {
         id: "completed",
-        title: "Completed",
-        description: "Mark the record complete when the internship closes.",
+        title: "เสร็จสิ้น",
+        description: "ทำเครื่องหมายว่าเสร็จสิ้นเมื่อการฝึกงานสิ้นสุดลง",
         tone: "upcoming",
       },
     ];
@@ -218,20 +210,20 @@ function getTimelineSteps(status: InternshipStatus): TimelineStep[] {
   return [
     {
       id: "submitted",
-      title: "Pending Review",
-      description: "The student has submitted or is preparing internship information.",
+      title: "รอตรวจสอบ",
+      description: "นักศึกษาส่งข้อมูลแล้วหรือกำลังเตรียมข้อมูลการฝึกงาน",
       tone: "active",
     },
     {
       id: "review",
-      title: "In Progress",
-      description: "Move the record here once active admin review begins.",
+      title: "กำลังดำเนินการ",
+      description: "เปลี่ยนสถานะเป็นขั้นตอนนี้เมื่อผู้ดูแลเริ่มติดตามอย่างเป็นทางการ",
       tone: "upcoming",
     },
     {
       id: "completed",
-      title: "Completed",
-      description: "This becomes available after the internship is tracked in progress.",
+      title: "เสร็จสิ้น",
+      description: "ขั้นตอนนี้จะพร้อมใช้งานหลังจากมีการติดตามสถานะกำลังดำเนินการแล้ว",
       tone: "upcoming",
     },
   ];
@@ -252,15 +244,15 @@ function getStepClasses(tone: TimelineStep["tone"]) {
 function getNextStatusAction(status: InternshipStatus) {
   if (status === "pending") {
     return {
-      label: "Move To In Progress",
-      helper: "Advance this student from pending review to active internship tracking.",
+      label: "เปลี่ยนเป็นกำลังดำเนินการ",
+      helper: "เลื่อนนักศึกษาคนนี้จากรอตรวจสอบไปสู่การติดตามการฝึกงานที่กำลังดำเนินอยู่",
     };
   }
 
   if (status === "in_progress") {
     return {
-      label: "Mark As Completed",
-      helper: "Finalize this internship record and lock student-side editing.",
+      label: "เปลี่ยนเป็นเสร็จสิ้น",
+      helper: "ปิดข้อมูลการฝึกงานนี้และล็อกการแก้ไขฝั่งนักศึกษา",
     };
   }
 
@@ -276,7 +268,7 @@ function StatusSubmitButton({ label }: { label: string }) {
       disabled={pending}
       className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-lg shadow-admin/25 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Updating..." : label}
+      {pending ? "กำลังอัปเดต..." : label}
     </button>
   );
 }
@@ -348,7 +340,7 @@ export function AdminStudentDetailPage({
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="Internship Management System"
+                  alt="ระบบจัดการฝึกงาน"
                   width={30}
                   height={30}
                   priority
@@ -356,9 +348,9 @@ export function AdminStudentDetailPage({
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
-                  Internship
+                  ระบบ
                 </p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
@@ -367,13 +359,13 @@ export function AdminStudentDetailPage({
                 href="/intern/dashboard"
                 className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
-                Dashboard
+                แดชบอร์ด
               </Link>
               <Link
                 href="/intern/admin/students"
                 className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
               >
-                Student List
+                รายชื่อนักศึกษา
               </Link>
             </nav>
           </div>
@@ -381,15 +373,15 @@ export function AdminStudentDetailPage({
           <div className="hidden items-center gap-3 md:flex">
             <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "Admin"}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
+              <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">ผู้ดูแล</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -398,7 +390,7 @@ export function AdminStudentDetailPage({
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="Open navigation menu"
+            aria-label="เปิดเมนูนำทาง"
           >
             <MenuIcon />
           </button>
@@ -413,14 +405,14 @@ export function AdminStudentDetailPage({
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "Admin"}</p>
+                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{currentUser.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="Close navigation menu"
+                aria-label="ปิดเมนูนำทาง"
               >
                 <span className="text-lg">×</span>
               </button>
@@ -432,14 +424,14 @@ export function AdminStudentDetailPage({
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Dashboard
+                แดชบอร์ด
               </Link>
               <Link
                 href="/intern/admin/students"
                 className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Student List
+                รายชื่อนักศึกษา
               </Link>
             </nav>
 
@@ -451,7 +443,7 @@ export function AdminStudentDetailPage({
                   type="submit"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Logout
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
@@ -466,7 +458,7 @@ export function AdminStudentDetailPage({
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             <ArrowLeftIcon />
-            Back to student list
+            กลับไปหน้ารายชื่อนักศึกษา
           </Link>
         </div>
 
@@ -475,13 +467,13 @@ export function AdminStudentDetailPage({
             <div className="max-w-3xl space-y-5">
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-                  Student Detail
+                  รายละเอียดนักศึกษา
                 </p>
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-                  Review <span className="text-(--color-admin)">{student.firstName}</span>'s internship record
+                  ตรวจสอบข้อมูลการฝึกงานของ <span className="text-(--color-admin)">{student.firstName}</span>
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                  Inspect the submitted profile, education history, internship details, and files before moving the status forward.
+                  ตรวจสอบโปรไฟล์ ประวัติการศึกษา รายละเอียดการฝึกงาน และไฟล์ที่ส่งมาก่อนเปลี่ยนสถานะถัดไป
                 </p>
               </div>
 
@@ -499,7 +491,7 @@ export function AdminStudentDetailPage({
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status Control</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">การควบคุมสถานะ</p>
               <div className="mt-3 space-y-3">
                 {nextAction ? (
                   <form action={formAction} className="space-y-3">
@@ -512,7 +504,7 @@ export function AdminStudentDetailPage({
                     <span className="mt-0.5 text-slate-500">
                       <LockIcon />
                     </span>
-                    <span>This internship record is already completed.</span>
+                    <span>ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว</span>
                   </div>
                 )}
 
@@ -527,11 +519,11 @@ export function AdminStudentDetailPage({
 
                 <div className="grid gap-3 rounded-2xl bg-white/70 p-4 text-sm text-slate-600 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Last Updated</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">อัปเดตล่าสุด</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.lastUpdatedLabel}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Submitted</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ส่งข้อมูลแล้ว</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.submittedAtLabel}</p>
                   </div>
                 </div>
@@ -544,7 +536,7 @@ export function AdminStudentDetailPage({
               <div key={step.id} className={`rounded-3xl border p-4 ${getStepClasses(step.tone)}`}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Step {index + 1}
+                    ขั้นตอนที่ {index + 1}
                   </span>
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-xs font-semibold text-slate-700 ring-1 ring-black/5">
                     {index + 1}
@@ -560,22 +552,22 @@ export function AdminStudentDetailPage({
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
           <div className="space-y-6">
             <SummaryCard
-              title="Personal Information"
-              description="Core identity and contact details currently stored for this student."
+              title="ข้อมูลส่วนตัว"
+              description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
               icon={<SummaryIcon />}
               items={student.personal}
             />
 
             <SummaryCard
-              title="Internship Information"
-              description="Placement details and current internship review context for this record."
+              title="ข้อมูลการฝึกงาน"
+              description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
               icon={<CalendarIcon />}
               items={student.internship}
             />
 
             <SummaryCard
-              title="Education Information"
-              description="Academic details supporting this internship submission."
+              title="ข้อมูลการศึกษา"
+              description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
               icon={<AcademicIcon />}
               items={student.education}
             />
@@ -585,9 +577,9 @@ export function AdminStudentDetailPage({
             <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">Files</h2>
+                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">ไฟล์</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Review student uploads directly from the admin workspace.
+                    ตรวจสอบไฟล์ที่นักศึกษาอัปโหลดได้จากพื้นที่ผู้ดูแลโดยตรง
                   </p>
                 </div>
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
@@ -620,18 +612,18 @@ export function AdminStudentDetailPage({
                   <div className="mx-auto flex justify-center text-(--color-admin)">
                     <EmptyFilesIcon />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-950">No files uploaded</h3>
+                  <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีการอัปโหลดไฟล์</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    This student has not uploaded supporting documents yet.
+                    นักศึกษาคนนี้ยังไม่ได้อัปโหลดเอกสารประกอบ
                   </p>
                 </div>
               )}
             </section>
 
             <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">Admin Review Note</h2>
+              <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                Status updates follow the defined workflow only: pending to in progress, then in progress to completed.
+                การอัปเดตสถานะต้องเป็นไปตามลำดับที่กำหนดเท่านั้น: รอดำเนินการ ไปเป็น กำลังดำเนินการ และจากนั้นเป็น เสร็จสิ้น
               </p>
             </section>
           </div>

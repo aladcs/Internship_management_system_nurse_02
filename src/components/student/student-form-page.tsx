@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
 import { logoutAction, saveStudentFormAction } from "@/app/intern/form/actions";
 
@@ -33,18 +34,18 @@ export type StudentFormPageProps = {
 };
 
 const GENDER_OPTIONS = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-  { value: "other", label: "Other" },
-  { value: "prefer_not_to_say", label: "Prefer not to say" },
+  { value: "male", label: "ชาย" },
+  { value: "female", label: "หญิง" },
+  { value: "other", label: "อื่นๆ" },
+  { value: "prefer_not_to_say", label: "ไม่ระบุ" },
 ] as const;
 
 const EDUCATION_LEVEL_OPTIONS = [
-  { value: "diploma", label: "Diploma" },
-  { value: "bachelor", label: "Bachelor" },
-  { value: "master", label: "Master" },
-  { value: "doctorate", label: "Doctorate" },
-  { value: "other", label: "Other" },
+  { value: "diploma", label: "ประกาศนียบัตร" },
+  { value: "bachelor", label: "ปริญญาตรี" },
+  { value: "master", label: "ปริญญาโท" },
+  { value: "doctorate", label: "ปริญญาเอก" },
+  { value: "other", label: "อื่นๆ" },
 ] as const;
 
 function MenuIcon() {
@@ -140,11 +141,15 @@ function CheckIcon() {
 }
 
 function statusLabel(status: StudentFormPageProps["student"]["status"]) {
-  if (status === "in_progress") {
-    return "In Progress";
+  if (status === "pending") {
+    return "รอดำเนินการ";
   }
 
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (status === "in_progress") {
+    return "กำลังดำเนินการ";
+  }
+
+  return "เสร็จสิ้น";
 }
 
 function getStatusClasses(status: StudentFormPageProps["student"]["status"]) {
@@ -306,8 +311,8 @@ function SectionCard({
 }
 
 function PrimaryActionButton({ submitted }: { submitted: boolean }) {
-  const label = submitted ? "Save Changes" : "Submit Form";
-  const { pending } = require("react-dom").useFormStatus();
+  const label = submitted ? "บันทึกการเปลี่ยนแปลง" : "ส่งแบบฟอร์ม";
+  const { pending } = useFormStatus();
 
   return (
     <button
@@ -315,13 +320,13 @@ function PrimaryActionButton({ submitted }: { submitted: boolean }) {
       className="inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-student) px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
       disabled={pending}
     >
-      {pending ? "Saving..." : label}
+      {pending ? "กำลังบันทึก..." : label}
     </button>
   );
 }
 
 function CancelLink() {
-  const { pending } = require("react-dom").useFormStatus();
+  const { pending } = useFormStatus();
 
   return (
     <Link
@@ -329,12 +334,12 @@ function CancelLink() {
       aria-disabled={pending}
       className={`inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${pending ? "pointer-events-none opacity-60" : ""}`}
     >
-      Cancel
+      ยกเลิก
     </Link>
   );
 }
 
-export function StudentFormPage({ currentUser, student, existingFiles, initialState }: StudentFormPageProps) {
+export function StudentFormPage({ student, existingFiles, initialState }: StudentFormPageProps) {
   const [state, formAction] = useActionState(saveStudentFormAction, initialState);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -431,11 +436,11 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <Link href="/intern/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="Internship Management System" width={30} height={30} priority />
+                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
               </div>
               <div className="hidden sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">Internship</p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
@@ -444,7 +449,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -455,15 +460,15 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-(--color-student) shadow-sm">
               <LockIcon />
             </div>
-            <h1 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950">This form is read-only</h1>
+            <h1 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950">แบบฟอร์มนี้เป็นแบบอ่านอย่างเดียว</h1>
             <p className="mt-4 text-sm leading-7 text-slate-700 sm:text-base">
-              Your internship status is {statusLabel(student.status).toLowerCase()}, so editing is locked. You can still review your submitted information from the overview page.
+              สถานะการฝึกงานของคุณคือ {statusLabel(student.status)} จึงไม่สามารถแก้ไขได้ แต่ยังสามารถตรวจสอบข้อมูลที่ส่งไว้จากหน้าภาพรวมได้
             </p>
             <Link
               href="/intern/overview"
               className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-student) px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
             >
-              Back to Overview
+              กลับไปหน้าภาพรวม
             </Link>
           </section>
         </main>
@@ -478,20 +483,20 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
           <div className="flex items-center gap-4">
             <Link href="/intern/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="Internship Management System" width={30} height={30} priority />
+                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
               </div>
               <div className="hidden sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">Internship</p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">
               <Link href="/intern/overview" className="rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-student/8 hover:text-(--color-student)">
-                Overview
+                ภาพรวม
               </Link>
               <Link href="/intern/form" className="rounded-full bg-student/12 px-4 py-2 text-sm font-semibold text-(--color-student)" aria-current="page">
-                Form
+                แบบฟอร์ม
               </Link>
             </nav>
           </div>
@@ -499,14 +504,14 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
           <div className="hidden items-center gap-3 md:flex">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
               <p className="text-sm font-semibold text-slate-900">{student.displayName}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Student</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">นักศึกษา</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -515,7 +520,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="Open navigation menu"
+            aria-label="เปิดเมนูนำทาง"
           >
             <MenuIcon />
           </button>
@@ -534,7 +539,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="Close navigation menu"
+                aria-label="ปิดเมนูนำทาง"
               >
                 <span className="text-lg">×</span>
               </button>
@@ -542,10 +547,10 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
 
             <nav className="mt-8 space-y-2">
               <Link href="/intern/overview" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
-                Overview
+                ภาพรวม
               </Link>
               <Link href="/intern/form" className="block rounded-2xl bg-student/12 px-4 py-3 text-sm font-semibold text-(--color-student)" aria-current="page" onClick={() => setMobileMenuOpen(false)}>
-                Form
+                แบบฟอร์ม
               </Link>
             </nav>
 
@@ -555,7 +560,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                   type="submit"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Logout
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
@@ -567,7 +572,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link href="/intern/overview" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-(--color-student)">
             <BackIcon />
-            Back to overview
+            กลับไปหน้าภาพรวม
           </Link>
           <span className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold ring-1 ${getStatusClasses(student.status)}`}>
             {statusLabel(student.status)}
@@ -575,9 +580,9 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
         </div>
 
         <div className="mt-5 max-w-3xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Internship Form</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">แบบฟอร์มฝึกงาน</h1>
           <p className="text-sm leading-6 text-slate-600 sm:text-base">
-            Fill in your internship record, keep supporting files together, and submit updates for admin review.
+            กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ
           </p>
         </div>
 
@@ -590,90 +595,90 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
 
           <SectionCard
             icon={<UserIcon />}
-            title="Personal Information"
-            description="Provide the key personal details used for your internship record and contact information."
+            title="ข้อมูลส่วนตัว"
+            description="กรอกรายละเอียดส่วนตัวหลักที่ใช้ในข้อมูลการฝึกงานและการติดต่อ"
           >
             <div className="grid gap-5 md:grid-cols-2">
-              <FieldShell label="Prefix / Title" htmlFor="prefix">
-                <TextInput id="prefix" name="prefix" value={state.values.prefix} placeholder="Mr., Ms., etc." />
+              <FieldShell label="คำนำหน้า" htmlFor="prefix">
+                <TextInput id="prefix" name="prefix" value={state.values.prefix} placeholder="นาย, นางสาว เป็นต้น" />
               </FieldShell>
-              <FieldShell label="Gender" htmlFor="gender" required error={state.fieldErrors.gender}>
-                <SelectInput id="gender" name="gender" value={state.values.gender} options={GENDER_OPTIONS} placeholder="Select gender" error={state.fieldErrors.gender} />
+              <FieldShell label="เพศ" htmlFor="gender" required error={state.fieldErrors.gender}>
+                <SelectInput id="gender" name="gender" value={state.values.gender} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} />
               </FieldShell>
-              <FieldShell label="First Name" htmlFor="firstName" required error={state.fieldErrors.firstName}>
-                <TextInput id="firstName" name="firstName" value={state.values.firstName} placeholder="First name" error={state.fieldErrors.firstName} />
+              <FieldShell label="ชื่อ" htmlFor="firstName" required error={state.fieldErrors.firstName}>
+                <TextInput id="firstName" name="firstName" value={state.values.firstName} placeholder="ชื่อ" error={state.fieldErrors.firstName} />
               </FieldShell>
-              <FieldShell label="Last Name" htmlFor="lastName" required error={state.fieldErrors.lastName}>
-                <TextInput id="lastName" name="lastName" value={state.values.lastName} placeholder="Last name" error={state.fieldErrors.lastName} />
+              <FieldShell label="นามสกุล" htmlFor="lastName" required error={state.fieldErrors.lastName}>
+                <TextInput id="lastName" name="lastName" value={state.values.lastName} placeholder="นามสกุล" error={state.fieldErrors.lastName} />
               </FieldShell>
-              <FieldShell label="Date of Birth" htmlFor="dateOfBirth" required error={state.fieldErrors.dateOfBirth}>
+              <FieldShell label="วันเกิด" htmlFor="dateOfBirth" required error={state.fieldErrors.dateOfBirth}>
                 <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={state.values.dateOfBirth} error={state.fieldErrors.dateOfBirth} />
               </FieldShell>
-              <FieldShell label="Phone Number" htmlFor="phoneNumber" required error={state.fieldErrors.phoneNumber}>
-                <TextInput id="phoneNumber" name="phoneNumber" value={state.values.phoneNumber} placeholder="Phone number" error={state.fieldErrors.phoneNumber} />
+              <FieldShell label="หมายเลขโทรศัพท์" htmlFor="phoneNumber" required error={state.fieldErrors.phoneNumber}>
+                <TextInput id="phoneNumber" name="phoneNumber" value={state.values.phoneNumber} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} />
               </FieldShell>
               <div className="md:col-span-2">
-                <FieldShell label="Address" htmlFor="address" required error={state.fieldErrors.address}>
-                  <TextArea id="address" name="address" value={state.values.address} placeholder="Current address" error={state.fieldErrors.address} />
+                <FieldShell label="ที่อยู่" htmlFor="address" required error={state.fieldErrors.address}>
+                  <TextArea id="address" name="address" value={state.values.address} placeholder="ที่อยู่ปัจจุบัน" error={state.fieldErrors.address} />
                 </FieldShell>
               </div>
-              <FieldShell label="Parent Phone" htmlFor="parentPhone" required error={state.fieldErrors.parentPhone}>
-                <TextInput id="parentPhone" name="parentPhone" value={state.values.parentPhone} placeholder="Parent phone number" error={state.fieldErrors.parentPhone} />
+              <FieldShell label="เบอร์โทรผู้ปกครอง" htmlFor="parentPhone" required error={state.fieldErrors.parentPhone}>
+                <TextInput id="parentPhone" name="parentPhone" value={state.values.parentPhone} placeholder="เบอร์โทรผู้ปกครอง" error={state.fieldErrors.parentPhone} />
               </FieldShell>
             </div>
           </SectionCard>
 
           <SectionCard
             icon={<AcademicIcon />}
-            title="Education Information"
-            description="Keep your academic details accurate so admins can review the correct placement context."
+            title="ข้อมูลการศึกษา"
+            description="ระบุข้อมูลการศึกษาให้ถูกต้องเพื่อให้ผู้ดูแลตรวจสอบบริบทการฝึกงานได้อย่างเหมาะสม"
           >
             <div className="grid gap-5 md:grid-cols-2">
-              <FieldShell label="Education Level" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
-                <SelectInput id="educationLevel" name="educationLevel" value={state.values.educationLevel} options={EDUCATION_LEVEL_OPTIONS} placeholder="Select education level" error={state.fieldErrors.educationLevel} />
+              <FieldShell label="ระดับการศึกษา" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
+                <SelectInput id="educationLevel" name="educationLevel" value={state.values.educationLevel} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} />
               </FieldShell>
-              <FieldShell label="Institution" htmlFor="institution" required error={state.fieldErrors.institution}>
-                <TextInput id="institution" name="institution" value={state.values.institution} placeholder="Institution" error={state.fieldErrors.institution} />
+              <FieldShell label="สถานศึกษา" htmlFor="institution" required error={state.fieldErrors.institution}>
+                <TextInput id="institution" name="institution" value={state.values.institution} placeholder="สถานศึกษา" error={state.fieldErrors.institution} />
               </FieldShell>
-              <FieldShell label="Faculty" htmlFor="faculty" required error={state.fieldErrors.faculty}>
-                <TextInput id="faculty" name="faculty" value={state.values.faculty} placeholder="Faculty" error={state.fieldErrors.faculty} />
+              <FieldShell label="คณะ" htmlFor="faculty" required error={state.fieldErrors.faculty}>
+                <TextInput id="faculty" name="faculty" value={state.values.faculty} placeholder="คณะ" error={state.fieldErrors.faculty} />
               </FieldShell>
-              <FieldShell label="Major / Branch" htmlFor="major" required error={state.fieldErrors.major}>
-                <TextInput id="major" name="major" value={state.values.major} placeholder="Major" error={state.fieldErrors.major} />
+              <FieldShell label="สาขา" htmlFor="major" required error={state.fieldErrors.major}>
+                <TextInput id="major" name="major" value={state.values.major} placeholder="สาขา" error={state.fieldErrors.major} />
               </FieldShell>
-              <FieldShell label="Co-op Advisor Name" htmlFor="coOpAdvisorName" required error={state.fieldErrors.coOpAdvisorName}>
-                <TextInput id="coOpAdvisorName" name="coOpAdvisorName" value={state.values.coOpAdvisorName} placeholder="Advisor name" error={state.fieldErrors.coOpAdvisorName} />
+              <FieldShell label="ชื่ออาจารย์ที่ปรึกษาสหกิจ" htmlFor="coOpAdvisorName" required error={state.fieldErrors.coOpAdvisorName}>
+                <TextInput id="coOpAdvisorName" name="coOpAdvisorName" value={state.values.coOpAdvisorName} placeholder="ชื่ออาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorName} />
               </FieldShell>
-              <FieldShell label="Co-op Advisor Phone" htmlFor="coOpAdvisorPhone" required error={state.fieldErrors.coOpAdvisorPhone}>
-                <TextInput id="coOpAdvisorPhone" name="coOpAdvisorPhone" value={state.values.coOpAdvisorPhone} placeholder="Advisor phone" error={state.fieldErrors.coOpAdvisorPhone} />
+              <FieldShell label="เบอร์โทรอาจารย์ที่ปรึกษาสหกิจ" htmlFor="coOpAdvisorPhone" required error={state.fieldErrors.coOpAdvisorPhone}>
+                <TextInput id="coOpAdvisorPhone" name="coOpAdvisorPhone" value={state.values.coOpAdvisorPhone} placeholder="เบอร์โทรอาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorPhone} />
               </FieldShell>
             </div>
           </SectionCard>
 
           <SectionCard
             icon={<BriefcaseIcon />}
-            title="Internship Details"
-            description="Capture the main placement details that define your internship and review timeline."
+            title="รายละเอียดการฝึกงาน"
+            description="ระบุรายละเอียดหลักของสถานที่ฝึกงานและช่วงเวลาการติดตามตรวจสอบ"
           >
             <div className="grid gap-5 md:grid-cols-2">
-              <FieldShell label="Position" htmlFor="position" required error={state.fieldErrors.position}>
-                <TextInput id="position" name="position" value={state.values.position} placeholder="Internship position" error={state.fieldErrors.position} />
+              <FieldShell label="ตำแหน่ง" htmlFor="position" required error={state.fieldErrors.position}>
+                <TextInput id="position" name="position" value={state.values.position} placeholder="ตำแหน่งฝึกงาน" error={state.fieldErrors.position} />
               </FieldShell>
-              <FieldShell label="Department / Unit" htmlFor="departmentUnit" required error={state.fieldErrors.departmentUnit}>
-                <TextInput id="departmentUnit" name="departmentUnit" value={state.values.departmentUnit} placeholder="Department or unit" error={state.fieldErrors.departmentUnit} />
+              <FieldShell label="แผนก / หน่วยงาน" htmlFor="departmentUnit" required error={state.fieldErrors.departmentUnit}>
+                <TextInput id="departmentUnit" name="departmentUnit" value={state.values.departmentUnit} placeholder="แผนกหรือหน่วยงาน" error={state.fieldErrors.departmentUnit} />
               </FieldShell>
-              <FieldShell label="Supervisor Name" htmlFor="supervisorName" required error={state.fieldErrors.supervisorName}>
-                <TextInput id="supervisorName" name="supervisorName" value={state.values.supervisorName} placeholder="Supervisor name" error={state.fieldErrors.supervisorName} />
+              <FieldShell label="ชื่อผู้ควบคุม" htmlFor="supervisorName" required error={state.fieldErrors.supervisorName}>
+                <TextInput id="supervisorName" name="supervisorName" value={state.values.supervisorName} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} />
               </FieldShell>
-              <FieldShell label="Internship Start Date" htmlFor="startDate" required error={state.fieldErrors.startDate}>
+              <FieldShell label="วันเริ่มฝึกงาน" htmlFor="startDate" required error={state.fieldErrors.startDate}>
                 <TextInput id="startDate" name="startDate" type="date" value={state.values.startDate} error={state.fieldErrors.startDate} />
               </FieldShell>
-              <FieldShell label="Internship End Date" htmlFor="endDate" required error={state.fieldErrors.endDate}>
+              <FieldShell label="วันสิ้นสุดฝึกงาน" htmlFor="endDate" required error={state.fieldErrors.endDate}>
                 <TextInput id="endDate" name="endDate" type="date" value={state.values.endDate} error={state.fieldErrors.endDate} />
               </FieldShell>
               <div className="md:col-span-2">
-                <FieldShell label="Additional Details" htmlFor="additionalDetails" error={state.fieldErrors.additionalDetails}>
-                  <TextArea id="additionalDetails" name="additionalDetails" value={state.values.additionalDetails} placeholder="Optional notes or internship details" error={state.fieldErrors.additionalDetails} rows={5} />
+                <FieldShell label="รายละเอียดเพิ่มเติม" htmlFor="additionalDetails" error={state.fieldErrors.additionalDetails}>
+                  <TextArea id="additionalDetails" name="additionalDetails" value={state.values.additionalDetails} placeholder="บันทึกเพิ่มเติมหรือรายละเอียดการฝึกงาน" error={state.fieldErrors.additionalDetails} rows={5} />
                 </FieldShell>
               </div>
             </div>
@@ -681,8 +686,8 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
 
           <SectionCard
             icon={<FileIcon />}
-            title="File Attachments"
-            description="Upload PDF or image files that support your internship record. You can keep up to 5 files, each no larger than 5 MB."
+            title="ไฟล์แนบ"
+            description="อัปโหลดไฟล์ PDF หรือรูปภาพเพื่อประกอบข้อมูลการฝึกงานของคุณ สามารถเก็บได้สูงสุด 5 ไฟล์ และแต่ละไฟล์ต้องไม่เกิน 5 MB"
           >
             <div>
               <input
@@ -710,9 +715,9 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-student/10 text-(--color-student)">
                   <UploadIcon />
                 </div>
-                <p className="mt-4 text-base font-semibold text-slate-950">Upload internship files</p>
+                <p className="mt-4 text-base font-semibold text-slate-950">อัปโหลดไฟล์ฝึกงาน</p>
                 <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
-                  Drag files here or click to browse. Accepted formats: PDF, JPG, PNG. Maximum 5 files total.
+                  ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับ PDF, JPG, PNG รวมได้สูงสุด 5 ไฟล์
                 </p>
               </button>
 
@@ -731,7 +736,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                           <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
                           <p className="mt-2 hidden items-center gap-1 text-xs font-medium text-emerald-600 sm:inline-flex">
                             <CheckIcon />
-                            Uploaded
+                            อัปโหลดแล้ว
                           </p>
                         </div>
                       </div>
@@ -739,7 +744,7 @@ export function StudentFormPage({ currentUser, student, existingFiles, initialSt
                         type="button"
                         onClick={() => markExistingFileRemoved(file.id)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-                        aria-label={`Remove ${file.name}`}
+                        aria-label={`ลบ ${file.name}`}
                       >
                         <CloseIcon />
                       </button>

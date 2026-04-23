@@ -25,7 +25,7 @@ export async function loginAction(
 
   if (!email || !password) {
     return {
-      error: "Enter both email and password.",
+      error: "กรุณากรอกอีเมลและรหัสผ่าน",
       email,
     };
   }
@@ -43,7 +43,7 @@ export async function loginAction(
 
   if (!user) {
     return {
-      error: "Invalid email or password.",
+      error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
       email,
     };
   }
@@ -52,7 +52,7 @@ export async function loginAction(
 
   if (!passwordMatches) {
     return {
-      error: "Invalid email or password.",
+      error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
       email,
     };
   }

@@ -143,20 +143,20 @@ function getTimelineSteps(student: StudentOverviewPageProps["student"]): Timelin
     return [
       {
         id: "form",
-        title: "Form Submitted",
-        description: "Your internship information is complete.",
+        title: "ส่งแบบฟอร์มแล้ว",
+        description: "ข้อมูลการฝึกงานของคุณครบถ้วนแล้ว",
         tone: "complete",
       },
       {
         id: "review",
-        title: "Admin Review",
-        description: "Your submission has already been reviewed.",
+        title: "เจ้าหน้าที่ตรวจสอบแล้ว",
+        description: "ข้อมูลที่คุณส่งได้รับการตรวจสอบเรียบร้อยแล้ว",
         tone: "complete",
       },
       {
         id: "done",
-        title: "Completed",
-        description: "The record is now locked for reference.",
+        title: "เสร็จสิ้น",
+        description: "บันทึกนี้ถูกล็อกไว้สำหรับอ้างอิง",
         tone: "complete",
       },
     ];
@@ -166,20 +166,20 @@ function getTimelineSteps(student: StudentOverviewPageProps["student"]): Timelin
     return [
       {
         id: "form",
-        title: "Form Submitted",
-        description: "Your internship details are already on file.",
+        title: "ส่งแบบฟอร์มแล้ว",
+        description: "ข้อมูลการฝึกงานของคุณถูกบันทึกไว้แล้ว",
         tone: "complete",
       },
       {
         id: "review",
-        title: "Admin Review",
-        description: "Your record is currently being updated and tracked.",
+        title: "กำลังติดตามโดยเจ้าหน้าที่",
+        description: "ข้อมูลของคุณกำลังอยู่ระหว่างการติดตามและอัปเดต",
         tone: "active",
       },
       {
         id: "done",
-        title: "Completed",
-        description: "This step becomes final once the internship is closed.",
+        title: "เสร็จสิ้น",
+        description: "ขั้นตอนนี้จะสมบูรณ์เมื่อการฝึกงานสิ้นสุดลง",
         tone: "upcoming",
       },
     ];
@@ -188,22 +188,22 @@ function getTimelineSteps(student: StudentOverviewPageProps["student"]): Timelin
   return [
     {
       id: "form",
-      title: student.hasStartedForm ? "Edit Details" : "Start Form",
+      title: student.hasStartedForm ? "แก้ไขข้อมูล" : "เริ่มกรอกแบบฟอร์ม",
       description: student.hasStartedForm
-        ? "Continue updating your internship information."
-        : "Begin filling in your internship details.",
+        ? "ดำเนินการแก้ไขข้อมูลการฝึกงานของคุณต่อ"
+        : "เริ่มกรอกรายละเอียดการฝึกงานของคุณ",
       tone: "active",
     },
     {
       id: "review",
-      title: "Pending Review",
-      description: "Admin review begins after you submit the form.",
+      title: "รอตรวจสอบ",
+      description: "เจ้าหน้าที่จะเริ่มตรวจสอบหลังจากคุณส่งแบบฟอร์ม",
       tone: "upcoming",
     },
     {
       id: "done",
-      title: "Completed",
-      description: "Completed records become read-only.",
+      title: "เสร็จสิ้น",
+      description: "ข้อมูลที่เสร็จสิ้นแล้วจะกลายเป็นแบบอ่านอย่างเดียว",
       tone: "upcoming",
     },
   ];
@@ -260,7 +260,7 @@ function SummaryCard({
 
 export function StudentOverviewPage({ currentUser, student }: StudentOverviewPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const ctaLabel = student.hasStartedForm ? "Edit Form" : "Submit Form";
+  const ctaLabel = student.hasStartedForm ? "แก้ไขแบบฟอร์ม" : "กรอกแบบฟอร์ม";
   const timelineSteps = getTimelineSteps(student);
 
   return (
@@ -272,7 +272,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="Internship Management System"
+                  alt="ระบบจัดการฝึกงาน"
                   width={30}
                   height={30}
                   priority
@@ -280,9 +280,9 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">
-                  Internship
+                  ระบบ
                 </p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
@@ -292,7 +292,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 className="rounded-full bg-student/12 px-4 py-2 text-sm font-semibold text-(--color-student)"
                 aria-current="page"
               >
-                Overview
+                ภาพรวม
               </Link>
             </nav>
           </div>
@@ -300,14 +300,14 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
           <div className="hidden items-center gap-3 md:flex">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
               <p className="text-sm font-semibold text-slate-900">{student.displayName}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Student</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">นักศึกษา</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -316,7 +316,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="Open navigation menu"
+            aria-label="เปิดเมนูนำทาง"
           >
             <MenuIcon />
           </button>
@@ -338,7 +338,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="Close navigation menu"
+                aria-label="ปิดเมนูนำทาง"
               >
                 <span className="text-lg">×</span>
               </button>
@@ -351,7 +351,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 aria-current="page"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Overview
+                ภาพรวม
               </Link>
             </nav>
 
@@ -361,7 +361,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   type="submit"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Logout
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
@@ -375,13 +375,13 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             <div className="max-w-3xl space-y-5">
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-student)">
-                  Student Overview
+                  ภาพรวมนักศึกษา
                 </p>
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
-                  Welcome back, <span className="text-(--color-student)">{student.firstName}</span>
+                  ยินดีต้อนรับกลับ, <span className="text-(--color-student)">{student.firstName}</span>
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                  Review your internship progress, confirm the information already on file, and continue with the form when updates are still allowed.
+                  ตรวจสอบความคืบหน้าการฝึกงาน ยืนยันข้อมูลที่มีอยู่ในระบบ และดำเนินการกับแบบฟอร์มต่อได้เมื่อยังอนุญาตให้แก้ไข
                 </p>
               </div>
 
@@ -399,7 +399,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-orange-950/8 backdrop-blur sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Primary Action</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">การดำเนินการหลัก</p>
               <div className="mt-3 space-y-3">
                 {student.canEdit ? (
                   <Link
@@ -413,16 +413,16 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                     <span className="mt-0.5 text-slate-500">
                       <LockIcon />
                     </span>
-                    <span>Your form is locked because your internship status is completed.</span>
+                    <span>แบบฟอร์มถูกล็อกเพราะสถานะการฝึกงานของคุณเสร็จสิ้นแล้ว</span>
                   </div>
                 )}
                 <div className="grid gap-3 rounded-2xl bg-white/70 p-4 text-sm text-slate-600 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Last Updated</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">อัปเดตล่าสุด</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.lastUpdatedLabel}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Submitted</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ส่งข้อมูลแล้ว</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.submittedAtLabel}</p>
                   </div>
                 </div>
@@ -435,7 +435,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               <div key={step.id} className={`rounded-3xl border p-4 ${getStepClasses(step.tone)}`}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Step {index + 1}
+                    ขั้นตอนที่ {index + 1}
                   </span>
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-xs font-semibold text-slate-700 ring-1 ring-black/5">
                     {index + 1}
@@ -451,22 +451,22 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
           <div className="space-y-6">
             <SummaryCard
-              title="Personal Information"
-              description="Your core profile details as they currently appear in the internship system."
+              title="ข้อมูลส่วนตัว"
+              description="รายละเอียดโปรไฟล์หลักของคุณตามที่ปรากฏอยู่ในระบบฝึกงาน"
               icon={<SummaryIcon />}
               items={student.personal}
             />
 
             <SummaryCard
-              title="Internship Summary"
-              description="A quick summary of your internship placement and current review status."
+              title="สรุปการฝึกงาน"
+              description="สรุปข้อมูลสถานที่ฝึกงานและสถานะการตรวจสอบปัจจุบันของคุณ"
               icon={<CalendarIcon />}
               items={student.internship}
             />
 
             <SummaryCard
-              title="Education Summary"
-              description="Academic information that supports your internship record."
+              title="สรุปข้อมูลการศึกษา"
+              description="ข้อมูลการศึกษาที่ใช้ประกอบบันทึกการฝึกงานของคุณ"
               icon={<AcademicIcon />}
               items={student.education}
             />
@@ -476,9 +476,9 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">My Files</h2>
+                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">ไฟล์ของฉัน</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Files uploaded for your own internship record only.
+                    ไฟล์ที่อัปโหลดสำหรับข้อมูลการฝึกงานของคุณเท่านั้น
                   </p>
                 </div>
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-(--color-student)">
@@ -505,16 +505,16 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   <div className="mx-auto flex justify-center text-(--color-student)">
                     <EmptyFilesIcon />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-950">No files uploaded</h3>
+                  <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีไฟล์ที่อัปโหลด</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Add supporting documents from the form when your internship record is editable.
+                    เพิ่มเอกสารประกอบจากแบบฟอร์มได้เมื่อข้อมูลการฝึกงานยังสามารถแก้ไขได้
                   </p>
                   {student.canEdit ? (
                     <Link
                       href="/intern/form"
                       className="mt-4 inline-flex text-sm font-semibold text-(--color-student) underline decoration-orange-200 underline-offset-4 transition hover:decoration-orange-500"
                     >
-                      Upload now
+                      อัปโหลดตอนนี้
                     </Link>
                   ) : null}
                 </div>
@@ -523,16 +523,16 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
             <section className="rounded-[30px] border border-orange-200 bg-[#fff1e7] p-6 shadow-xl shadow-orange-950/6 sm:p-7">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-(--color-student)">
-                Help & Support
+                คำแนะนำและการช่วยเหลือ
               </p>
               <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-950">
-                Keep your internship record accurate
+                ดูแลให้ข้อมูลการฝึกงานถูกต้องเสมอ
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                Review the summary cards before opening the form. While your status is pending or in progress, you can continue updating your own details. Once the status becomes completed, the record stays visible here but editing is locked.
+                ตรวจสอบข้อมูลสรุปก่อนเปิดแบบฟอร์ม เมื่อสถานะยังเป็นรอดำเนินการหรือกำลังดำเนินการ คุณยังสามารถแก้ไขข้อมูลของตนเองได้ แต่เมื่อสถานะเป็นเสร็จสิ้นแล้ว ข้อมูลจะยังแสดงที่นี่แต่ไม่สามารถแก้ไขได้
               </p>
               <div className="mt-5 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-700 ring-1 ring-orange-100">
-                Signed in as {currentUser.email}
+                เข้าสู่ระบบด้วยบัญชี {currentUser.email}
               </div>
             </section>
           </div>

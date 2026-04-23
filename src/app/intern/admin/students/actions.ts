@@ -77,13 +77,13 @@ export async function saveStudentAction(
   const fieldErrors: SaveStudentActionState["fieldErrors"] = {};
 
   if (!name) {
-    fieldErrors.name = "Enter the student name.";
+    fieldErrors.name = "กรุณากรอกชื่อนักศึกษา";
   }
 
   if (!email) {
-    fieldErrors.email = "Enter the student email.";
+    fieldErrors.email = "กรุณากรอกอีเมลนักศึกษา";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    fieldErrors.email = "Enter a valid email address.";
+    fieldErrors.email = "กรุณากรอกอีเมลให้ถูกต้อง";
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -107,7 +107,7 @@ export async function saveStudentAction(
       status: "validation-error",
       message: null,
       fieldErrors: {
-        email: "An account with this email already exists.",
+        email: "มีบัญชีที่ใช้อีเมลนี้อยู่แล้ว",
       },
       values: { name, email },
       student: null,
@@ -157,7 +157,7 @@ export async function saveStudentAction(
 
   return {
     status: "created",
-    message: "Student account created.",
+    message: "สร้างบัญชีนักศึกษาเรียบร้อยแล้ว",
     fieldErrors: {},
     values: {
       name,

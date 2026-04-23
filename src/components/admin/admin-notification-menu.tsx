@@ -29,7 +29,7 @@ export function AdminNotificationFeed({
   compact?: boolean;
 }) {
   if (items.length === 0) {
-    return <div className="px-5 py-10 text-center text-sm text-slate-500 sm:px-6">No notifications yet.</div>;
+    return <div className="px-5 py-10 text-center text-sm text-slate-500 sm:px-6">ยังไม่มีการแจ้งเตือน</div>;
   }
 
   return (
@@ -73,7 +73,7 @@ export function AdminNotificationMenu({ unreadNotificationCount, notifications }
         type="button"
         onClick={() => setNotificationsOpen((open) => !open)}
         className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
-        aria-label="Open notifications"
+        aria-label="เปิดการแจ้งเตือน"
         aria-expanded={notificationsOpen}
       >
         <BellIcon />
@@ -89,19 +89,19 @@ export function AdminNotificationMenu({ unreadNotificationCount, notifications }
           <button
             type="button"
             className="fixed inset-0 z-10 cursor-default"
-            aria-label="Close notifications"
+            aria-label="ปิดการแจ้งเตือน"
             onClick={() => setNotificationsOpen(false)}
           />
           <div className="absolute right-0 z-20 mt-3 w-[24rem] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/12">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Notifications</p>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{unreadNotificationCount} unread</p>
+                <p className="text-sm font-semibold text-slate-900">การแจ้งเตือน</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">ยังไม่อ่าน {unreadNotificationCount} รายการ</p>
               </div>
               {unreadNotificationCount > 0 ? (
                 <form action={markAllNotificationsReadAction}>
                   <button type="submit" className="text-sm font-medium text-(--color-admin) transition hover:opacity-80">
-                    Mark all read
+                    อ่านทั้งหมดแล้ว
                   </button>
                 </form>
               ) : null}
@@ -125,13 +125,13 @@ export function AdminMobileNotificationsCard({
     <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-900">Notifications</p>
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{unreadNotificationCount} unread</p>
+          <p className="text-sm font-semibold text-slate-900">การแจ้งเตือน</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">ยังไม่อ่าน {unreadNotificationCount} รายการ</p>
         </div>
         {unreadNotificationCount > 0 ? (
           <form action={markAllNotificationsReadAction}>
             <button type="submit" className="text-sm font-medium text-(--color-admin)">
-              Mark all read
+              อ่านทั้งหมดแล้ว
             </button>
           </form>
         ) : null}

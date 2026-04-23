@@ -65,13 +65,13 @@ export async function saveAdminAction(
   const fieldErrors: SaveAdminActionState["fieldErrors"] = {};
 
   if (!name) {
-    fieldErrors.name = "Enter the admin name.";
+    fieldErrors.name = "กรุณากรอกชื่อผู้ดูแลระบบ";
   }
 
   if (!email) {
-    fieldErrors.email = "Enter the admin email.";
+    fieldErrors.email = "กรุณากรอกอีเมลผู้ดูแลระบบ";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    fieldErrors.email = "Enter a valid email address.";
+    fieldErrors.email = "กรุณากรอกอีเมลให้ถูกต้อง";
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -95,7 +95,7 @@ export async function saveAdminAction(
       status: "validation-error",
       message: null,
       fieldErrors: {
-        email: "An account with this email already exists.",
+        email: "มีบัญชีที่ใช้อีเมลนี้อยู่แล้ว",
       },
       values: { name, email },
       admin: null,
@@ -120,7 +120,7 @@ export async function saveAdminAction(
     if (!existingAdmin) {
       return {
         status: "error",
-        message: "The selected admin account could not be found.",
+        message: "ไม่พบบัญชีผู้ดูแลระบบที่เลือก",
         fieldErrors: {},
         values: { name, email },
         admin: null,
@@ -146,7 +146,7 @@ export async function saveAdminAction(
 
     return {
       status: "updated",
-      message: "Admin details updated.",
+      message: "อัปเดตข้อมูลผู้ดูแลระบบเรียบร้อยแล้ว",
       fieldErrors: {},
       values: { name: updatedAdmin.name ?? "", email: updatedAdmin.email },
       admin: toAdminListItem(updatedAdmin),
@@ -175,7 +175,7 @@ export async function saveAdminAction(
 
   return {
     status: "created",
-    message: "Admin account created.",
+    message: "สร้างบัญชีผู้ดูแลระบบเรียบร้อยแล้ว",
     fieldErrors: {},
     values: {
       name: createdAdmin.name ?? "",
@@ -196,7 +196,7 @@ export async function deleteAdminAction(
   if (!adminId) {
     return {
       status: "error",
-      message: "The selected admin account could not be found.",
+      message: "ไม่พบบัญชีผู้ดูแลระบบที่เลือก",
       deletedAdminId: null,
     };
   }
@@ -212,7 +212,7 @@ export async function deleteAdminAction(
   if (!existingAdmin) {
     return {
       status: "error",
-      message: "The selected admin account could not be found.",
+      message: "ไม่พบบัญชีผู้ดูแลระบบที่เลือก",
       deletedAdminId: null,
     };
   }
@@ -225,7 +225,7 @@ export async function deleteAdminAction(
 
   return {
     status: "deleted",
-    message: "Admin account deleted.",
+    message: "ลบบัญชีผู้ดูแลระบบเรียบร้อยแล้ว",
     deletedAdminId: existingAdmin.id,
   };
 }

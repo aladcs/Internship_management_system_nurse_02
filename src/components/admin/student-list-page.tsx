@@ -42,10 +42,10 @@ const STATUS_FILTERS: Array<{
   value: StudentStatusFilter;
   label: string;
 }> = [
-  { value: "all", label: "All" },
-  { value: "pending", label: "Pending" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Completed" },
+  { value: "all", label: "ทั้งหมด" },
+  { value: "pending", label: "รอดำเนินการ" },
+  { value: "in_progress", label: "กำลังดำเนินการ" },
+  { value: "completed", label: "เสร็จสิ้น" },
 ];
 
 function MenuIcon() {
@@ -90,8 +90,8 @@ function ViewStudentLink({ email, href }: { email: string; href: string }) {
     <Link
       href={href}
       className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-      aria-label={`View ${email}`}
-      title={`View ${email}`}
+      aria-label={`ดู ${email}`}
+      title={`ดู ${email}`}
     >
       <EyeIcon />
     </Link>
@@ -165,11 +165,15 @@ function getInitials(name: string, email: string) {
 }
 
 function formatStatusLabel(status: InternshipStatus) {
-  if (status === "in_progress") {
-    return "In Progress";
+  if (status === "pending") {
+    return "รอดำเนินการ";
   }
 
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (status === "in_progress") {
+    return "กำลังดำเนินการ";
+  }
+
+  return "เสร็จสิ้น";
 }
 
 function getStatusClasses(status: InternshipStatus) {
@@ -187,7 +191,7 @@ function getStatusClasses(status: InternshipStatus) {
 function ResultCount({ count }: { count: number }) {
   return (
     <p className="text-sm text-slate-500">
-      {count} {count === 1 ? "student" : "students"}
+      {count} {count === 1 ? "นักศึกษา" : "นักศึกษา"}
     </p>
   );
 }
@@ -201,7 +205,7 @@ function ActionButton({ children }: { children: React.ReactNode }) {
       disabled={pending}
       className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Creating..." : children}
+      {pending ? "กำลังสร้าง..." : children}
     </button>
   );
 }
@@ -297,14 +301,14 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
   if (state.status === "created" && state.generatedPassword && state.student) {
     return (
       <ModalFrame
-        title="Student account created"
-        description="Store this generated password securely before closing. It is only shown once in this flow."
+        title="สร้างบัญชีนักศึกษาเรียบร้อยแล้ว"
+        description="กรุณาเก็บรหัสผ่านที่ระบบสร้างให้อย่างปลอดภัยก่อนปิดหน้าต่างนี้ เนื่องจากจะแสดงเพียงครั้งเดียวในขั้นตอนนี้"
       >
         <div className="space-y-5">
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-emerald-700">Generated password</p>
+                <p className="text-sm font-medium text-emerald-700">รหัสผ่านที่สร้างขึ้น</p>
                 <p className="mt-3 font-mono text-lg font-semibold tracking-[0.08em]">
                   {state.generatedPassword}
                 </p>
@@ -313,7 +317,7 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
                 type="button"
                 onClick={handleCopyPassword}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-100"
-                aria-label="Copy generated password"
+                aria-label="คัดลอกรหัสผ่านที่สร้างขึ้น"
               >
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
@@ -331,7 +335,7 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
               onClick={handleDone}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
             >
-              Done
+              เสร็จสิ้น
             </button>
           </div>
         </div>
@@ -341,20 +345,20 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
 
   return (
     <ModalFrame
-      title="Create student"
-      description="Add a student account. The system will generate a password after save."
+      title="สร้างนักศึกษา"
+      description="เพิ่มบัญชีนักศึกษา ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
     >
       <form action={formAction} className="space-y-5">
         <div className="space-y-2">
           <label htmlFor="student-name" className="text-sm font-medium text-slate-700">
-            Name
+            ชื่อ
           </label>
           <input
             id="student-name"
             name="name"
             defaultValue={state.values.name}
             className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
-            placeholder="Enter student name"
+            placeholder="กรอกชื่อนักศึกษา"
           />
           {state.fieldErrors.name ? (
             <p className="text-sm text-red-600">{state.fieldErrors.name}</p>
@@ -363,7 +367,7 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
 
         <div className="space-y-2">
           <label htmlFor="student-email" className="text-sm font-medium text-slate-700">
-            Email
+            อีเมล
           </label>
           <input
             id="student-email"
@@ -385,7 +389,7 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
         ) : null}
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          A related student profile will be created with an initial pending internship status.
+          ระบบจะสร้างโปรไฟล์นักศึกษาพร้อมสถานะเริ่มต้นเป็นรอดำเนินการ
         </div>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -394,9 +398,9 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
             onClick={onClose}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            Cancel
+            ยกเลิก
           </button>
-          <ActionButton>Create Student</ActionButton>
+          <ActionButton>สร้างนักศึกษา</ActionButton>
         </div>
       </form>
     </ModalFrame>
@@ -406,8 +410,8 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
 function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
   return (
     <ModalFrame
-      title="Delete student"
-      description="The destructive delete flow is reserved for the dedicated student management slice. This dialog is present now so the list UI matches the approved design."
+      title="ลบนักศึกษา"
+      description="ขั้นตอนการลบนักศึกษาจะอยู่ในฟีเจอร์จัดการนักศึกษาโดยเฉพาะ กล่องโต้ตอบนี้แสดงไว้เพื่อให้หน้ารายการตรงตามแบบที่อนุมัติแล้ว"
     >
       <div className="space-y-5">
         <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
@@ -416,7 +420,7 @@ function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          Delete student is not implemented in this feature. The current page only exposes the action entry point in the UI.
+          การลบนักศึกษายังไม่ได้ถูกพัฒนาในฟีเจอร์นี้ หน้าปัจจุบันจะแสดงเพียงจุดเริ่มต้นของการดำเนินการใน UI เท่านั้น
         </div>
 
         <div className="flex justify-end">
@@ -425,7 +429,7 @@ function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
             onClick={onClose}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            Close
+            ปิด
           </button>
         </div>
       </div>
@@ -499,7 +503,7 @@ export function StudentListPage({
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="Internship Management System"
+                  alt="ระบบจัดการฝึกงาน"
                   width={30}
                   height={30}
                   priority
@@ -507,9 +511,9 @@ export function StudentListPage({
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
-                  Internship
+                  ระบบ
                 </p>
-                <p className="text-sm font-medium text-slate-700">Management System</p>
+                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
@@ -518,14 +522,14 @@ export function StudentListPage({
                 href="/intern/dashboard"
                 className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
-                Dashboard
+                แดชบอร์ด
               </Link>
               <Link
                 href="/intern/admin/students"
                 className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
                 aria-current="page"
               >
-                Student List
+                รายชื่อนักศึกษา
               </Link>
             </nav>
           </div>
@@ -534,16 +538,16 @@ export function StudentListPage({
             <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
               <p className="text-sm font-semibold text-slate-900">
-                {currentUser.name ?? "Admin"}
+                {currentUser.name ?? "ผู้ดูแล"}
               </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">ผู้ดูแล</p>
             </div>
             <form action={logoutAction}>
               <button
                 type="submit"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                Logout
+                ออกจากระบบ
               </button>
             </form>
           </div>
@@ -552,7 +556,7 @@ export function StudentListPage({
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="Open navigation menu"
+            aria-label="เปิดเมนูนำทาง"
           >
             <MenuIcon />
           </button>
@@ -567,14 +571,14 @@ export function StudentListPage({
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "Admin"}</p>
+                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{currentUser.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="Close navigation menu"
+                aria-label="ปิดเมนูนำทาง"
               >
                 <span className="text-lg">×</span>
               </button>
@@ -586,7 +590,7 @@ export function StudentListPage({
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Dashboard
+                แดชบอร์ด
               </Link>
               <Link
                 href="/intern/admin/students"
@@ -594,7 +598,7 @@ export function StudentListPage({
                 aria-current="page"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Student List
+                รายชื่อนักศึกษา
               </Link>
             </nav>
 
@@ -606,7 +610,7 @@ export function StudentListPage({
                   type="submit"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Logout
+                  ออกจากระบบ
                 </button>
               </form>
             </div>
@@ -618,14 +622,14 @@ export function StudentListPage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-              Admin Workspace
+              พื้นที่ผู้ดูแล
             </p>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Student List
+                รายชื่อนักศึกษา
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                Browse student records, filter by internship status, and open the student management actions from one place.
+                ดูข้อมูลนักศึกษา กรองตามสถานะการฝึกงาน และเปิดการจัดการนักศึกษาได้จากที่เดียว
               </p>
             </div>
           </div>
@@ -635,7 +639,7 @@ export function StudentListPage({
             onClick={() => setCreateOpen(true)}
             className="inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-lg shadow-admin/25 transition hover:brightness-95"
           >
-            Create Student
+            สร้างนักศึกษา
           </button>
         </div>
 
@@ -650,7 +654,7 @@ export function StudentListPage({
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
-                  placeholder="Search by name, email, or major"
+                  placeholder="ค้นหาจากชื่อ อีเมล หรือสาขา"
                 />
               </label>
               <ResultCount count={filteredStudents.length} />
@@ -687,17 +691,17 @@ export function StudentListPage({
                 <EmptyIcon />
               </div>
               <h2 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">
-                No students yet
+                ยังไม่มีนักศึกษา
               </h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
-                Student records will appear here after admin-created accounts are added to the system.
+                ข้อมูลนักศึกษาจะแสดงที่นี่หลังจากผู้ดูแลเพิ่มบัญชีเข้าสู่ระบบแล้ว
               </p>
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
               >
-                Create Student
+                สร้างนักศึกษา
               </button>
             </div>
           ) : filteredEmptyState ? (
@@ -706,10 +710,10 @@ export function StudentListPage({
                 <EmptyIcon />
               </div>
               <h2 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">
-                No matching students
+                ไม่พบนักศึกษาที่ตรงกัน
               </h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
-                Try another search term or switch the active status filter.
+                ลองค้นหาด้วยคำอื่นหรือเปลี่ยนตัวกรองสถานะ
               </p>
             </div>
           ) : (
@@ -718,10 +722,10 @@ export function StudentListPage({
                 <table className="min-w-full border-separate border-spacing-0">
                   <thead>
                     <tr className="bg-admin/7 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      <th className="px-6 py-4">Student</th>
-                      <th className="px-6 py-4">Email</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
+                      <th className="px-6 py-4">นักศึกษา</th>
+                      <th className="px-6 py-4">อีเมล</th>
+                      <th className="px-6 py-4">สถานะ</th>
+                      <th className="px-6 py-4 text-right">การดำเนินการ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -736,7 +740,7 @@ export function StudentListPage({
                               <p className="font-medium text-slate-900">{student.name}</p>
                               <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                                 <UserIcon />
-                                {student.major ?? "Student record"}
+                                {student.major ?? "ข้อมูลนักศึกษา"}
                               </p>
                             </div>
                           </div>
@@ -756,13 +760,13 @@ export function StudentListPage({
                               href={`/intern/admin/students/${student.id}`}
                             />
                             <ActionIconButton
-                              label={`Edit ${student.email} (coming soon)`}
+                              label={`แก้ไข ${student.email} (เร็วๆ นี้)`}
                               disabled
                             >
                               <EditIcon />
                             </ActionIconButton>
                             <ActionIconButton
-                              label={`Delete ${student.email}`}
+                              label={`ลบ ${student.email}`}
                               tone="destructive"
                               onClick={() => setDeletingStudent(student)}
                             >
@@ -786,7 +790,7 @@ export function StudentListPage({
                         </div>
                         <div>
                           <p className="font-medium text-slate-900">{student.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{student.major ?? "Student record"}</p>
+                          <p className="mt-1 text-xs text-slate-500">{student.major ?? "ข้อมูลนักศึกษา"}</p>
                         </div>
                       </div>
                       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusClasses(student.status)}`}>
@@ -801,11 +805,11 @@ export function StudentListPage({
                         email={student.email}
                         href={`/intern/admin/students/${student.id}`}
                       />
-                      <ActionIconButton label={`Edit ${student.email} (coming soon)`} disabled>
+                      <ActionIconButton label={`แก้ไข ${student.email} (เร็วๆ นี้)`} disabled>
                         <EditIcon />
                       </ActionIconButton>
                       <ActionIconButton
-                        label={`Delete ${student.email}`}
+                        label={`ลบ ${student.email}`}
                         tone="destructive"
                         onClick={() => setDeletingStudent(student)}
                       >
