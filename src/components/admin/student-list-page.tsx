@@ -2,17 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
 import type { InternshipStatus } from "@prisma/client";
-import { logoutAction } from "@/app/intern/admin/students/actions";
-
-type StudentListItem = {
-  id: string;
-  name: string;
-  email: string;
-  status: InternshipStatus;
-  major: string | null;
-};
+import {
+  initialSaveStudentActionState,
+  type StudentListItem,
+} from "@/app/intern/admin/students/action-state";
+import { logoutAction, saveStudentAction } from "@/app/intern/admin/students/actions";
 
 type StudentListPageProps = {
   students: StudentListItem[];
@@ -24,6 +21,7 @@ type StudentListPageProps = {
 
 type StudentDialogProps = {
   onClose: () => void;
+  onCreated: (student: StudentListItem) => void;
 };
 
 type DeleteDialogProps = {
@@ -114,6 +112,23 @@ function EmptyIcon() {
   );
 }
 
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
+      <rect x="7" y="7" width="9" height="9" rx="2" />
+      <path d="M4 12V6a2 2 0 0 1 2-2h6" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m4.75 10.25 3.25 3.25 7.25-7.25" />
+    </svg>
+  );
+}
+
 function getInitials(name: string, email: string) {
   const source = name.trim() || email;
   const segments = source.split(/\s+/).filter(Boolean);
@@ -154,6 +169,20 @@ function ResultCount({ count }: { count: number }) {
     <p className="text-sm text-slate-500">
       {count} {count === 1 ? "student" : "students"}
     </p>
+  );
+}
+
+function ActionButton({ children }: { children: React.ReactNode }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+    >
+      {pending ? "Creating..." : children}
+    </button>
   );
 }
 
@@ -211,66 +240,132 @@ function ActionIconButton({
   );
 }
 
-function CreateStudentDialog({ onClose }: StudentDialogProps) {
+function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
+  const [state, formAction] = useActionState(
+    saveStudentAction,
+    initialSaveStudentActionState,
+  );
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setCopied(false), 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copied]);
+
+  async function handleCopyPassword() {
+    if (!state.generatedPassword) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(state.generatedPassword);
+    setCopied(true);
+  }
+
+  function handleDone() {
+    if (state.student) {
+      onCreated(state.student);
+    }
+
+    onClose();
+  }
+
+  if (state.status === "created" && state.generatedPassword && state.student) {
+    return (
+      <ModalFrame
+        title="Student account created"
+        description="Store this generated password securely before closing. It is only shown once in this flow."
+      >
+        <div className="space-y-5">
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-emerald-700">Generated password</p>
+                <p className="mt-3 font-mono text-lg font-semibold tracking-[0.08em]">
+                  {state.generatedPassword}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyPassword}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-100"
+                aria-label="Copy generated password"
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <p className="font-medium text-slate-800">{state.student.name}</p>
+            <p>{state.student.email}</p>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleDone}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </ModalFrame>
+    );
+  }
+
   return (
     <ModalFrame
       title="Create student"
-      description="This slice ships the student list and real Prisma data. Student creation form behavior is intentionally left for the dedicated Create Student feature."
+      description="Add a student account. The system will generate a password after save."
     >
-      <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Name</span>
-            <input
-              disabled
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500 outline-none"
-              placeholder="Enter student name"
-            />
+      <form action={formAction} className="space-y-5">
+        <div className="space-y-2">
+          <label htmlFor="student-name" className="text-sm font-medium text-slate-700">
+            Name
           </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Email</span>
-            <input
-              disabled
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500 outline-none"
-              placeholder="student@cmu.ac.th"
-            />
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Student ID</span>
-            <input
-              disabled
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500 outline-none"
-              placeholder="650000000"
-            />
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Major</span>
-            <input
-              disabled
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500 outline-none"
-              placeholder="Nursing"
-            />
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Year</span>
-            <input
-              disabled
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500 outline-none"
-              placeholder="4"
-            />
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700">Phone</span>
-            <input
-              disabled
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-500 outline-none"
-              placeholder="08x-xxx-xxxx"
-            />
-          </label>
+          <input
+            id="student-name"
+            name="name"
+            defaultValue={state.values.name}
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
+            placeholder="Enter student name"
+          />
+          {state.fieldErrors.name ? (
+            <p className="text-sm text-red-600">{state.fieldErrors.name}</p>
+          ) : null}
         </div>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Create Student is UI-only in this slice. Account creation and generated password flow will be added in the dedicated feature.
+        <div className="space-y-2">
+          <label htmlFor="student-email" className="text-sm font-medium text-slate-700">
+            Email
+          </label>
+          <input
+            id="student-email"
+            name="email"
+            type="email"
+            defaultValue={state.values.email}
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
+            placeholder="student@cmu.ac.th"
+          />
+          {state.fieldErrors.email ? (
+            <p className="text-sm text-red-600">{state.fieldErrors.email}</p>
+          ) : null}
+        </div>
+
+        {state.status === "error" && state.message ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {state.message}
+          </div>
+        ) : null}
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          A related student profile will be created with an initial pending internship status.
         </div>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -281,13 +376,7 @@ function CreateStudentDialog({ onClose }: StudentDialogProps) {
           >
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white opacity-60"
-          >
-            Create Student
-          </button>
+          <ActionButton>Create Student</ActionButton>
         </div>
       </form>
     </ModalFrame>
@@ -325,13 +414,14 @@ function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
 }
 
 export function StudentListPage({ students, currentUser }: StudentListPageProps) {
+  const [studentItems, setStudentItems] = useState(students);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<StudentStatusFilter>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
 
-  const statusCounts = students.reduce(
+  const statusCounts = studentItems.reduce(
     (counts, student) => {
       counts.all += 1;
       counts[student.status] += 1;
@@ -347,7 +437,7 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
   );
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredStudents = students.filter((student) => {
+  const filteredStudents = studentItems.filter((student) => {
     if (activeFilter !== "all" && student.status !== activeFilter) {
       return false;
     }
@@ -362,8 +452,18 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
       .includes(normalizedQuery);
   });
 
-  const emptyState = students.length === 0;
+  const emptyState = studentItems.length === 0;
   const filteredEmptyState = !emptyState && filteredStudents.length === 0;
+
+  function handleStudentCreated(student: StudentListItem) {
+    setStudentItems((currentStudents) => {
+      if (currentStudents.some((currentStudent) => currentStudent.id === student.id)) {
+        return currentStudents;
+      }
+
+      return [student, ...currentStudents];
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
@@ -693,7 +793,12 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
         </section>
       </main>
 
-      {createOpen ? <CreateStudentDialog onClose={() => setCreateOpen(false)} /> : null}
+      {createOpen ? (
+        <CreateStudentDialog
+          onClose={() => setCreateOpen(false)}
+          onCreated={handleStudentCreated}
+        />
+      ) : null}
       {deletingStudent ? (
         <DeleteStudentDialog student={deletingStudent} onClose={() => setDeletingStudent(null)} />
       ) : null}

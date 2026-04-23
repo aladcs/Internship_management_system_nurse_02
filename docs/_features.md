@@ -131,16 +131,16 @@
 
 ### UI
 
-* [ ] Modal form
+* [x] Modal form
 
   * email
   * name
 
 ### Logic
 
-* [ ] create user (role=student)
-* [ ] generate password
-* [ ] create student record
+* [x] create user (role=student)
+* [x] generate password
+* [x] create student record
 
 ---
 

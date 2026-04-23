@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import type { StudentListItem } from "@/app/intern/admin/students/action-state";
 import { StudentListPage } from "@/components/admin/student-list-page";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
@@ -21,6 +22,26 @@ function getStudentDisplayName(student: {
   const profileName = [student.firstName, student.lastName].filter(Boolean).join(" ").trim();
 
   return student.user.name?.trim() || profileName || student.user.email;
+}
+
+function toStudentListItem(student: {
+  id: string;
+  internshipStatus: StudentListItem["status"];
+  firstName: string | null;
+  lastName: string | null;
+  major: string | null;
+  user: {
+    email: string;
+    name: string | null;
+  };
+}): StudentListItem {
+  return {
+    id: student.id,
+    email: student.user.email,
+    major: student.major,
+    name: getStudentDisplayName(student),
+    status: student.internshipStatus,
+  };
 }
 
 export default async function InternAdminStudentsPage() {
@@ -59,13 +80,7 @@ export default async function InternAdminStudentsPage() {
         email: session.email,
         name: session.name,
       }}
-      students={students.map((student) => ({
-        id: student.id,
-        email: student.user.email,
-        major: student.major,
-        name: getStudentDisplayName(student),
-        status: student.internshipStatus,
-      }))}
+      students={students.map(toStudentListItem)}
     />
   );
 }
