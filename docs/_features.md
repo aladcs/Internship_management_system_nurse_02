@@ -23,18 +23,18 @@
 
 ### Feature: Login Page
 
-* [ ] Route: `/login`
-* [ ] Email + Password input
-* [ ] Login button
-* [ ] CMU login button (UI only)
-* [ ] Validation message
-* [ ] Error state
+* [x] Route: `/login`
+* [x] Email + Password input
+* [x] Login button
+* [x] CMU login button (UI only)
+* [x] Validation message
+* [x] Error state
 
 ### Logic
 
-* [ ] ตรวจสอบ email ต้องมีใน DB
-* [ ] ตรวจ password
-* [ ] Redirect ตาม role:
+* [x] ตรวจสอบ email ต้องมีใน DB
+* [x] ตรวจ password
+* [~] Redirect ตาม role:
 
   * super_admin → `/intern/admins`
   * admin → `/intern/dashboard`
@@ -46,8 +46,8 @@
 
 ### Feature: Route Protection
 
-* [ ] สร้าง middleware / guard
-* [ ] block route ตาม role:
+* [x] สร้าง middleware / guard
+* [~] block route ตาม role:
 
 | Route                  | Role        |
 | ---------------------- | ----------- |
@@ -61,11 +61,11 @@
 
 ## 🧱 Database (Prisma Setup)
 
-* [ ] User model
-* [ ] Student model
-* [ ] Internship model
-* [ ] File model
-* [ ] Notification model
+* [x] User model
+* [x] Student model
+* [x] Internship model
+* [x] File model
+* [x] Notification model
 
 ---
 
@@ -90,7 +90,7 @@
 
 ### Logic
 
-* [ ] super_admin only
+* [~] super_admin only
 * [ ] create admin (generate password)
 * [ ] update admin
 * [ ] delete admin
@@ -122,7 +122,7 @@
 
 ### Logic
 
-* [ ] admin only
+* [~] admin only
 * [ ] fetch from Prisma
 
 ---
@@ -162,7 +162,7 @@
 
 ### Logic
 
-* [ ] student only
+* [~] student only
 * [ ] fetch own data
 
 ---
@@ -236,7 +236,7 @@
 
 ### Logic
 
-* [ ] admin only
+* [~] admin only
 * [ ] change status:
 
   * pending → in_progress
@@ -262,7 +262,7 @@
 
 ### Logic
 
-* [ ] admin only
+* [~] admin only
 * [ ] aggregate Prisma data
 
 ---
@@ -310,9 +310,9 @@
 
 ## 🎨 UI Consistency
 
-* [ ] Admin theme: #aa74ab
-* [ ] Student theme: #f26e2c
-* [ ] consistent spacing
+* [~] Admin theme: #aa74ab
+* [~] Student theme: #f26e2c
+* [~] consistent spacing
 * [ ] consistent components
 
 ---
