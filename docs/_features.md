@@ -77,23 +77,23 @@
 
 ### Route
 
-* [ ] `/intern/admins`
+* [x] `/intern/admins`
 
 ### UI
 
-* [ ] Table:
+* [x] Table:
 
   * name
   * email
-* [ ] Button: Create Admin
-* [ ] Actions: Edit / Delete
+* [x] Button: Create Admin
+* [x] Actions: Edit / Delete
 
 ### Logic
 
-* [~] super_admin only
-* [ ] create admin (generate password)
-* [ ] update admin
-* [ ] delete admin
+* [x] super_admin only
+* [x] create admin (generate password)
+* [x] update admin
+* [x] delete admin
 
 ---
 
