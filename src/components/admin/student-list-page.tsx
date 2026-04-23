@@ -78,6 +78,19 @@ function EyeIcon() {
   );
 }
 
+function ViewStudentLink({ email, href }: { email: string; href: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+      aria-label={`View ${email}`}
+      title={`View ${email}`}
+    >
+      <EyeIcon />
+    </Link>
+  );
+}
+
 function EditIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
@@ -723,12 +736,10 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
                         </td>
                         <td className="border-t border-slate-100 px-6 py-4">
                           <div className="flex justify-end gap-2">
-                            <ActionIconButton
-                              label={`View ${student.email} (coming soon)`}
-                              disabled
-                            >
-                              <EyeIcon />
-                            </ActionIconButton>
+                            <ViewStudentLink
+                              email={student.email}
+                              href={`/intern/admin/students/${student.id}`}
+                            />
                             <ActionIconButton
                               label={`Edit ${student.email} (coming soon)`}
                               disabled
@@ -771,9 +782,10 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
                       <p>{student.email}</p>
                     </div>
                     <div className="flex gap-2">
-                      <ActionIconButton label={`View ${student.email} (coming soon)`} disabled>
-                        <EyeIcon />
-                      </ActionIconButton>
+                      <ViewStudentLink
+                        email={student.email}
+                        href={`/intern/admin/students/${student.id}`}
+                      />
                       <ActionIconButton label={`Edit ${student.email} (coming soon)`} disabled>
                         <EditIcon />
                       </ActionIconButton>

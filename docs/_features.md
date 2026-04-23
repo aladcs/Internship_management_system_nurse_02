@@ -224,20 +224,20 @@
 
 ### Route
 
-* [ ] `/intern/admin/students/[id]`
+* [x] `/intern/admin/students/[id]`
 
 ### UI
 
-* [ ] Personal info
-* [ ] Education info
-* [ ] Internship info
-* [ ] File list
-* [ ] Status control
+* [x] Personal info
+* [x] Education info
+* [x] Internship info
+* [x] File list
+* [x] Status control
 
 ### Logic
 
-* [~] admin only
-* [ ] change status:
+* [x] admin only
+* [x] change status:
 
   * pending → in_progress
   * in_progress → completed
