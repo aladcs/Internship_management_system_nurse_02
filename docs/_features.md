@@ -34,7 +34,7 @@
 
 * [x] ตรวจสอบ email ต้องมีใน DB
 * [x] ตรวจ password
-* [~] Redirect ตาม role:
+* [x] Redirect ตาม role:
 
   * super_admin → `/intern/admins`
   * admin → `/intern/dashboard`
@@ -47,7 +47,7 @@
 ### Feature: Route Protection
 
 * [x] สร้าง middleware / guard
-* [~] block route ตาม role:
+* [x] block route ตาม role:
 
 | Route                  | Role        |
 | ---------------------- | ----------- |
@@ -302,18 +302,18 @@
 
 ## 📱 Responsive UI
 
-* [ ] mobile navbar (hamburger)
-* [ ] table responsive
-* [ ] form responsive
+* [x] mobile navbar (hamburger)
+* [x] table responsive
+* [x] form responsive
 
 ---
 
 ## 🎨 UI Consistency
 
-* [~] Admin theme: #aa74ab
-* [~] Student theme: #f26e2c
-* [~] consistent spacing
-* [ ] consistent components
+* [x] Admin theme: #aa74ab
+* [x] Student theme: #f26e2c
+* [x] consistent spacing
+* [x] consistent components
 
 ---
 
