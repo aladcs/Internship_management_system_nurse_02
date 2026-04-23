@@ -101,29 +101,29 @@
 
 ### Route
 
-* [ ] `/intern/admin/students`
+* [x] `/intern/admin/students`
 
 ### UI
 
-* [ ] Table:
+* [x] Table:
 
   * name
   * email
   * status
-* [ ] Filter by status
-* [ ] Search (optional)
-* [ ] Button: Create Student
+* [x] Filter by status
+* [x] Search (optional)
+* [x] Button: Create Student
 
 ### Actions
 
-* [ ] View
-* [ ] Edit
-* [ ] Delete
+* [x] View
+* [x] Edit
+* [x] Delete
 
 ### Logic
 
-* [~] admin only
-* [ ] fetch from Prisma
+* [x] admin only
+* [x] fetch from Prisma
 
 ---
 
