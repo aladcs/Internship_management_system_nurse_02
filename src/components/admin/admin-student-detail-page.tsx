@@ -12,6 +12,11 @@ import {
 } from "@/app/intern/admin/students/[id]/action-state";
 import { updateStudentStatusAction } from "@/app/intern/admin/students/[id]/actions";
 import { logoutAction } from "@/app/intern/admin/students/actions";
+import {
+  AdminMobileNotificationsCard,
+  AdminNotificationMenu,
+} from "@/components/admin/admin-notification-menu";
+import type { AdminNotificationItem } from "@/lib/admin/notifications";
 
 type SummaryItem = {
   label: string;
@@ -30,6 +35,8 @@ export type AdminStudentDetailPageProps = {
     email: string;
     name: string | null;
   };
+  unreadNotificationCount: number;
+  notifications: AdminNotificationItem[];
   student: {
     id: string;
     firstName: string;
@@ -311,7 +318,12 @@ function SummaryCard({
   );
 }
 
-export function AdminStudentDetailPage({ currentUser, student }: AdminStudentDetailPageProps) {
+export function AdminStudentDetailPage({
+  currentUser,
+  unreadNotificationCount,
+  notifications,
+  student,
+}: AdminStudentDetailPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [statusState, formAction] = useActionState<UpdateStudentStatusActionState, FormData>(
     updateStudentStatusAction,
@@ -351,13 +363,12 @@ export function AdminStudentDetailPage({ currentUser, student }: AdminStudentDet
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">
-              <span
-                className="rounded-full px-4 py-2 text-sm font-medium text-slate-400"
-                aria-disabled="true"
-                title="Dashboard will be added in its dedicated feature"
+              <Link
+                href="/intern/dashboard"
+                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 Dashboard
-              </span>
+              </Link>
               <Link
                 href="/intern/admin/students"
                 className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
@@ -368,6 +379,7 @@ export function AdminStudentDetailPage({ currentUser, student }: AdminStudentDet
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
+            <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
               <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "Admin"}</p>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Admin</p>
@@ -415,12 +427,13 @@ export function AdminStudentDetailPage({ currentUser, student }: AdminStudentDet
             </div>
 
             <nav className="mt-8 space-y-2">
-              <span
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-400"
-                aria-disabled="true"
+              <Link
+                href="/intern/dashboard"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Dashboard
-              </span>
+              </Link>
               <Link
                 href="/intern/admin/students"
                 className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)"
@@ -429,6 +442,8 @@ export function AdminStudentDetailPage({ currentUser, student }: AdminStudentDet
                 Student List
               </Link>
             </nav>
+
+            <AdminMobileNotificationsCard unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
 
             <div className="mt-auto pt-8">
               <form action={logoutAction}>

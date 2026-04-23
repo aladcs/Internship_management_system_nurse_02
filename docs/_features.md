@@ -275,9 +275,9 @@
 
 ### UI
 
-* [ ] icon in navbar
-* [ ] badge count
-* [ ] dropdown list
+* [x] icon in navbar
+* [x] badge count
+* [x] dropdown list
 
 ---
 
@@ -285,14 +285,14 @@
 
 ### Trigger
 
-* [ ] student submits form
-* [ ] student edits while status = in_progress
+* [x] student submits form
+* [x] student edits while status = in_progress
 
 ### Behavior
 
-* [ ] store in DB
-* [ ] mark as read
-* [ ] show latest first
+* [x] store in DB
+* [x] mark as read
+* [x] show latest first
 
 ---
 

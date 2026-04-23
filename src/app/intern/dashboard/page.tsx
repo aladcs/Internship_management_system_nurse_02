@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AdminDashboardPage, type AdminDashboardPageProps } from "@/components/admin/admin-dashboard-page";
+import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
@@ -50,75 +51,34 @@ export default async function InternDashboardPage() {
     redirect(getRoleRedirectPath(session.role));
   }
 
-  const [
-    totalStudents,
-    pendingStudents,
-    inProgressStudents,
-    completedStudents,
-    recentStudents,
-    recentNotifications,
-    unreadNotificationCount,
-  ] = await prisma.$transaction([
-    prisma.student.count(),
-    prisma.student.count({ where: { internshipStatus: "pending" } }),
-    prisma.student.count({ where: { internshipStatus: "in_progress" } }),
-    prisma.student.count({ where: { internshipStatus: "completed" } }),
-    prisma.student.findMany({
-      orderBy: {
-        updatedAt: "desc",
-      },
-      take: 5,
-      select: {
-        id: true,
-        internshipStatus: true,
-        firstName: true,
-        lastName: true,
-        major: true,
-        updatedAt: true,
-        user: {
-          select: {
-            email: true,
-            name: true,
+  const [totalStudents, pendingStudents, inProgressStudents, completedStudents, recentStudents, notificationSummary] =
+    await Promise.all([
+      prisma.student.count(),
+      prisma.student.count({ where: { internshipStatus: "pending" } }),
+      prisma.student.count({ where: { internshipStatus: "in_progress" } }),
+      prisma.student.count({ where: { internshipStatus: "completed" } }),
+      prisma.student.findMany({
+        orderBy: {
+          updatedAt: "desc",
+        },
+        take: 5,
+        select: {
+          id: true,
+          internshipStatus: true,
+          firstName: true,
+          lastName: true,
+          major: true,
+          updatedAt: true,
+          user: {
+            select: {
+              email: true,
+              name: true,
+            },
           },
         },
-      },
-    }),
-    prisma.notificationEvent.findMany({
-      where: {
-        receipts: {
-          some: {
-            adminUserId: session.userId,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 6,
-      select: {
-        id: true,
-        title: true,
-        message: true,
-        targetPath: true,
-        createdAt: true,
-        receipts: {
-          where: {
-            adminUserId: session.userId,
-          },
-          select: {
-            isRead: true,
-          },
-          take: 1,
-        },
-      },
-    }),
-    prisma.adminNotificationReceipt.count({
-      where: {
-        adminUserId: session.userId,
-        isRead: false,
-      },
-    }),
-  ]);
+      }),
+      getAdminNotificationSummary(session.userId),
+    ]);
 
   const viewModel: AdminDashboardPageProps = {
     currentUser: {
@@ -131,7 +91,7 @@ export default async function InternDashboardPage() {
       inProgressStudents,
       completedStudents,
     },
-    unreadNotificationCount,
+    unreadNotificationCount: notificationSummary.unreadNotificationCount,
     recentStudents: recentStudents.map((student) => ({
       id: student.id,
       name: getStudentDisplayName(student),
@@ -140,14 +100,7 @@ export default async function InternDashboardPage() {
       statusLabel: formatStatusLabel(student.internshipStatus),
       meta: student.major?.trim() || `Updated ${formatDateTime(student.updatedAt)}`,
     })),
-    notifications: recentNotifications.map((notification) => ({
-      id: notification.id,
-      title: notification.title,
-      message: notification.message,
-      createdAtLabel: formatDateTime(notification.createdAt),
-      isRead: notification.receipts[0]?.isRead ?? true,
-      targetPath: notification.targetPath || "/intern/admin/students",
-    })),
+    notifications: notificationSummary.notifications,
   };
 
   return <AdminDashboardPage {...viewModel} />;

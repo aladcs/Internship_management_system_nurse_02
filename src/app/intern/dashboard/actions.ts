@@ -40,4 +40,47 @@ export async function markAllNotificationsReadAction() {
   });
 
   revalidatePath("/intern/dashboard");
+  revalidatePath("/intern/admin/students");
+}
+
+export async function markNotificationReadAction(formData: FormData) {
+  const session = await requireAdminSession();
+  const notificationEventId = String(formData.get("notificationEventId") ?? "").trim();
+  const fallbackTargetPath = String(formData.get("targetPath") ?? "/intern/admin/students").trim();
+
+  if (!notificationEventId) {
+    redirect(fallbackTargetPath || "/intern/admin/students");
+  }
+
+  const receipt = await prisma.adminNotificationReceipt.findFirst({
+    where: {
+      adminUserId: session.userId,
+      notificationEventId,
+    },
+    select: {
+      id: true,
+      isRead: true,
+      notificationEvent: {
+        select: {
+          targetPath: true,
+        },
+      },
+    },
+  });
+
+  if (receipt && !receipt.isRead) {
+    await prisma.adminNotificationReceipt.update({
+      where: {
+        id: receipt.id,
+      },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
+    });
+  }
+
+  revalidatePath("/intern/dashboard");
+  revalidatePath("/intern/admin/students");
+  redirect(receipt?.notificationEvent.targetPath || fallbackTargetPath || "/intern/admin/students");
 }

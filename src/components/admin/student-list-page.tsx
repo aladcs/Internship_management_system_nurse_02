@@ -10,6 +10,11 @@ import {
   type StudentListItem,
 } from "@/app/intern/admin/students/action-state";
 import { logoutAction, saveStudentAction } from "@/app/intern/admin/students/actions";
+import {
+  AdminMobileNotificationsCard,
+  AdminNotificationMenu,
+} from "@/components/admin/admin-notification-menu";
+import type { AdminNotificationItem } from "@/lib/admin/notifications";
 
 type StudentListPageProps = {
   students: StudentListItem[];
@@ -17,6 +22,8 @@ type StudentListPageProps = {
     email: string;
     name: string | null;
   };
+  unreadNotificationCount: number;
+  notifications: AdminNotificationItem[];
 };
 
 type StudentDialogProps = {
@@ -426,7 +433,12 @@ function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
   );
 }
 
-export function StudentListPage({ students, currentUser }: StudentListPageProps) {
+export function StudentListPage({
+  students,
+  currentUser,
+  unreadNotificationCount,
+  notifications,
+}: StudentListPageProps) {
   const [studentItems, setStudentItems] = useState(students);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<StudentStatusFilter>("all");
@@ -519,6 +531,7 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
+            <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
               <p className="text-sm font-semibold text-slate-900">
                 {currentUser.name ?? "Admin"}
@@ -584,6 +597,8 @@ export function StudentListPage({ students, currentUser }: StudentListPageProps)
                 Student List
               </Link>
             </nav>
+
+            <AdminMobileNotificationsCard unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
 
             <div className="mt-auto pt-8">
               <form action={logoutAction}>
