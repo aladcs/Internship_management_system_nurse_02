@@ -152,18 +152,18 @@
 
 ### Route
 
-* [ ] `/intern/overview`
+* [x] `/intern/overview`
 
 ### UI
 
-* [ ] Status badge
-* [ ] Summary card
-* [ ] Edit button
+* [x] Status badge
+* [x] Summary card
+* [x] Edit button
 
 ### Logic
 
-* [~] student only
-* [ ] fetch own data
+* [x] student only
+* [x] fetch own data
 
 ---
 
