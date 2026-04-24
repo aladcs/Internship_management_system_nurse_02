@@ -46,3 +46,17 @@ export const initialDeleteStudentActionState: DeleteStudentActionState = {
   message: null,
   deletedStudentId: null,
 };
+
+export type ResetStudentPasswordActionState = {
+  status: "idle" | "error" | "success";
+  message: string | null;
+  student: StudentListItem | null;
+  generatedPassword: string | null;
+};
+
+export const initialResetStudentPasswordActionState: ResetStudentPasswordActionState = {
+  status: "idle",
+  message: null,
+  student: null,
+  generatedPassword: null,
+};

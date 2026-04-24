@@ -94,6 +94,7 @@
 * [x] create admin (generate password)
 * [x] update admin
 * [x] delete admin
+* [x] reset admin password (super_admin only, generate temporary password)
 
 ---
 
@@ -124,6 +125,7 @@
 
 * [x] admin only
 * [x] fetch from Prisma
+* [x] reset student password (admin only, generate temporary password)
 
 ---
 

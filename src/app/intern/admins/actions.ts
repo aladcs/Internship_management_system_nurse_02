@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { type UserRole } from "@prisma/client";
 import {
   type DeleteAdminActionState,
+  type ResetAdminPasswordActionState,
   type SaveAdminActionState,
 } from "@/app/intern/admins/action-state";
 import { clearSession, readSession } from "@/lib/auth/session";
@@ -227,5 +228,64 @@ export async function deleteAdminAction(
     status: "deleted",
     message: "ลบบัญชีผู้ดูแลระบบเรียบร้อยแล้ว",
     deletedAdminId: existingAdmin.id,
+  };
+}
+
+export async function resetAdminPasswordAction(
+  _previousState: ResetAdminPasswordActionState,
+  formData: FormData,
+): Promise<ResetAdminPasswordActionState> {
+  await requireSuperAdminSession();
+  const adminId = String(formData.get("adminId") ?? "").trim();
+
+  if (!adminId) {
+    return {
+      status: "error",
+      message: "ไม่พบบัญชีผู้ดูแลระบบที่เลือก",
+      admin: null,
+      generatedPassword: null,
+    };
+  }
+
+  const existingAdmin = await prisma.user.findFirst({
+    where: {
+      id: adminId,
+      role: "admin",
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+    },
+  });
+
+  if (!existingAdmin) {
+    return {
+      status: "error",
+      message: "ไม่พบบัญชีผู้ดูแลระบบที่เลือก",
+      admin: null,
+      generatedPassword: null,
+    };
+  }
+
+  const generatedPassword = generatePassword();
+
+  await prisma.user.update({
+    where: {
+      id: existingAdmin.id,
+    },
+    data: {
+      passwordHash: await hashPassword(generatedPassword),
+    },
+  });
+
+  revalidatePath("/intern/admins");
+
+  return {
+    status: "success",
+    message: "รีเซ็ตรหัสผ่านผู้ดูแลระบบเรียบร้อยแล้ว",
+    admin: toAdminListItem(existingAdmin),
+    generatedPassword,
   };
 }

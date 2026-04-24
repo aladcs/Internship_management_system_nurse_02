@@ -7,12 +7,14 @@ import { useFormStatus } from "react-dom";
 import type { InternshipStatus } from "@prisma/client";
 import {
   initialDeleteStudentActionState,
+  initialResetStudentPasswordActionState,
   initialSaveStudentActionState,
   type StudentListItem,
 } from "@/app/intern/admin/students/action-state";
 import {
   deleteStudentAction,
   logoutAction,
+  resetStudentPasswordAction,
   saveStudentAction,
 } from "@/app/intern/admin/students/actions";
 import {
@@ -45,6 +47,11 @@ type DeleteDialogProps = {
   student: StudentListItem;
   onClose: () => void;
   onDeleted: (studentId: string) => void;
+};
+
+type ResetPasswordDialogProps = {
+  student: StudentListItem;
+  onClose: () => void;
 };
 
 type StudentStatusFilter = "all" | InternshipStatus;
@@ -130,6 +137,17 @@ function TrashIcon() {
   );
 }
 
+function KeyIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
+      <circle cx="6.5" cy="10" r="3.25" />
+      <path d="M9.75 10h5.5" />
+      <path d="M13.5 10v2.25" />
+      <path d="M16 10v1.5" />
+    </svg>
+  );
+}
+
 function EmptyIcon() {
   return (
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className="h-14 w-14">
@@ -195,7 +213,13 @@ function ResultCount({ count }: { count: number }) {
   );
 }
 
-function ActionButton({ children }: { children: React.ReactNode }) {
+function ActionButton({
+  children,
+  pendingLabel = "กำลังสร้าง...",
+}: {
+  children: React.ReactNode;
+  pendingLabel?: string;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -204,7 +228,7 @@ function ActionButton({ children }: { children: React.ReactNode }) {
       disabled={pending}
       className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "กำลังสร้าง..." : children}
+      {pending ? pendingLabel : children}
     </button>
   );
 }
@@ -484,6 +508,110 @@ function DeleteStudentDialog({ student, onClose, onDeleted }: DeleteDialogProps)
   );
 }
 
+function ResetStudentPasswordDialog({ student, onClose }: ResetPasswordDialogProps) {
+  const [state, formAction] = useActionState(
+    resetStudentPasswordAction,
+    initialResetStudentPasswordActionState,
+  );
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setCopied(false), 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copied]);
+
+  async function handleCopyPassword() {
+    if (!state.generatedPassword) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(state.generatedPassword);
+    setCopied(true);
+  }
+
+  if (state.status === "success" && state.generatedPassword && state.student) {
+    return (
+      <ModalFrame
+        title="รีเซ็ตรหัสผ่านแล้ว"
+        description="กรุณาเก็บรหัสผ่านชั่วคราวนี้อย่างปลอดภัยก่อนปิดหน้าต่าง ระบบจะแสดงเพียงครั้งเดียวหลังรีเซ็ต"
+      >
+        <div className="space-y-5">
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-emerald-700">รหัสผ่านชั่วคราวใหม่</p>
+                <p className="mt-3 font-mono text-lg font-semibold tracking-[0.08em]">
+                  {state.generatedPassword}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyPassword}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-100"
+                aria-label="คัดลอกรหัสผ่านชั่วคราวใหม่"
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <p className="font-medium text-slate-800">{state.student.name}</p>
+            <p>{state.student.email}</p>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+            >
+              เสร็จสิ้น
+            </button>
+          </div>
+        </div>
+      </ModalFrame>
+    );
+  }
+
+  return (
+    <ModalFrame
+      title="รีเซ็ตรหัสผ่านนักศึกษา"
+      description="ระบบจะสร้างรหัสผ่านชั่วคราวใหม่ให้บัญชีนี้ทันที และรหัสผ่านเดิมจะใช้งานไม่ได้อีกต่อไป"
+    >
+      <div className="space-y-5">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+          <p className="font-medium">{student.name}</p>
+          <p className="mt-1">{student.email}</p>
+        </div>
+
+        {state.status === "error" && state.message ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {state.message}
+          </div>
+        ) : null}
+
+        <form action={formAction} className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <input type="hidden" name="studentId" value={student.id} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            ยกเลิก
+          </button>
+          <ActionButton pendingLabel="กำลังรีเซ็ต...">รีเซ็ตรหัสผ่าน</ActionButton>
+        </form>
+      </div>
+    </ModalFrame>
+  );
+}
+
 export function StudentListPage({
   students,
   currentUser,
@@ -497,6 +625,7 @@ export function StudentListPage({
   const [createOpen, setCreateOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentListItem | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
+  const [resettingStudent, setResettingStudent] = useState<StudentListItem | null>(null);
 
   const statusCounts = studentItems.reduce(
     (counts, student) => {
@@ -822,6 +951,12 @@ export function StudentListPage({
                               href={`/intern/admin/students/${student.id}`}
                             />
                             <ActionIconButton
+                              label={`รีเซ็ตรหัสผ่าน ${student.email}`}
+                              onClick={() => setResettingStudent(student)}
+                            >
+                              <KeyIcon />
+                            </ActionIconButton>
+                            <ActionIconButton
                               label={`แก้ไข ${student.email}`}
                               onClick={() => setEditingStudent(student)}
                             >
@@ -868,6 +1003,12 @@ export function StudentListPage({
                         href={`/intern/admin/students/${student.id}`}
                       />
                       <ActionIconButton
+                        label={`รีเซ็ตรหัสผ่าน ${student.email}`}
+                        onClick={() => setResettingStudent(student)}
+                      >
+                        <KeyIcon />
+                      </ActionIconButton>
+                      <ActionIconButton
                         label={`แก้ไข ${student.email}`}
                         onClick={() => setEditingStudent(student)}
                       >
@@ -912,6 +1053,13 @@ export function StudentListPage({
           student={deletingStudent}
           onClose={() => setDeletingStudent(null)}
           onDeleted={handleStudentDeleted}
+        />
+      ) : null}
+
+      {resettingStudent ? (
+        <ResetStudentPasswordDialog
+          student={resettingStudent}
+          onClose={() => setResettingStudent(null)}
         />
       ) : null}
     </div>

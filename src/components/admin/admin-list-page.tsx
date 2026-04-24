@@ -6,11 +6,13 @@ import { useFormStatus } from "react-dom";
 import {
   deleteAdminAction,
   logoutAction,
+  resetAdminPasswordAction,
   saveAdminAction,
 } from "@/app/intern/admins/actions";
 import {
   type AdminListItem,
   initialDeleteAdminActionState,
+  initialResetAdminPasswordActionState,
   initialSaveAdminActionState,
 } from "@/app/intern/admins/action-state";
 import { AccountMenu } from "@/components/auth/account-menu";
@@ -35,6 +37,11 @@ type DeleteDialogProps = {
   admin: AdminListItem;
   onClose: () => void;
   onDeleted: (adminId: string) => void;
+};
+
+type ResetPasswordDialogProps = {
+  admin: AdminListItem;
+  onClose: () => void;
 };
 
 function MenuIcon() {
@@ -81,6 +88,17 @@ function TrashIcon() {
       <path d="M6.25 5.5v9.25c0 .41.34.75.75.75h6c.41 0 .75-.34.75-.75V5.5" />
       <path d="M8.5 8.25v4.5" />
       <path d="M11.5 8.25v4.5" />
+    </svg>
+  );
+}
+
+function KeyIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
+      <circle cx="6.5" cy="10" r="3.25" />
+      <path d="M9.75 10h5.5" />
+      <path d="M13.5 10v2.25" />
+      <path d="M16 10v1.5" />
     </svg>
   );
 }
@@ -146,7 +164,13 @@ function ResultCount({ count }: { count: number }) {
   );
 }
 
-function ActionButton({ children }: { children: React.ReactNode }) {
+function ActionButton({
+  children,
+  pendingLabel = "กำลังบันทึก...",
+}: {
+  children: React.ReactNode;
+  pendingLabel?: string;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -155,7 +179,7 @@ function ActionButton({ children }: { children: React.ReactNode }) {
       disabled={pending}
       className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "กำลังบันทึก..." : children}
+      {pending ? pendingLabel : children}
     </button>
   );
 }
@@ -395,6 +419,110 @@ function DeleteAdminDialog({ admin, onClose, onDeleted }: DeleteDialogProps) {
   );
 }
 
+function ResetAdminPasswordDialog({ admin, onClose }: ResetPasswordDialogProps) {
+  const [state, formAction] = useActionState(
+    resetAdminPasswordAction,
+    initialResetAdminPasswordActionState,
+  );
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setCopied(false), 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copied]);
+
+  async function handleCopyPassword() {
+    if (!state.generatedPassword) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(state.generatedPassword);
+    setCopied(true);
+  }
+
+  if (state.status === "success" && state.generatedPassword && state.admin) {
+    return (
+      <ModalFrame
+        title="รีเซ็ตรหัสผ่านแล้ว"
+        description="กรุณาเก็บรหัสผ่านชั่วคราวนี้อย่างปลอดภัยก่อนปิดหน้าต่าง ระบบจะแสดงเพียงครั้งเดียวหลังรีเซ็ต"
+      >
+        <div className="space-y-5">
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-emerald-700">รหัสผ่านชั่วคราวใหม่</p>
+                <p className="mt-3 font-mono text-lg font-semibold tracking-[0.08em]">
+                  {state.generatedPassword}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyPassword}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 transition hover:bg-emerald-100"
+                aria-label="คัดลอกรหัสผ่านชั่วคราวใหม่"
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <p className="font-medium text-slate-800">{state.admin.name ?? "ผู้ดูแลระบบที่ยังไม่ระบุชื่อ"}</p>
+            <p>{state.admin.email}</p>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+            >
+              เสร็จสิ้น
+            </button>
+          </div>
+        </div>
+      </ModalFrame>
+    );
+  }
+
+  return (
+    <ModalFrame
+      title="รีเซ็ตรหัสผ่านผู้ดูแลระบบ"
+      description="ระบบจะสร้างรหัสผ่านชั่วคราวใหม่ให้บัญชีนี้ทันที และรหัสผ่านเดิมจะใช้งานไม่ได้อีกต่อไป"
+    >
+      <div className="space-y-5">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+          <p className="font-medium">{admin.name ?? "ผู้ดูแลระบบที่ยังไม่ระบุชื่อ"}</p>
+          <p className="mt-1">{admin.email}</p>
+        </div>
+
+        {state.status === "error" && state.message ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {state.message}
+          </div>
+        ) : null}
+
+        <form action={formAction} className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <input type="hidden" name="adminId" value={admin.id} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            ยกเลิก
+          </button>
+          <ActionButton pendingLabel="กำลังรีเซ็ต...">รีเซ็ตรหัสผ่าน</ActionButton>
+        </form>
+      </div>
+    </ModalFrame>
+  );
+}
+
 export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListPageProps) {
   const [admins, setAdmins] = useState(initialAdmins);
   const [searchQuery, setSearchQuery] = useState("");
@@ -402,6 +530,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminListItem | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState<AdminListItem | null>(null);
+  const [resettingAdmin, setResettingAdmin] = useState<AdminListItem | null>(null);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredAdmins = admins.filter((admin) => {
@@ -663,6 +792,14 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
+                              onClick={() => setResettingAdmin(admin)}
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-amber-600 transition hover:bg-amber-50 hover:text-amber-700"
+                              aria-label={`รีเซ็ตรหัสผ่าน ${admin.email}`}
+                            >
+                              <KeyIcon />
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => setEditingAdmin(admin)}
                               className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
                               aria-label={`แก้ไข ${admin.email}`}
@@ -704,6 +841,14 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setResettingAdmin(admin)}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600"
+                          aria-label={`รีเซ็ตรหัสผ่าน ${admin.email}`}
+                        >
+                          <KeyIcon />
+                        </button>
                         <button
                           type="button"
                           onClick={() => setEditingAdmin(admin)}
@@ -759,6 +904,13 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
           admin={deletingAdmin}
           onClose={() => setDeletingAdmin(null)}
           onDeleted={handleDeletedAdmin}
+        />
+      ) : null}
+
+      {resettingAdmin ? (
+        <ResetAdminPasswordDialog
+          admin={resettingAdmin}
+          onClose={() => setResettingAdmin(null)}
         />
       ) : null}
     </div>

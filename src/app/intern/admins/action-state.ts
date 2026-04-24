@@ -43,3 +43,17 @@ export const initialDeleteAdminActionState: DeleteAdminActionState = {
   message: null,
   deletedAdminId: null,
 };
+
+export type ResetAdminPasswordActionState = {
+  status: "idle" | "error" | "success";
+  message: string | null;
+  admin: AdminListItem | null;
+  generatedPassword: string | null;
+};
+
+export const initialResetAdminPasswordActionState: ResetAdminPasswordActionState = {
+  status: "idle",
+  message: null,
+  admin: null,
+  generatedPassword: null,
+};

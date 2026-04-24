@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { type UserRole } from "@prisma/client";
 import {
   type DeleteStudentActionState,
+  type ResetStudentPasswordActionState,
   type StudentListItem,
   type SaveStudentActionState,
 } from "@/app/intern/admin/students/action-state";
@@ -303,5 +304,71 @@ export async function deleteStudentAction(
     status: "deleted",
     message: "ลบบัญชีนักศึกษาเรียบร้อยแล้ว",
     deletedStudentId: existingStudent.id,
+  };
+}
+
+export async function resetStudentPasswordAction(
+  _previousState: ResetStudentPasswordActionState,
+  formData: FormData,
+): Promise<ResetStudentPasswordActionState> {
+  await requireAdminSession();
+  const studentId = String(formData.get("studentId") ?? "").trim();
+
+  if (!studentId) {
+    return {
+      status: "error",
+      message: "ไม่พบนักศึกษาที่เลือก",
+      student: null,
+      generatedPassword: null,
+    };
+  }
+
+  const existingStudent = await prisma.student.findUnique({
+    where: {
+      id: studentId,
+    },
+    select: {
+      id: true,
+      internshipStatus: true,
+      major: true,
+      userId: true,
+      user: {
+        select: {
+          email: true,
+          name: true,
+          role: true,
+        },
+      },
+    },
+  });
+
+  if (!existingStudent || existingStudent.user.role !== "student") {
+    return {
+      status: "error",
+      message: "ไม่พบนักศึกษาที่เลือก",
+      student: null,
+      generatedPassword: null,
+    };
+  }
+
+  const generatedPassword = generatePassword();
+
+  await prisma.user.update({
+    where: {
+      id: existingStudent.userId,
+    },
+    data: {
+      passwordHash: await hashPassword(generatedPassword),
+    },
+  });
+
+  revalidatePath("/intern/admin/students");
+  revalidatePath(`/intern/admin/students/${existingStudent.id}`);
+
+  return {
+    status: "success",
+    message: "รีเซ็ตรหัสผ่านนักศึกษาเรียบร้อยแล้ว",
+    student: toStudentListItem(existingStudent),
+    generatedPassword,
   };
 }
