@@ -32,8 +32,11 @@ type StudentListPageProps = {
 };
 
 type StudentDialogProps = {
+  mode: "create" | "edit";
+  student: StudentListItem | null;
   onClose: () => void;
   onCreated: (student: StudentListItem) => void;
+  onUpdated: (student: StudentListItem) => void;
 };
 
 type DeleteDialogProps = {
@@ -284,12 +287,22 @@ function ActionIconButton({
   );
 }
 
-function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
-  const [state, formAction] = useActionState(
-    saveStudentAction,
-    initialSaveStudentActionState,
-  );
+function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: StudentDialogProps) {
+  const [state, formAction] = useActionState(saveStudentAction, {
+    ...initialSaveStudentActionState,
+    values: {
+      name: student?.name ?? "",
+      email: student?.email ?? "",
+    },
+  });
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (state.status === "updated" && state.student) {
+      onUpdated(state.student);
+      onClose();
+    }
+  }, [onClose, onUpdated, state.status, state.student]);
 
   useEffect(() => {
     if (!copied) {
@@ -365,10 +378,16 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
 
   return (
     <ModalFrame
-      title="สร้างนักศึกษา"
-      description="เพิ่มบัญชีนักศึกษา ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
+      title={mode === "create" ? "สร้างนักศึกษา" : "แก้ไขนักศึกษา"}
+      description={
+        mode === "create"
+          ? "เพิ่มบัญชีนักศึกษา ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
+          : "อัปเดตชื่อและอีเมลของบัญชีนักศึกษาที่เลือก"
+      }
     >
       <form action={formAction} className="space-y-5">
+        <input type="hidden" name="intent" value={mode} />
+        <input type="hidden" name="studentId" value={student?.id ?? ""} />
         <div className="space-y-2">
           <label htmlFor="student-name" className="text-sm font-medium text-slate-700">
             ชื่อ
@@ -408,9 +427,11 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          ระบบจะสร้างโปรไฟล์นักศึกษาพร้อมสถานะเริ่มต้นเป็นรอดำเนินการ
-        </div>
+        {mode === "create" ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            ระบบจะสร้างโปรไฟล์นักศึกษาพร้อมสถานะเริ่มต้นเป็นรอดำเนินการ
+          </div>
+        ) : null}
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
@@ -420,7 +441,7 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
           >
             ยกเลิก
           </button>
-          <ActionButton>สร้างนักศึกษา</ActionButton>
+          <ActionButton>{mode === "create" ? "สร้างนักศึกษา" : "บันทึกการเปลี่ยนแปลง"}</ActionButton>
         </div>
       </form>
     </ModalFrame>
@@ -484,6 +505,7 @@ export function StudentListPage({
   const [activeFilter, setActiveFilter] = useState<StudentStatusFilter>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<StudentListItem | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
 
   const statusCounts = studentItems.reduce(
@@ -533,6 +555,14 @@ export function StudentListPage({
   function handleStudentDeleted(studentId: string) {
     setStudentItems((currentStudents) =>
       currentStudents.filter((currentStudent) => currentStudent.id !== studentId),
+    );
+  }
+
+  function handleStudentUpdated(student: StudentListItem) {
+    setStudentItems((currentStudents) =>
+      currentStudents.map((currentStudent) =>
+        currentStudent.id === student.id ? student : currentStudent,
+      ),
     );
   }
 
@@ -802,8 +832,8 @@ export function StudentListPage({
                               href={`/intern/admin/students/${student.id}`}
                             />
                             <ActionIconButton
-                              label={`แก้ไข ${student.email} (เร็วๆ นี้)`}
-                              disabled
+                              label={`แก้ไข ${student.email}`}
+                              onClick={() => setEditingStudent(student)}
                             >
                               <EditIcon />
                             </ActionIconButton>
@@ -847,7 +877,10 @@ export function StudentListPage({
                         email={student.email}
                         href={`/intern/admin/students/${student.id}`}
                       />
-                      <ActionIconButton label={`แก้ไข ${student.email} (เร็วๆ นี้)`} disabled>
+                      <ActionIconButton
+                        label={`แก้ไข ${student.email}`}
+                        onClick={() => setEditingStudent(student)}
+                      >
                         <EditIcon />
                       </ActionIconButton>
                       <ActionIconButton
@@ -867,9 +900,21 @@ export function StudentListPage({
       </main>
 
       {createOpen ? (
-        <CreateStudentDialog
+        <StudentDialog
+          mode="create"
+          student={null}
           onClose={() => setCreateOpen(false)}
           onCreated={handleStudentCreated}
+          onUpdated={handleStudentUpdated}
+        />
+      ) : null}
+      {editingStudent ? (
+        <StudentDialog
+          mode="edit"
+          student={editingStudent}
+          onClose={() => setEditingStudent(null)}
+          onCreated={handleStudentCreated}
+          onUpdated={handleStudentUpdated}
         />
       ) : null}
       {deletingStudent ? (

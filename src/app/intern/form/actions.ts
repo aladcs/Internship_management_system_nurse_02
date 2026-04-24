@@ -80,14 +80,14 @@ function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
-async function requireStudentSession() {
+async function requireStudentOrAdminSession() {
   const session = await readSession();
 
   if (!session) {
     redirect("/login");
   }
 
-  if (session.role !== ("student" satisfies UserRole)) {
+  if (session.role !== ("student" satisfies UserRole) && session.role !== ("admin" satisfies UserRole)) {
     redirect(getRoleRedirectPath(session.role));
   }
 
@@ -141,16 +141,18 @@ export async function saveStudentFormAction(
   _previousState: StudentFormActionState,
   formData: FormData,
 ): Promise<StudentFormActionState> {
-  const session = await requireStudentSession();
+  const session = await requireStudentOrAdminSession();
+  const targetStudentId = String(formData.get("studentId") ?? "").trim();
   const values = getFormValues(formData);
   const fieldErrors: StudentFormFieldErrors = {};
 
   const student = await prisma.student.findUnique({
     where: {
-      userId: session.userId,
+      ...(session.role === "admin" ? { id: targetStudentId } : { userId: session.userId }),
     },
     select: {
       id: true,
+      userId: true,
       submittedAt: true,
       internshipStatus: true,
       files: {
@@ -163,10 +165,10 @@ export async function saveStudentFormAction(
   });
 
   if (!student) {
-    redirect("/intern/overview");
+    redirect(session.role === "admin" ? "/intern/admin/students" : "/intern/overview");
   }
 
-  if (student.internshipStatus === "completed") {
+  if (session.role === "student" && student.internshipStatus === "completed") {
     redirect("/intern/overview");
   }
 
@@ -337,7 +339,7 @@ export async function saveStudentFormAction(
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: {
-          id: session.userId,
+          id: student.userId,
         },
         data: {
           name: fullName,
@@ -363,9 +365,10 @@ export async function saveStudentFormAction(
           major: values.major,
           coOpAdvisorName: values.coOpAdvisorName,
           coOpAdvisorPhone: values.coOpAdvisorPhone,
-          lastStudentEditAt: now,
-          submittedAt: student.submittedAt ?? now,
-          internshipStatus: student.submittedAt ? undefined : "pending",
+          lastStudentEditAt: session.role === "student" ? now : undefined,
+          submittedAt: session.role === "student" ? (student.submittedAt ?? now) : undefined,
+          internshipStatus:
+            session.role === "student" && !student.submittedAt ? "pending" : undefined,
         },
       });
 
@@ -416,7 +419,7 @@ export async function saveStudentFormAction(
       }
     });
 
-    if (!student.submittedAt) {
+    if (session.role === "student" && !student.submittedAt) {
       await createNotificationEvent({
         studentId: student.id,
         type: "form_submitted",
@@ -424,7 +427,7 @@ export async function saveStudentFormAction(
         message: `${fullName} ส่งแบบฟอร์มฝึกงานเพื่อรอการตรวจสอบแล้ว`,
         targetPath: `/intern/admin/students/${student.id}`,
       });
-    } else if (student.internshipStatus === "in_progress") {
+    } else if (session.role === "student" && student.internshipStatus === "in_progress") {
       await createNotificationEvent({
         studentId: student.id,
         type: "form_updated_in_progress",
@@ -466,5 +469,8 @@ export async function saveStudentFormAction(
 
   revalidatePath("/intern/form");
   revalidatePath("/intern/overview");
-  redirect("/intern/overview");
+  revalidatePath("/intern/admin/students");
+  revalidatePath(`/intern/admin/students/${student.id}`);
+  revalidatePath(`/intern/admin/students/${student.id}/edit`);
+  redirect(session.role === "admin" ? `/intern/admin/students/${student.id}` : "/intern/overview");
 }

@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useActionState, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
-import { logoutAction, saveStudentFormAction } from "@/app/intern/form/actions";
+import {
+  logoutAction as defaultLogoutAction,
+  saveStudentFormAction as defaultSaveStudentFormAction,
+} from "@/app/intern/form/actions";
 
 const MAX_FILE_COUNT = 5;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -15,6 +18,30 @@ type ExistingFileItem = {
   id: string;
   name: string;
   meta: string;
+};
+
+type StudentFormServerAction = (
+  state: StudentFormActionState,
+  formData: FormData,
+) => Promise<StudentFormActionState>;
+
+type LogoutServerAction = () => Promise<void>;
+
+type FormTheme = {
+  pageBackground: string;
+  headerBorder: string;
+  brandText: string;
+  navHover: string;
+  navActive: string;
+  accentTile: string;
+  primaryButton: string;
+  backHoverText: string;
+  successMessage: string;
+  uploadIdle: string;
+  uploadActive: string;
+  stickyBar: string;
+  readyText: string;
+  inputFocus: string;
 };
 
 export type StudentFormPageProps = {
@@ -31,6 +58,16 @@ export type StudentFormPageProps = {
   };
   existingFiles: ExistingFileItem[];
   initialState: StudentFormActionState;
+  mode?: "student" | "admin";
+  backHref?: string;
+  backLabel?: string;
+  cancelHref?: string;
+  saveAction?: StudentFormServerAction;
+  logoutAction?: LogoutServerAction;
+  hiddenFields?: Array<{
+    name: string;
+    value: string;
+  }>;
 };
 
 const PREFIX_OPTIONS = [
@@ -170,6 +207,44 @@ function getStatusClasses(status: StudentFormPageProps["student"]["status"]) {
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
 }
 
+function getFormTheme(isAdminMode: boolean): FormTheme {
+  if (isAdminMode) {
+    return {
+      pageBackground: "bg-[#fbf7f4]",
+      headerBorder: "border-slate-200/80",
+      brandText: "text-(--color-admin)",
+      navHover: "hover:bg-admin/8 hover:text-(--color-admin)",
+      navActive: "bg-admin/12 text-(--color-admin)",
+      accentTile: "bg-admin/10 text-(--color-admin)",
+      primaryButton: "bg-(--color-admin) shadow-lg shadow-admin/25",
+      backHoverText: "hover:text-(--color-admin)",
+      successMessage: "border-admin/20 bg-admin/8 text-(--color-admin)",
+      uploadIdle: "border-admin/20 bg-[#faf6fa] hover:border-admin/30 hover:bg-admin/6",
+      uploadActive: "border-admin/30 bg-admin/8",
+      stickyBar: "border-slate-200 bg-[#fbf7f4]/95",
+      readyText: "text-(--color-admin)",
+      inputFocus: "border-slate-200 focus:border-admin/40 focus:ring-admin/10",
+    };
+  }
+
+  return {
+    pageBackground: "bg-[#fff7f1]",
+    headerBorder: "border-orange-100/80",
+    brandText: "text-(--color-student)",
+    navHover: "hover:bg-student/8 hover:text-(--color-student)",
+    navActive: "bg-student/12 text-(--color-student)",
+    accentTile: "bg-student/10 text-(--color-student)",
+    primaryButton: "bg-(--color-student) shadow-lg shadow-orange-600/25",
+    backHoverText: "hover:text-(--color-student)",
+    successMessage: "border-orange-200 bg-[#fff4eb] text-orange-700",
+    uploadIdle: "border-orange-200 bg-[#fff9f4] hover:border-orange-300 hover:bg-orange-50/70",
+    uploadActive: "border-orange-300 bg-orange-50",
+    stickyBar: "border-orange-100 bg-[#fff7f1]/95",
+    readyText: "text-orange-600",
+    inputFocus: "border-slate-200 focus:border-orange-300 focus:ring-orange-100",
+  };
+}
+
 function FieldError({ message }: { message?: string }) {
   if (!message) {
     return null;
@@ -210,6 +285,7 @@ function TextInput({
   value,
   placeholder,
   error,
+  inputFocusClass,
 }: {
   id: string;
   name: string;
@@ -217,6 +293,7 @@ function TextInput({
   value: string;
   placeholder?: string;
   error?: string;
+  inputFocusClass: string;
 }) {
   return (
     <input
@@ -225,7 +302,7 @@ function TextInput({
       type={type}
       defaultValue={value}
       placeholder={placeholder}
-      className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : "border-slate-200 focus:border-orange-300 focus:ring-orange-100"}`}
+      className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
     />
   );
 }
@@ -237,6 +314,7 @@ function SelectInput({
   options,
   placeholder,
   error,
+  inputFocusClass,
 }: {
   id: string;
   name: string;
@@ -244,13 +322,14 @@ function SelectInput({
   options: ReadonlyArray<{ value: string; label: string }>;
   placeholder: string;
   error?: string;
+  inputFocusClass: string;
 }) {
   return (
     <select
       id={id}
       name={name}
       defaultValue={value}
-      className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : "border-slate-200 focus:border-orange-300 focus:ring-orange-100"}`}
+      className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
     >
       <option value="">{placeholder}</option>
       {options.map((option) => (
@@ -269,6 +348,7 @@ function TextArea({
   placeholder,
   error,
   rows = 4,
+  inputFocusClass,
 }: {
   id: string;
   name: string;
@@ -276,6 +356,7 @@ function TextArea({
   placeholder?: string;
   error?: string;
   rows?: number;
+  inputFocusClass: string;
 }) {
   return (
     <textarea
@@ -284,7 +365,7 @@ function TextArea({
       defaultValue={value}
       rows={rows}
       placeholder={placeholder}
-      className={`w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : "border-slate-200 focus:border-orange-300 focus:ring-orange-100"}`}
+      className={`w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
     />
   );
 }
@@ -293,17 +374,19 @@ function SectionCard({
   icon,
   title,
   description,
+  accentTileClass,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
+  accentTileClass: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
       <div className="flex items-start gap-4 border-b border-slate-200 px-5 py-5 sm:px-6">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-(--color-student)">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${accentTileClass}`}>
           {icon}
         </div>
         <div>
@@ -316,14 +399,13 @@ function SectionCard({
   );
 }
 
-function PrimaryActionButton({ submitted }: { submitted: boolean }) {
-  const label = submitted ? "บันทึกการเปลี่ยนแปลง" : "ส่งแบบฟอร์ม";
+function PrimaryActionButton({ label, className }: { label: string; className: string }) {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
-      className="inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-student) px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+      className={`inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70 ${className}`}
       disabled={pending}
     >
       {pending ? "กำลังบันทึก..." : label}
@@ -331,12 +413,12 @@ function PrimaryActionButton({ submitted }: { submitted: boolean }) {
   );
 }
 
-function CancelLink() {
+function CancelLink({ href }: { href: string }) {
   const { pending } = useFormStatus();
 
   return (
     <Link
-      href="/intern/overview"
+      href={href}
       aria-disabled={pending}
       className={`inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${pending ? "pointer-events-none opacity-60" : ""}`}
     >
@@ -345,14 +427,36 @@ function CancelLink() {
   );
 }
 
-export function StudentFormPage({ student, existingFiles, initialState }: StudentFormPageProps) {
-  const [state, formAction] = useActionState(saveStudentFormAction, initialState);
+export function StudentFormPage({
+  currentUser,
+  student,
+  existingFiles,
+  initialState,
+  mode = "student",
+  backHref,
+  backLabel,
+  cancelHref,
+  saveAction = defaultSaveStudentFormAction,
+  logoutAction = defaultLogoutAction,
+  hiddenFields = [],
+}: StudentFormPageProps) {
+  const [state, formAction] = useActionState(saveAction, initialState);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [localFileError, setLocalFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const isAdminMode = mode === "admin";
+  const resolvedBackHref = backHref ?? (isAdminMode ? "/intern/admin/students" : "/intern/overview");
+  const resolvedBackLabel = backLabel ?? (isAdminMode ? "กลับไปหน้ารายชื่อนักศึกษา" : "กลับไปหน้าภาพรวม");
+  const resolvedCancelHref = cancelHref ?? (isAdminMode ? resolvedBackHref : "/intern/overview");
+  const pageTitle = isAdminMode ? "แก้ไขข้อมูลนักศึกษา" : "แบบฟอร์มฝึกงาน";
+  const pageDescription = isAdminMode
+    ? "อัปเดตข้อมูลส่วนตัว การศึกษา รายละเอียดการฝึกงาน และไฟล์แนบของนักศึกษาได้จากหน้าฟอร์มเดียวกัน"
+    : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
+  const primaryButtonLabel = isAdminMode || student.hasSubmitted ? "บันทึกการเปลี่ยนแปลง" : "ส่งแบบฟอร์ม";
+  const theme = getFormTheme(isAdminMode);
   const visibleExistingFiles = useMemo(
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
@@ -435,7 +539,7 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
     setRemovedFileIds((currentFileIds) => (currentFileIds.includes(fileId) ? currentFileIds : [...currentFileIds, fileId]));
   }
 
-  if (student.isReadOnly) {
+  if (!isAdminMode && student.isReadOnly) {
     return (
       <div className="min-h-screen bg-[#fff7f1] text-slate-950">
         <header className="sticky top-0 z-30 border-b border-orange-100/80 bg-white/90 backdrop-blur-xl">
@@ -483,34 +587,47 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
   }
 
   return (
-    <div className="min-h-screen bg-[#fff7f1] text-slate-950">
-      <header className="sticky top-0 z-30 border-b border-orange-100/80 bg-white/90 backdrop-blur-xl">
+    <div className={`min-h-screen text-slate-950 ${theme.pageBackground}`}>
+      <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${theme.headerBorder}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <Link href="/intern/overview" className="flex items-center gap-3">
+            <Link href={isAdminMode ? "/intern/admin/students" : "/intern/overview"} className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
               </div>
               <div className="hidden sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
+                <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${theme.brandText}`}>ระบบ</p>
                 <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
               </div>
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">
-              <Link href="/intern/overview" className="rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-student/8 hover:text-(--color-student)">
-                ภาพรวม
-              </Link>
-              <Link href="/intern/form" className="rounded-full bg-student/12 px-4 py-2 text-sm font-semibold text-(--color-student)" aria-current="page">
-                แบบฟอร์ม
-              </Link>
+              {isAdminMode ? (
+                <>
+                  <Link href="/intern/dashboard" className={`rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition ${theme.navHover}`}>
+                    แดชบอร์ด
+                  </Link>
+                  <Link href="/intern/admin/students" className={`rounded-full px-4 py-2 text-sm font-semibold ${theme.navActive}`} aria-current="page">
+                    แก้ไขข้อมูลนักศึกษา
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/intern/overview" className={`rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition ${theme.navHover}`}>
+                    ภาพรวม
+                  </Link>
+                  <Link href="/intern/form" className={`rounded-full px-4 py-2 text-sm font-semibold ${theme.navActive}`} aria-current="page">
+                    แบบฟอร์ม
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">{student.displayName}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">นักศึกษา</p>
+              <p className="text-sm font-semibold text-slate-900">{isAdminMode ? (currentUser.name ?? "ผู้ดูแล") : student.displayName}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{isAdminMode ? "ผู้ดูแล" : "นักศึกษา"}</p>
             </div>
             <form action={logoutAction}>
               <button
@@ -538,8 +655,8 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
           <aside className="ml-auto flex h-full w-[84%] max-w-sm flex-col bg-white px-5 py-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{student.displayName}</p>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{student.email}</p>
+                <p className="text-sm font-semibold text-slate-900">{isAdminMode ? (currentUser.name ?? "ผู้ดูแล") : student.displayName}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{isAdminMode ? currentUser.email : student.email}</p>
               </div>
               <button
                 type="button"
@@ -552,12 +669,25 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             </div>
 
             <nav className="mt-8 space-y-2">
-              <Link href="/intern/overview" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
-                ภาพรวม
-              </Link>
-              <Link href="/intern/form" className="block rounded-2xl bg-student/12 px-4 py-3 text-sm font-semibold text-(--color-student)" aria-current="page" onClick={() => setMobileMenuOpen(false)}>
-                แบบฟอร์ม
-              </Link>
+              {isAdminMode ? (
+                <>
+                  <Link href="/intern/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
+                    แดชบอร์ด
+                  </Link>
+                  <Link href="/intern/admin/students" className={`block rounded-2xl px-4 py-3 text-sm font-semibold ${theme.navActive}`} aria-current="page" onClick={() => setMobileMenuOpen(false)}>
+                    แก้ไขข้อมูลนักศึกษา
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/intern/overview" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
+                    ภาพรวม
+                  </Link>
+                  <Link href="/intern/form" className={`block rounded-2xl px-4 py-3 text-sm font-semibold ${theme.navActive}`} aria-current="page" onClick={() => setMobileMenuOpen(false)}>
+                    แบบฟอร์ม
+                  </Link>
+                </>
+              )}
             </nav>
 
             <div className="mt-auto pt-8">
@@ -576,9 +706,9 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:pb-28 lg:pt-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/intern/overview" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-(--color-student)">
+          <Link href={resolvedBackHref} className={`inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition ${theme.backHoverText}`}>
             <BackIcon />
-            กลับไปหน้าภาพรวม
+            {resolvedBackLabel}
           </Link>
           <span className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold ring-1 ${getStatusClasses(student.status)}`}>
             {statusLabel(student.status)}
@@ -586,15 +716,18 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
         </div>
 
         <div className="mt-5 max-w-3xl space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">แบบฟอร์มฝึกงาน</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{pageTitle}</h1>
           <p className="text-sm leading-6 text-slate-600 sm:text-base">
-            กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ
+            {pageDescription}
           </p>
         </div>
 
         <form action={formAction} className="mt-8 space-y-6 pb-24">
+          {hiddenFields.map((field) => (
+            <input key={`${field.name}-${field.value}`} type="hidden" name={field.name} value={field.value} />
+          ))}
           {state.message ? (
-            <div className={`rounded-2xl border px-4 py-3 text-sm ${state.status === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-orange-200 bg-[#fff4eb] text-orange-700"}`}>
+            <div className={`rounded-2xl border px-4 py-3 text-sm ${state.status === "error" ? "border-red-200 bg-red-50 text-red-700" : theme.successMessage}`}>
               {state.message}
             </div>
           ) : null}
@@ -603,33 +736,34 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             icon={<UserIcon />}
             title="ข้อมูลส่วนตัว"
             description="กรอกรายละเอียดส่วนตัวหลักที่ใช้ในข้อมูลการฝึกงานและการติดต่อ"
+            accentTileClass={theme.accentTile}
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="คำนำหน้า" htmlFor="prefix" required error={state.fieldErrors.prefix}>
-                <SelectInput id="prefix" name="prefix" value={state.values.prefix} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} />
+                <SelectInput id="prefix" name="prefix" value={state.values.prefix} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="เพศ" htmlFor="gender" required error={state.fieldErrors.gender}>
-                <SelectInput id="gender" name="gender" value={state.values.gender} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} />
+                <SelectInput id="gender" name="gender" value={state.values.gender} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="ชื่อ" htmlFor="firstName" required error={state.fieldErrors.firstName}>
-                <TextInput id="firstName" name="firstName" value={state.values.firstName} placeholder="ชื่อ" error={state.fieldErrors.firstName} />
+                <TextInput id="firstName" name="firstName" value={state.values.firstName} placeholder="ชื่อ" error={state.fieldErrors.firstName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="นามสกุล" htmlFor="lastName" required error={state.fieldErrors.lastName}>
-                <TextInput id="lastName" name="lastName" value={state.values.lastName} placeholder="นามสกุล" error={state.fieldErrors.lastName} />
+                <TextInput id="lastName" name="lastName" value={state.values.lastName} placeholder="นามสกุล" error={state.fieldErrors.lastName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเกิด" htmlFor="dateOfBirth" required error={state.fieldErrors.dateOfBirth}>
-                <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={state.values.dateOfBirth} error={state.fieldErrors.dateOfBirth} />
+                <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={state.values.dateOfBirth} error={state.fieldErrors.dateOfBirth} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="หมายเลขโทรศัพท์" htmlFor="phoneNumber" required error={state.fieldErrors.phoneNumber}>
-                <TextInput id="phoneNumber" name="phoneNumber" value={state.values.phoneNumber} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} />
+                <TextInput id="phoneNumber" name="phoneNumber" value={state.values.phoneNumber} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <div className="md:col-span-2">
                 <FieldShell label="ที่อยู่" htmlFor="address" required error={state.fieldErrors.address}>
-                  <TextArea id="address" name="address" value={state.values.address} placeholder="ที่อยู่ปัจจุบัน" error={state.fieldErrors.address} />
+                  <TextArea id="address" name="address" value={state.values.address} placeholder="ที่อยู่ปัจจุบัน" error={state.fieldErrors.address} inputFocusClass={theme.inputFocus} />
                 </FieldShell>
               </div>
               <FieldShell label="เบอร์โทรผู้ปกครอง" htmlFor="parentPhone" required error={state.fieldErrors.parentPhone}>
-                <TextInput id="parentPhone" name="parentPhone" value={state.values.parentPhone} placeholder="เบอร์โทรผู้ปกครอง" error={state.fieldErrors.parentPhone} />
+                <TextInput id="parentPhone" name="parentPhone" value={state.values.parentPhone} placeholder="เบอร์โทรผู้ปกครอง" error={state.fieldErrors.parentPhone} inputFocusClass={theme.inputFocus} />
               </FieldShell>
             </div>
           </SectionCard>
@@ -638,25 +772,26 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             icon={<AcademicIcon />}
             title="ข้อมูลการศึกษา"
             description="ระบุข้อมูลการศึกษาให้ถูกต้องเพื่อให้ผู้ดูแลตรวจสอบบริบทการฝึกงานได้อย่างเหมาะสม"
+            accentTileClass={theme.accentTile}
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ระดับการศึกษา" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
-                <SelectInput id="educationLevel" name="educationLevel" value={state.values.educationLevel} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} />
+                <SelectInput id="educationLevel" name="educationLevel" value={state.values.educationLevel} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="สถานศึกษา" htmlFor="institution" required error={state.fieldErrors.institution}>
-                <TextInput id="institution" name="institution" value={state.values.institution} placeholder="สถานศึกษา" error={state.fieldErrors.institution} />
+                <TextInput id="institution" name="institution" value={state.values.institution} placeholder="สถานศึกษา" error={state.fieldErrors.institution} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="คณะ" htmlFor="faculty" required error={state.fieldErrors.faculty}>
-                <TextInput id="faculty" name="faculty" value={state.values.faculty} placeholder="คณะ" error={state.fieldErrors.faculty} />
+                <TextInput id="faculty" name="faculty" value={state.values.faculty} placeholder="คณะ" error={state.fieldErrors.faculty} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="สาขา" htmlFor="major" required error={state.fieldErrors.major}>
-                <TextInput id="major" name="major" value={state.values.major} placeholder="สาขา" error={state.fieldErrors.major} />
+                <TextInput id="major" name="major" value={state.values.major} placeholder="สาขา" error={state.fieldErrors.major} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="ชื่ออาจารย์ที่ปรึกษาสหกิจ" htmlFor="coOpAdvisorName" required error={state.fieldErrors.coOpAdvisorName}>
-                <TextInput id="coOpAdvisorName" name="coOpAdvisorName" value={state.values.coOpAdvisorName} placeholder="ชื่ออาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorName} />
+                <TextInput id="coOpAdvisorName" name="coOpAdvisorName" value={state.values.coOpAdvisorName} placeholder="ชื่ออาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="เบอร์โทรอาจารย์ที่ปรึกษาสหกิจ" htmlFor="coOpAdvisorPhone" required error={state.fieldErrors.coOpAdvisorPhone}>
-                <TextInput id="coOpAdvisorPhone" name="coOpAdvisorPhone" value={state.values.coOpAdvisorPhone} placeholder="เบอร์โทรอาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorPhone} />
+                <TextInput id="coOpAdvisorPhone" name="coOpAdvisorPhone" value={state.values.coOpAdvisorPhone} placeholder="เบอร์โทรอาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorPhone} inputFocusClass={theme.inputFocus} />
               </FieldShell>
             </div>
           </SectionCard>
@@ -665,26 +800,27 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             icon={<BriefcaseIcon />}
             title="รายละเอียดการฝึกงาน"
             description="ระบุรายละเอียดหลักของสถานที่ฝึกงานและช่วงเวลาการติดตามตรวจสอบ"
+            accentTileClass={theme.accentTile}
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ตำแหน่ง" htmlFor="position" required error={state.fieldErrors.position}>
-                <TextInput id="position" name="position" value={state.values.position} placeholder="ตำแหน่งฝึกงาน" error={state.fieldErrors.position} />
+                <TextInput id="position" name="position" value={state.values.position} placeholder="ตำแหน่งฝึกงาน" error={state.fieldErrors.position} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="แผนก / หน่วยงาน" htmlFor="departmentUnit" required error={state.fieldErrors.departmentUnit}>
-                <TextInput id="departmentUnit" name="departmentUnit" value={state.values.departmentUnit} placeholder="แผนกหรือหน่วยงาน" error={state.fieldErrors.departmentUnit} />
+                <TextInput id="departmentUnit" name="departmentUnit" value={state.values.departmentUnit} placeholder="แผนกหรือหน่วยงาน" error={state.fieldErrors.departmentUnit} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="ชื่อผู้ควบคุม" htmlFor="supervisorName" required error={state.fieldErrors.supervisorName}>
-                <TextInput id="supervisorName" name="supervisorName" value={state.values.supervisorName} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} />
+                <TextInput id="supervisorName" name="supervisorName" value={state.values.supervisorName} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเริ่มฝึกงาน" htmlFor="startDate" required error={state.fieldErrors.startDate}>
-                <TextInput id="startDate" name="startDate" type="date" value={state.values.startDate} error={state.fieldErrors.startDate} />
+                <TextInput id="startDate" name="startDate" type="date" value={state.values.startDate} error={state.fieldErrors.startDate} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันสิ้นสุดฝึกงาน" htmlFor="endDate" required error={state.fieldErrors.endDate}>
-                <TextInput id="endDate" name="endDate" type="date" value={state.values.endDate} error={state.fieldErrors.endDate} />
+                <TextInput id="endDate" name="endDate" type="date" value={state.values.endDate} error={state.fieldErrors.endDate} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <div className="md:col-span-2">
                 <FieldShell label="รายละเอียดเพิ่มเติม" htmlFor="additionalDetails" error={state.fieldErrors.additionalDetails}>
-                  <TextArea id="additionalDetails" name="additionalDetails" value={state.values.additionalDetails} placeholder="บันทึกเพิ่มเติมหรือรายละเอียดการฝึกงาน" error={state.fieldErrors.additionalDetails} rows={5} />
+                  <TextArea id="additionalDetails" name="additionalDetails" value={state.values.additionalDetails} placeholder="บันทึกเพิ่มเติมหรือรายละเอียดการฝึกงาน" error={state.fieldErrors.additionalDetails} rows={5} inputFocusClass={theme.inputFocus} />
                 </FieldShell>
               </div>
             </div>
@@ -694,6 +830,7 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             icon={<FileIcon />}
             title="ไฟล์แนบ"
             description="อัปโหลดไฟล์ PDF หรือรูปภาพเพื่อประกอบข้อมูลการฝึกงานของคุณ สามารถเก็บได้สูงสุด 5 ไฟล์ และแต่ละไฟล์ต้องไม่เกิน 5 MB"
+            accentTileClass={theme.accentTile}
           >
             <div>
               <input
@@ -716,9 +853,9 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
                 }}
                 onDragLeave={() => setDragActive(false)}
                 onDrop={handleDrop}
-                className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${dragActive ? "border-orange-300 bg-orange-50" : "border-orange-200 bg-[#fff9f4] hover:border-orange-300 hover:bg-orange-50/70"}`}
+                className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${dragActive ? theme.uploadActive : theme.uploadIdle}`}
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-student/10 text-(--color-student)">
+                <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
                   <UploadIcon />
                 </div>
                 <p className="mt-4 text-base font-semibold text-slate-950">อัปโหลดไฟล์ฝึกงาน</p>
@@ -734,7 +871,7 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
                   {visibleExistingFiles.map((file) => (
                     <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-(--color-student)">
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
                           <FileIcon />
                         </div>
                         <div className="min-w-0">
@@ -764,13 +901,13 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
                   {selectedFiles.map((file, index) => (
                     <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-(--color-student)">
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
                           <FileIcon />
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
                           <p className="mt-1 text-xs leading-5 text-slate-500">{`${(file.size / 1024).toFixed(1)} KB`}</p>
-                          <p className="mt-2 hidden text-xs font-medium text-orange-600 sm:block">Ready to upload</p>
+                          <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
                         </div>
                       </div>
                       <button
@@ -792,10 +929,10 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             </div>
           </SectionCard>
 
-          <div className="sticky bottom-0 z-20 -mx-4 border-t border-orange-100 bg-[#fff7f1]/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className={`sticky bottom-0 z-20 -mx-4 border-t px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ${theme.stickyBar}`}>
             <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-              <CancelLink />
-              <PrimaryActionButton submitted={student.hasSubmitted} />
+              <CancelLink href={resolvedCancelHref} />
+              <PrimaryActionButton label={primaryButtonLabel} className={theme.primaryButton} />
             </div>
           </div>
         </form>

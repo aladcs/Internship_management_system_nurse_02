@@ -73,6 +73,8 @@ export async function saveStudentAction(
   formData: FormData,
 ): Promise<SaveStudentActionState> {
   const session = await requireAdminSession();
+  const intent = String(formData.get("intent") ?? "create");
+  const studentId = String(formData.get("studentId") ?? "").trim();
   const name = normalizeName(formData.get("name"));
   const email = normalizeEmail(formData.get("email"));
   const fieldErrors: SaveStudentActionState["fieldErrors"] = {};
@@ -103,7 +105,7 @@ export async function saveStudentAction(
     select: { id: true },
   });
 
-  if (existingByEmail) {
+  if (existingByEmail && (intent !== "edit" || existingByEmail.id !== studentId)) {
     return {
       status: "validation-error",
       message: null,
@@ -112,6 +114,88 @@ export async function saveStudentAction(
       },
       values: { name, email },
       student: null,
+      generatedPassword: null,
+    };
+  }
+
+  if (intent === "edit") {
+    const existingStudent = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        user: {
+          role: "student",
+        },
+      },
+      select: {
+        id: true,
+        userId: true,
+        internshipStatus: true,
+        major: true,
+        user: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!existingStudent) {
+      return {
+        status: "error",
+        message: "ไม่พบนักศึกษาที่เลือก",
+        fieldErrors: {},
+        values: { name, email },
+        student: null,
+        generatedPassword: null,
+      };
+    }
+
+    const { firstName, lastName } = splitStudentName(name);
+
+    const updatedStudent = await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: existingStudent.userId },
+        data: {
+          name,
+          email,
+        },
+      });
+
+      return tx.student.update({
+        where: { id: existingStudent.id },
+        data: {
+          firstName,
+          lastName,
+        },
+        select: {
+          id: true,
+          internshipStatus: true,
+          major: true,
+          user: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      });
+    });
+
+    revalidatePath("/intern/admin/students");
+    revalidatePath(`/intern/admin/students/${updatedStudent.id}`);
+    revalidatePath("/intern/overview");
+    revalidatePath("/intern/form");
+
+    return {
+      status: "updated",
+      message: "อัปเดตข้อมูลนักศึกษาเรียบร้อยแล้ว",
+      fieldErrors: {},
+      values: {
+        name: updatedStudent.user.name?.trim() || "",
+        email: updatedStudent.user.email,
+      },
+      student: toStudentListItem(updatedStudent),
       generatedPassword: null,
     };
   }

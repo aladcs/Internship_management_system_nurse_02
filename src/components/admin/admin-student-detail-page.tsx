@@ -82,6 +82,15 @@ function ArrowLeftIcon() {
   );
 }
 
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m13.75 3.75 2.5 2.5" />
+      <path d="M4.75 15.25 7.5 14.5l7.5-7.5a1.77 1.77 0 0 0-2.5-2.5L5 12l-.25 3.25Z" />
+    </svg>
+  );
+}
+
 function SparklesIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
@@ -452,13 +461,20 @@ export function AdminStudentDetailPage({
       ) : null}
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <div className="mb-6">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/intern/admin/students"
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             <ArrowLeftIcon />
             กลับไปหน้ารายชื่อนักศึกษา
+          </Link>
+          <Link
+            href={`/intern/admin/students/${student.id}/edit`}
+            className="inline-flex items-center gap-2 rounded-full bg-(--color-admin) px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
+          >
+            <EditIcon />
+            แก้ไขข้อมูลนักศึกษา
           </Link>
         </div>
 

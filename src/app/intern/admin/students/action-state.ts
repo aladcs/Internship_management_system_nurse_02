@@ -9,7 +9,7 @@ export type StudentListItem = {
 };
 
 export type SaveStudentActionState = {
-  status: "idle" | "validation-error" | "created" | "error";
+  status: "idle" | "validation-error" | "created" | "updated" | "error";
   message: string | null;
   fieldErrors: {
     name?: string;
