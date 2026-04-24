@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 
 const GENDER_VALUES = ["male", "female", "other", "prefer_not_to_say"] as const;
 const EDUCATION_LEVEL_VALUES = ["diploma", "bachelor", "master", "doctorate", "other"] as const;
+const PREFIX_VALUES = ["นาย", "นาง", "นางสาว"] as const;
 const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const MAX_FILE_COUNT = 5;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -167,6 +168,10 @@ export async function saveStudentFormAction(
 
   if (student.internshipStatus === "completed") {
     redirect("/intern/overview");
+  }
+
+  if (!values.prefix || !PREFIX_VALUES.includes(values.prefix as (typeof PREFIX_VALUES)[number])) {
+    fieldErrors.prefix = "กรุณาเลือกคำนำหน้า";
   }
 
   if (!values.firstName) {

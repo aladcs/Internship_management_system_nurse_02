@@ -33,6 +33,12 @@ export type StudentFormPageProps = {
   initialState: StudentFormActionState;
 };
 
+const PREFIX_OPTIONS = [
+  { value: "นาย", label: "นาย" },
+  { value: "นาง", label: "นาง" },
+  { value: "นางสาว", label: "นางสาว" },
+] as const;
+
 const GENDER_OPTIONS = [
   { value: "male", label: "ชาย" },
   { value: "female", label: "หญิง" },
@@ -599,8 +605,8 @@ export function StudentFormPage({ student, existingFiles, initialState }: Studen
             description="กรอกรายละเอียดส่วนตัวหลักที่ใช้ในข้อมูลการฝึกงานและการติดต่อ"
           >
             <div className="grid gap-5 md:grid-cols-2">
-              <FieldShell label="คำนำหน้า" htmlFor="prefix">
-                <TextInput id="prefix" name="prefix" value={state.values.prefix} placeholder="นาย, นางสาว เป็นต้น" />
+              <FieldShell label="คำนำหน้า" htmlFor="prefix" required error={state.fieldErrors.prefix}>
+                <SelectInput id="prefix" name="prefix" value={state.values.prefix} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} />
               </FieldShell>
               <FieldShell label="เพศ" htmlFor="gender" required error={state.fieldErrors.gender}>
                 <SelectInput id="gender" name="gender" value={state.values.gender} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} />
