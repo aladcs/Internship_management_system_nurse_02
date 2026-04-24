@@ -149,7 +149,7 @@ function getStatusDefinitions(): StatusDefinition[] {
     {
       id: "in_progress",
       label: formatInternshipStatusLabel("in_progress"),
-      description: "ข้อมูลอยู่ระหว่างการติดตามหรือการฝึกงานกำลังดำเนินอยู่ และยังแก้ไขข้อมูลได้",
+      description: "การฝึกงานกำลังดำเนินการอยู่หรืออยู่ในช่วงกำลังฝึกงาน และยังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",

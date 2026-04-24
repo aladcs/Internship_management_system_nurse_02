@@ -16,7 +16,7 @@ const EMPTY_VALUE = "ยังไม่ได้ระบุ";
 
 function formatStatusDescription(status: StudentOverviewPageProps["student"]["status"]) {
   if (status === "in_progress") {
-    return "ข้อมูลของคุณอยู่ระหว่างการติดตามหรือการฝึกงานกำลังดำเนินอยู่ และยังสามารถกลับไปแก้ไขแบบฟอร์มได้";
+    return "การฝึกงานของคุณกำลังดำเนินการอยู่หรืออยู่ระหว่างช่วงกำลังฝึกงาน และยังสามารถกลับไปแก้ไขแบบฟอร์มได้";
   }
 
   if (status === "pending") {

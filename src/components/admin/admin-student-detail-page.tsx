@@ -62,11 +62,10 @@ export type AdminStudentDetailPageProps = {
   };
 };
 
-type TimelineStep = {
-  id: string;
-  title: string;
+type StatusDefinition = {
+  id: InternshipStatus;
+  label: string;
   description: string;
-  tone: "complete" | "active" | "upcoming";
 };
 
 function MenuIcon() {
@@ -175,85 +174,32 @@ function getStatusClasses(status: InternshipStatus) {
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
 }
 
-function getTimelineSteps(status: InternshipStatus): TimelineStep[] {
-  if (status === "completed") {
-    return [
-      {
-        id: "submitted",
-        title: "ส่งแบบฟอร์มแล้ว",
-        description: "ข้อมูลการฝึกงานของนักศึกษาถูกบันทึกไว้แล้ว",
-        tone: "complete",
-      },
-      {
-        id: "review",
-        title: "ตรวจสอบโดยผู้ดูแล",
-        description: "ข้อมูลนี้ผ่านการตรวจสอบแล้ว",
-        tone: "complete",
-      },
-      {
-        id: "completed",
-        title: "เสร็จสิ้น",
-        description: "ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว",
-        tone: "complete",
-      },
-    ];
-  }
-
-  if (status === "in_progress") {
-    return [
-      {
-        id: "submitted",
-        title: "ส่งแบบฟอร์มแล้ว",
-        description: "รายละเอียดการฝึกงานของนักศึกษาถูกบันทึกไว้แล้ว",
-        tone: "complete",
-      },
-      {
-        id: "review",
-        title: "กำลังติดตามโดยผู้ดูแล",
-        description: "การฝึกงานกำลังดำเนินอยู่และอยู่ในการติดตามของผู้ดูแล",
-        tone: "active",
-      },
-      {
-        id: "completed",
-        title: "เสร็จสิ้น",
-        description: "ทำเครื่องหมายว่าเสร็จสิ้นเมื่อการฝึกงานสิ้นสุดลง",
-        tone: "upcoming",
-      },
-    ];
-  }
-
+function getStatusDefinitions(): StatusDefinition[] {
   return [
     {
-      id: "submitted",
-      title: "รอตรวจสอบ",
-      description: "นักศึกษาส่งข้อมูลแล้วหรือกำลังเตรียมข้อมูลการฝึกงาน",
-      tone: "active",
+      id: "pending",
+      label: formatInternshipStatusLabel("pending"),
+      description: "นักศึกษาได้ส่งข้อมูลแล้วและกำลังรอให้แอดมินตรวจสอบ โดยยังแก้ไขข้อมูลได้",
     },
     {
-      id: "review",
-      title: "กำลังดำเนินการ",
-      description: "เปลี่ยนสถานะเป็นขั้นตอนนี้เมื่อผู้ดูแลเริ่มติดตามอย่างเป็นทางการ",
-      tone: "upcoming",
+      id: "in_progress",
+      label: formatInternshipStatusLabel("in_progress"),
+      description: "การฝึกงานกำลังดำเนินการอยู่หรืออยู่ในช่วงกำลังฝึกงาน และนักศึกษายังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",
-      title: "เสร็จสิ้น",
-      description: "ขั้นตอนนี้จะพร้อมใช้งานหลังจากมีการติดตามสถานะกำลังดำเนินการแล้ว",
-      tone: "upcoming",
+      label: formatInternshipStatusLabel("completed"),
+      description: "ข้อมูลฝึกงานเสร็จสิ้นแล้วและแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา",
     },
   ];
 }
 
-function getStepClasses(tone: TimelineStep["tone"]) {
-  if (tone === "complete") {
-    return "border-white/70 bg-white text-slate-900 shadow-lg shadow-admin/10";
+function getStatusCardClasses(definitionId: InternshipStatus, currentStatus: InternshipStatus) {
+  if (definitionId === currentStatus) {
+    return "border-admin/20 bg-white text-slate-900 shadow-lg shadow-admin/10 ring-1 ring-admin/10";
   }
 
-  if (tone === "active") {
-    return "border-admin/20 bg-admin/8 text-slate-900 shadow-lg shadow-admin/10";
-  }
-
-  return "border-dashed border-admin/20 bg-white/55 text-slate-500";
+  return "border-white/70 bg-white/65 text-slate-600";
 }
 
 function getNextStatusAction(nextStatus: InternshipStatus | null) {
@@ -339,7 +285,7 @@ export function AdminStudentDetailPage({
   );
   const router = useRouter();
   const nextAction = getNextStatusAction(student.statusControl.nextStatus);
-  const timelineSteps = getTimelineSteps(student.status);
+  const statusDefinitions = getStatusDefinitions();
   const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && nextAction);
   const statusButtonLabel = isStatusChangeBlocked ? "รอนักศึกษาส่งแบบฟอร์ม" : nextAction?.label;
   const statusHelperText = isStatusChangeBlocked
@@ -501,7 +447,7 @@ export function AdminStudentDetailPage({
                   ตรวจสอบข้อมูลการฝึกงานของ <span className="text-(--color-admin)">{student.firstName}</span>
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                  ตรวจสอบโปรไฟล์ ประวัติการศึกษา รายละเอียดการฝึกงาน และไฟล์ที่ส่งมาก่อนเปลี่ยนสถานะถัดไป
+                  ตรวจสอบโปรไฟล์ ประวัติการศึกษา รายละเอียดการฝึกงาน และไฟล์ประกอบ พร้อมอัปเดตสถานะการฝึกงานให้ตรงกับความคืบหน้าจริง
                 </p>
               </div>
 
@@ -515,6 +461,13 @@ export function AdminStudentDetailPage({
                     {student.completionNote}
                   </span>
                 ) : null}
+              </div>
+
+              <div className="rounded-[28px] border border-white/70 bg-white/70 p-4 text-sm text-slate-700 shadow-lg shadow-admin/10 sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">ความหมายของสถานะปัจจุบัน</p>
+                <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base">
+                  {statusDefinitions.find((definition) => definition.id === student.status)?.description}
+                </p>
               </div>
             </div>
 
@@ -559,9 +512,12 @@ export function AdminStudentDetailPage({
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4">
-            {timelineSteps.map((step, index) => (
-              <div key={step.id} className={`rounded-3xl border p-4 ${getStepClasses(step.tone)}`}>
+          <div className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
+            {statusDefinitions.map((definition, index) => (
+              <div
+                key={definition.id}
+                className={`rounded-3xl border p-4 ${getStatusCardClasses(definition.id, student.status)}`}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                     ขั้นตอนที่ {index + 1}
@@ -570,8 +526,8 @@ export function AdminStudentDetailPage({
                     {index + 1}
                   </span>
                 </div>
-                <p className="mt-4 text-sm font-semibold text-current sm:text-base">{step.title}</p>
-                <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{step.description}</p>
+                <p className="mt-4 text-sm font-semibold text-current sm:text-base">{definition.label}</p>
+                <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{definition.description}</p>
               </div>
             ))}
           </div>
@@ -651,7 +607,7 @@ export function AdminStudentDetailPage({
             <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                การอัปเดตสถานะต้องเป็นไปตามลำดับที่กำหนดเท่านั้น และเริ่มได้หลังนักศึกษาส่งแบบฟอร์มครั้งแรกแล้ว: รอดำเนินการ ไปเป็น กำลังดำเนินการ และจากนั้นเป็น เสร็จสิ้น
+                การอัปเดตสถานะต้องอิงตามความหมายเดียวกับหน้าภาพรวมนักศึกษา เริ่มจาก รอตรวจสอบ ไปเป็น กำลังดำเนินการ และจบที่ เสร็จสิ้น โดยจะเปลี่ยนสถานะได้หลังนักศึกษาส่งแบบฟอร์มครั้งแรกแล้วเท่านั้น
               </p>
             </section>
           </div>

@@ -7,7 +7,7 @@ const NEXT_STATUS_BY_CURRENT: Partial<Record<InternshipStatus, InternshipStatus>
 
 export function formatInternshipStatusLabel(status: InternshipStatus) {
   if (status === "pending") {
-    return "รอดำเนินการ";
+    return "รอตรวจสอบ";
   }
 
   if (status === "in_progress") {
@@ -26,7 +26,7 @@ export function getAdminStatusTransitionBlockReason(input: {
   submittedAt: Date | null;
 }) {
   if (!input.submittedAt) {
-    return "นักศึกษายังไม่ได้ส่งแบบฟอร์มครั้งแรก จึงยังไม่สามารถเปลี่ยนสถานะได้";
+    return "นักศึกษายังไม่ได้ส่งแบบฟอร์มครั้งแรก จึงยังไม่สามารถเปลี่ยนสถานะการฝึกงานได้";
   }
 
   if (!getNextInternshipStatus(input.status)) {
