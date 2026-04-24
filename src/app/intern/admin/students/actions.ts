@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type UserRole } from "@prisma/client";
 import {
+  type DeleteStudentActionState,
   type StudentListItem,
   type SaveStudentActionState,
 } from "@/app/intern/admin/students/action-state";
@@ -165,5 +166,58 @@ export async function saveStudentAction(
     },
     student: toStudentListItem(createdStudent),
     generatedPassword,
+  };
+}
+
+export async function deleteStudentAction(
+  _previousState: DeleteStudentActionState,
+  formData: FormData,
+): Promise<DeleteStudentActionState> {
+  await requireAdminSession();
+  const studentId = String(formData.get("studentId") ?? "").trim();
+
+  if (!studentId) {
+    return {
+      status: "error",
+      message: "ไม่พบนักศึกษาที่เลือก",
+      deletedStudentId: null,
+    };
+  }
+
+  const existingStudent = await prisma.student.findUnique({
+    where: {
+      id: studentId,
+    },
+    select: {
+      id: true,
+      userId: true,
+      user: {
+        select: {
+          role: true,
+        },
+      },
+    },
+  });
+
+  if (!existingStudent || existingStudent.user.role !== "student") {
+    return {
+      status: "error",
+      message: "ไม่พบนักศึกษาที่เลือก",
+      deletedStudentId: null,
+    };
+  }
+
+  await prisma.user.delete({
+    where: {
+      id: existingStudent.userId,
+    },
+  });
+
+  revalidatePath("/intern/admin/students");
+
+  return {
+    status: "deleted",
+    message: "ลบบัญชีนักศึกษาเรียบร้อยแล้ว",
+    deletedStudentId: existingStudent.id,
   };
 }

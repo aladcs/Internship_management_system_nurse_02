@@ -4,6 +4,7 @@ import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import { clearSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "ภาพรวมของนักศึกษา | ระบบจัดการฝึกงาน",
@@ -188,7 +189,8 @@ export default async function InternOverviewPage() {
   });
 
   if (!student) {
-    notFound();
+    await clearSession();
+    redirect("/login?cmu=student_profile_missing");
   }
 
   const canEdit = student.internshipStatus !== "completed";

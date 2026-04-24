@@ -34,3 +34,15 @@ export const initialSaveStudentActionState: SaveStudentActionState = {
   student: null,
   generatedPassword: null,
 };
+
+export type DeleteStudentActionState = {
+  status: "idle" | "error" | "deleted";
+  message: string | null;
+  deletedStudentId: string | null;
+};
+
+export const initialDeleteStudentActionState: DeleteStudentActionState = {
+  status: "idle",
+  message: null,
+  deletedStudentId: null,
+};

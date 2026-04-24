@@ -6,10 +6,11 @@ import {
   getCmuEntraConfig,
 } from "@/lib/auth/cmu-entra";
 import { createSession } from "@/lib/auth/session";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { getSafePostLoginRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
+const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
 
 type TokenResponse = {
   access_token?: string;
@@ -28,6 +29,15 @@ type UserinfoResponse = {
   username?: unknown;
 };
 
+function splitStudentName(name: string | null) {
+  const parts = (name ?? "").split(/\s+/).filter(Boolean);
+
+  return {
+    firstName: parts[0] ?? null,
+    lastName: parts.length > 1 ? parts.slice(1).join(" ") : null,
+  };
+}
+
 function createLoginRedirect(request: NextRequest, code: string) {
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("cmu", code);
@@ -37,6 +47,14 @@ function createLoginRedirect(request: NextRequest, code: string) {
 
 function clearStateCookie(response: NextResponse, path: string) {
   response.cookies.set(STATE_COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path,
+    expires: new Date(0),
+  });
+
+  response.cookies.set(NEXT_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -180,6 +198,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const storedState = request.cookies.get(STATE_COOKIE_NAME)?.value;
+  const nextPath = request.cookies.get(NEXT_COOKIE_NAME)?.value ?? null;
 
   if (providerError) {
     const response = NextResponse.redirect(
@@ -233,6 +252,11 @@ export async function GET(request: NextRequest) {
       email: true,
       role: true,
       name: true,
+      studentProfile: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -243,6 +267,22 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
+  if (user.role === "student" && !user.studentProfile) {
+    const { firstName, lastName } = splitStudentName(user.name);
+
+    await prisma.student.upsert({
+      where: {
+        userId: user.id,
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        firstName,
+        lastName,
+      },
+    });
+  }
+
   await createSession({
     userId: user.id,
     email: user.email,
@@ -250,7 +290,9 @@ export async function GET(request: NextRequest) {
     name: user.name ?? null,
   });
 
-  const response = NextResponse.redirect(new URL(getRoleRedirectPath(user.role), request.url));
+  const response = NextResponse.redirect(
+    new URL(getSafePostLoginRedirectPath(user.role, nextPath), request.url),
+  );
   clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
 
   return response;

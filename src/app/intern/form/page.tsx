@@ -5,7 +5,7 @@ import {
   type StudentFormValues,
 } from "@/app/intern/form/action-state";
 import { StudentFormPage, type StudentFormPageProps } from "@/components/student/student-form-page";
-import { readSession } from "@/lib/auth/session";
+import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
@@ -106,7 +106,8 @@ export default async function InternFormPage() {
   });
 
   if (!student) {
-    notFound();
+    await clearSession();
+    redirect("/login?cmu=student_profile_missing");
   }
 
   const initialValues: StudentFormValues = {

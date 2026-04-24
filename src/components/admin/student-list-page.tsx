@@ -6,10 +6,15 @@ import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { InternshipStatus } from "@prisma/client";
 import {
+  initialDeleteStudentActionState,
   initialSaveStudentActionState,
   type StudentListItem,
 } from "@/app/intern/admin/students/action-state";
-import { logoutAction, saveStudentAction } from "@/app/intern/admin/students/actions";
+import {
+  deleteStudentAction,
+  logoutAction,
+  saveStudentAction,
+} from "@/app/intern/admin/students/actions";
 import {
   AdminMobileNotificationsCard,
   AdminNotificationMenu,
@@ -34,6 +39,7 @@ type StudentDialogProps = {
 type DeleteDialogProps = {
   student: StudentListItem;
   onClose: () => void;
+  onDeleted: (studentId: string) => void;
 };
 
 type StudentStatusFilter = "all" | InternshipStatus;
@@ -206,6 +212,20 @@ function ActionButton({ children }: { children: React.ReactNode }) {
       className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "กำลังสร้าง..." : children}
+    </button>
+  );
+}
+
+function DeleteButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-70"
+    >
+      {pending ? "กำลังลบ..." : "ลบนักศึกษา"}
     </button>
   );
 }
@@ -407,11 +427,23 @@ function CreateStudentDialog({ onClose, onCreated }: StudentDialogProps) {
   );
 }
 
-function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
+function DeleteStudentDialog({ student, onClose, onDeleted }: DeleteDialogProps) {
+  const [state, formAction] = useActionState(
+    deleteStudentAction,
+    initialDeleteStudentActionState,
+  );
+
+  useEffect(() => {
+    if (state.status === "deleted" && state.deletedStudentId) {
+      onDeleted(state.deletedStudentId);
+      onClose();
+    }
+  }, [onClose, onDeleted, state.deletedStudentId, state.status]);
+
   return (
     <ModalFrame
       title="ลบนักศึกษา"
-      description="ขั้นตอนการลบนักศึกษาจะอยู่ในฟีเจอร์จัดการนักศึกษาโดยเฉพาะ กล่องโต้ตอบนี้แสดงไว้เพื่อให้หน้ารายการตรงตามแบบที่อนุมัติแล้ว"
+      description="การดำเนินการนี้จะลบบัญชีนักศึกษาและข้อมูลฝึกงานที่เกี่ยวข้องออกจากระบบ และไม่สามารถย้อนกลับได้"
     >
       <div className="space-y-5">
         <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
@@ -419,19 +451,23 @@ function DeleteStudentDialog({ student, onClose }: DeleteDialogProps) {
           <p className="mt-1">{student.email}</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          การลบนักศึกษายังไม่ได้ถูกพัฒนาในฟีเจอร์นี้ หน้าปัจจุบันจะแสดงเพียงจุดเริ่มต้นของการดำเนินการใน UI เท่านั้น
-        </div>
+        {state.status === "error" && state.message ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {state.message}
+          </div>
+        ) : null}
 
-        <div className="flex justify-end">
+        <form action={formAction} className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <input type="hidden" name="studentId" value={student.id} />
           <button
             type="button"
             onClick={onClose}
             className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            ปิด
+            ยกเลิก
           </button>
-        </div>
+          <DeleteButton />
+        </form>
       </div>
     </ModalFrame>
   );
@@ -492,6 +528,12 @@ export function StudentListPage({
 
       return [student, ...currentStudents];
     });
+  }
+
+  function handleStudentDeleted(studentId: string) {
+    setStudentItems((currentStudents) =>
+      currentStudents.filter((currentStudent) => currentStudent.id !== studentId),
+    );
   }
 
   return (
@@ -831,7 +873,11 @@ export function StudentListPage({
         />
       ) : null}
       {deletingStudent ? (
-        <DeleteStudentDialog student={deletingStudent} onClose={() => setDeletingStudent(null)} />
+        <DeleteStudentDialog
+          student={deletingStudent}
+          onClose={() => setDeletingStudent(null)}
+          onDeleted={handleStudentDeleted}
+        />
       ) : null}
     </div>
   );

@@ -5,8 +5,10 @@ import {
   CMU_ENTRA_CALLBACK_PATH,
   getCmuEntraConfig,
 } from "@/lib/auth/cmu-entra";
+import { getSafePostLoginRedirectPath } from "@/lib/auth/roles";
 
 const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
+const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
 const STATE_TTL_SECONDS = 60 * 10;
 
 function createLoginRedirect(request: NextRequest, code: string) {
@@ -26,6 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   const state = randomBytes(24).toString("base64url");
+  const nextPath = getSafePostLoginRedirectPath("student", request.nextUrl.searchParams.get("next"));
   const authorizationUrl = new URL(config.authorizeUrl);
 
   authorizationUrl.searchParams.set("client_id", config.clientId);
@@ -38,6 +41,14 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(authorizationUrl);
 
   response.cookies.set(STATE_COOKIE_NAME, state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: config.callbackPath || CMU_ENTRA_CALLBACK_PATH,
+    maxAge: STATE_TTL_SECONDS,
+  });
+
+  response.cookies.set(NEXT_COOKIE_NAME, nextPath, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

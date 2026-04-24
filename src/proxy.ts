@@ -3,6 +3,12 @@ import type { NextRequest } from "next/server";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session-token";
 
+const PUBLIC_INTERN_PREFIXES = [
+  "/intern/auth/cmu",
+  "/intern/auth/cmu/callback",
+  "/intern/api/auth/callback",
+] as const;
+
 const ROLE_PROTECTED_PREFIXES = [
   {
     prefix: "/intern/admins",
@@ -30,6 +36,10 @@ function getRequiredRole(pathname: string) {
   return ROLE_PROTECTED_PREFIXES.find(({ prefix }) => pathname.startsWith(prefix))?.role ?? null;
 }
 
+function isPublicInternPath(pathname: string) {
+  return PUBLIC_INTERN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 function redirectToLogin(request: NextRequest) {
   const loginUrl = new URL("/login", request.url);
   const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
@@ -45,16 +55,22 @@ function redirectToLogin(request: NextRequest) {
 }
 
 export function proxy(request: NextRequest) {
-  const requiredRole = getRequiredRole(request.nextUrl.pathname);
+  const pathname = request.nextUrl.pathname;
 
-  if (!requiredRole) {
+  if (isPublicInternPath(pathname)) {
     return NextResponse.next();
   }
+
+  const requiredRole = getRequiredRole(pathname);
 
   const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
   if (!session) {
-    return redirectToLogin(request);
+    return pathname.startsWith("/intern") ? redirectToLogin(request) : NextResponse.next();
+  }
+
+  if (!requiredRole) {
+    return NextResponse.next();
   }
 
   if (session.role !== requiredRole) {
@@ -66,10 +82,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/intern/admins/:path*",
-    "/intern/dashboard/:path*",
-    "/intern/admin/students/:path*",
-    "/intern/overview/:path*",
-    "/intern/form/:path*",
+    "/intern/:path*",
   ],
 };

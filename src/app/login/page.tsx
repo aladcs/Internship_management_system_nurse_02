@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { CMU_ENTRA_LOGIN_PATH, isCmuEntraConfigured } from "@/lib/auth/cmu-entra";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
-import { readSession } from "@/lib/auth/session";
+import { clearSession, readSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
 
 const statusChips = [
   {
@@ -37,6 +38,7 @@ const CMU_LOGIN_ERRORS: Record<string, string> = {
   userinfo_failed: "ไม่สามารถอ่านข้อมูลโปรไฟล์บัญชี CMU ของคุณได้",
   email_not_allowed: "บัญชี CMU นี้ไม่มีสิทธิ์เข้าใช้งานระบบฝึกงาน",
   callback_failed: "การเข้าสู่ระบบ CMU ส่งผลลัพธ์กลับมาไม่ถูกต้อง",
+  student_profile_missing: "บัญชีนักศึกษานี้มีข้อมูลโปรไฟล์ไม่ครบถ้วน กรุณาเข้าสู่ระบบใหม่อีกครั้ง",
 };
 
 type LoginPageProps = {
@@ -56,10 +58,40 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await readSession();
   const resolvedSearchParams = (await searchParams) ?? {};
   const cmuErrorCode = readSearchParam(resolvedSearchParams, "cmu");
-  const initialError = cmuErrorCode ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null : null;
+  const nextPath = readSearchParam(resolvedSearchParams, "next");
+  let initialError = cmuErrorCode ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null : null;
+
+  const cmuLoginHref = (() => {
+    if (!nextPath) {
+      return CMU_ENTRA_LOGIN_PATH;
+    }
+
+    const loginUrl = new URL(CMU_ENTRA_LOGIN_PATH, "http://localhost");
+    loginUrl.searchParams.set("next", nextPath);
+
+    return `${loginUrl.pathname}${loginUrl.search}`;
+  })();
 
   if (session) {
-    redirect(getRoleRedirectPath(session.role));
+    if (session.role === "student") {
+      const studentProfile = await prisma.student.findUnique({
+        where: {
+          userId: session.userId,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!studentProfile) {
+        await clearSession();
+        initialError ??= CMU_LOGIN_ERRORS.student_profile_missing;
+      } else {
+        redirect(getRoleRedirectPath(session.role));
+      }
+    } else {
+      redirect(getRoleRedirectPath(session.role));
+    }
   }
 
   return (
@@ -88,7 +120,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <LoginForm
               initialError={initialError}
               cmuLoginEnabled={isCmuEntraConfigured()}
-              cmuLoginHref={CMU_ENTRA_LOGIN_PATH}
+              cmuLoginHref={cmuLoginHref}
+              nextPath={nextPath}
             />
           </div>
 

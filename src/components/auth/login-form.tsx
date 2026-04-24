@@ -72,12 +72,14 @@ type LoginFormProps = {
   initialError?: string | null;
   cmuLoginEnabled: boolean;
   cmuLoginHref: string;
+  nextPath?: string | null;
 };
 
 export function LoginForm({
   initialError = null,
   cmuLoginEnabled,
   cmuLoginHref,
+  nextPath = null,
 }: LoginFormProps) {
   const [state, formAction] = useActionState(loginAction, initialLoginActionState);
   const [showPassword, setShowPassword] = useState(false);
@@ -104,6 +106,8 @@ export function LoginForm({
       ) : null}
 
       <form action={formAction} className="space-y-4">
+        {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
+
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-slate-700">
             อีเมล
