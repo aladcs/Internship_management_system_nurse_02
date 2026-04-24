@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import {
   createInitialStudentFormActionState,
   type StudentFormValues,
@@ -42,6 +42,17 @@ function formatFileSize(sizeBytes: number | null) {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function getProfileImageSrc(value: string) {
+  if (value.startsWith("/uploads/student-profile-images/")) {
+    return value.replace(
+      "/uploads/student-profile-images/",
+      "/intern/api/student-profile-images/",
+    );
+  }
+
+  return value;
+}
+
 export default async function InternFormPage() {
   const session = await readSession();
 
@@ -60,6 +71,8 @@ export default async function InternFormPage() {
     select: {
       internshipStatus: true,
       submittedAt: true,
+      profileImagePath: true,
+      profileImageName: true,
       firstName: true,
       lastName: true,
       prefix: true,
@@ -157,6 +170,13 @@ export default async function InternFormPage() {
         meta: metaParts.join(" • "),
       };
     }),
+    profileImage:
+      student.profileImagePath
+        ? {
+            src: getProfileImageSrc(student.profileImagePath),
+            name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
+          }
+        : null,
     initialState: createInitialStudentFormActionState(initialValues),
   };
 

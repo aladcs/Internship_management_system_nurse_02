@@ -7,6 +7,7 @@ const PUBLIC_INTERN_PREFIXES = [
   "/intern/auth/cmu",
   "/intern/auth/cmu/callback",
   "/intern/api/auth/callback",
+  "/intern/api/student-profile-images",
 ] as const;
 
 const ROLE_PROTECTED_PREFIXES = [

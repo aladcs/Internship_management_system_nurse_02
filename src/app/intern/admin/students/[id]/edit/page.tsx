@@ -44,6 +44,17 @@ function formatFileSize(sizeBytes: number | null) {
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function getProfileImageSrc(value: string) {
+  if (value.startsWith("/uploads/student-profile-images/")) {
+    return value.replace(
+      "/uploads/student-profile-images/",
+      "/intern/api/student-profile-images/",
+    );
+  }
+
+  return value;
+}
+
 function getDisplayName(student: {
   firstName: string | null;
   lastName: string | null;
@@ -82,6 +93,8 @@ export default async function InternAdminStudentEditPage({
       id: true,
       internshipStatus: true,
       submittedAt: true,
+      profileImagePath: true,
+      profileImageName: true,
       firstName: true,
       lastName: true,
       prefix: true,
@@ -175,6 +188,13 @@ export default async function InternAdminStudentEditPage({
         meta: metaParts.join(" • "),
       };
     }),
+    profileImage:
+      student.profileImagePath
+        ? {
+            src: getProfileImageSrc(student.profileImagePath),
+            name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
+          }
+        : null,
     initialState: createInitialStudentFormActionState(initialValues),
     mode: "admin",
     backHref: `/intern/admin/students/${student.id}`,

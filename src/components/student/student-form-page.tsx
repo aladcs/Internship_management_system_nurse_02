@@ -20,6 +20,11 @@ type ExistingFileItem = {
   meta: string;
 };
 
+type ProfileImageItem = {
+  src: string;
+  name: string;
+};
+
 type StudentFormServerAction = (
   state: StudentFormActionState,
   formData: FormData,
@@ -57,6 +62,7 @@ export type StudentFormPageProps = {
     hasSubmitted: boolean;
   };
   existingFiles: ExistingFileItem[];
+  profileImage: ProfileImageItem | null;
   initialState: StudentFormActionState;
   mode?: "student" | "admin";
   backHref?: string;
@@ -179,6 +185,15 @@ function CheckIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
       <path d="m4.75 10.25 3.25 3.25 7.25-7.25" />
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-5 w-5">
+      <path d="M6.5 5.25 7.4 3.75h5.2l.9 1.5h1.75A1.75 1.75 0 0 1 17 7v7.25A1.75 1.75 0 0 1 15.25 16h-10.5A1.75 1.75 0 0 1 3 14.25V7a1.75 1.75 0 0 1 1.75-1.75H6.5Z" />
+      <circle cx="10" cy="10.5" r="2.75" />
     </svg>
   );
 }
@@ -431,6 +446,7 @@ export function StudentFormPage({
   currentUser,
   student,
   existingFiles,
+  profileImage,
   initialState,
   mode = "student",
   backHref,
@@ -445,8 +461,11 @@ export function StudentFormPage({
   const [dragActive, setDragActive] = useState(false);
   const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
+  const [removeProfileImage, setRemoveProfileImage] = useState(false);
   const [localFileError, setLocalFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const isAdminMode = mode === "admin";
   const resolvedBackHref = backHref ?? (isAdminMode ? "/intern/admin/students" : "/intern/overview");
   const resolvedBackLabel = backLabel ?? (isAdminMode ? "กลับไปหน้ารายชื่อนักศึกษา" : "กลับไปหน้าภาพรวม");
@@ -457,10 +476,64 @@ export function StudentFormPage({
     : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
   const primaryButtonLabel = isAdminMode || student.hasSubmitted ? "บันทึกการเปลี่ยนแปลง" : "ส่งแบบฟอร์ม";
   const theme = getFormTheme(isAdminMode);
+  const selectedProfileImagePreview = useMemo(
+    () => (selectedProfileImage ? URL.createObjectURL(selectedProfileImage) : null),
+    [selectedProfileImage],
+  );
+  const visibleProfileImage = selectedProfileImagePreview
+    ? {
+        src: selectedProfileImagePreview,
+        name: selectedProfileImage?.name ?? "รูปโปรไฟล์ใหม่",
+      }
+    : removeProfileImage
+      ? null
+      : profileImage;
   const visibleExistingFiles = useMemo(
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
   );
+
+  function handleProfileImageInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+
+    if (!file) {
+      return;
+    }
+
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setLocalFileError("รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setLocalFileError("รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+      event.target.value = "";
+      return;
+    }
+
+    setLocalFileError(null);
+    setRemoveProfileImage(false);
+    setSelectedProfileImage(file);
+  }
+
+  function handleRemoveProfileImage() {
+    setLocalFileError(null);
+    setSelectedProfileImage(null);
+    setRemoveProfileImage(Boolean(profileImage));
+
+    if (profileImageInputRef.current) {
+      profileImageInputRef.current.value = "";
+    }
+  }
+
+  function handlePreviewProfileImage() {
+    if (!visibleProfileImage) {
+      return;
+    }
+
+    window.open(visibleProfileImage.src, "_blank", "noopener,noreferrer");
+  }
 
   function syncInputFiles(files: File[]) {
     const dataTransfer = new DataTransfer();
@@ -723,6 +796,82 @@ export function StudentFormPage({
         </div>
 
         <form action={formAction} className="mt-8 space-y-6 pb-24">
+          <SectionCard
+            icon={<CameraIcon />}
+            title="รูปโปรไฟล์นักศึกษา"
+            description="นักศึกษาหรือผู้ดูแลสามารถอัปโหลด เปลี่ยน ดูตัวอย่าง หรือเอารูปโปรไฟล์ออกได้จากส่วนนี้"
+            accentTileClass={theme.accentTile}
+          >
+            <input
+              ref={profileImageInputRef}
+              id="profileImage"
+              name="profileImage"
+              type="file"
+              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+              className="hidden"
+              onChange={handleProfileImageInputChange}
+            />
+
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[28px] border border-slate-200 bg-white ${theme.accentTile}`}>
+                  {visibleProfileImage ? (
+                    <Image
+                      src={visibleProfileImage.src}
+                      alt={visibleProfileImage.name}
+                      fill
+                      className="object-cover"
+                      unoptimized={
+                        visibleProfileImage.src.startsWith("blob:") ||
+                        visibleProfileImage.src.startsWith("/uploads/")
+                      }
+                    />
+                  ) : (
+                    <span className="text-3xl font-semibold text-white/95">
+                      {student.displayName.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-base font-semibold text-slate-950">{student.displayName}</p>
+                  <p className="text-sm text-slate-600">
+                    {visibleProfileImage ? visibleProfileImage.name : "ยังไม่มีรูปโปรไฟล์"}
+                  </p>
+                  <p className="text-xs leading-5 text-slate-500">รองรับ JPG และ PNG ขนาดไม่เกิน 5 MB</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => profileImageInputRef.current?.click()}
+                  className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-sm font-semibold text-white transition hover:brightness-95 ${theme.primaryButton}`}
+                >
+                  {visibleProfileImage ? "เปลี่ยนรูป" : "เพิ่มรูป"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePreviewProfileImage}
+                  disabled={!visibleProfileImage}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  ดูตัวอย่าง
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveProfileImage}
+                  disabled={!visibleProfileImage}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  ลบรูป
+                </button>
+              </div>
+            </div>
+
+            {removeProfileImage ? <input type="hidden" name="removeProfileImage" value="true" /> : null}
+          </SectionCard>
+
           {hiddenFields.map((field) => (
             <input key={`${field.name}-${field.value}`} type="hidden" name={field.name} value={field.value} />
           ))}

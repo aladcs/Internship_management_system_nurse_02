@@ -24,8 +24,10 @@ const GENDER_VALUES = ["male", "female", "other", "prefer_not_to_say"] as const;
 const EDUCATION_LEVEL_VALUES = ["diploma", "bachelor", "master", "doctorate", "other"] as const;
 const PREFIX_VALUES = ["นาย", "นาง", "นางสาว"] as const;
 const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const ALLOWED_PROFILE_IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
 const MAX_FILE_COUNT = 5;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PROFILE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 function normalizeText(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
@@ -155,6 +157,9 @@ export async function saveStudentFormAction(
       userId: true,
       submittedAt: true,
       internshipStatus: true,
+      profileImagePath: true,
+      profileImageName: true,
+      profileImageMimeType: true,
       files: {
         select: {
           id: true,
@@ -267,6 +272,17 @@ export async function saveStudentFormAction(
   const newFiles = formData
     .getAll("attachments")
     .filter((value): value is File => value instanceof File && value.size > 0);
+  const profileImageEntry = formData.get("profileImage");
+  const newProfileImage = profileImageEntry instanceof File && profileImageEntry.size > 0 ? profileImageEntry : null;
+  const removeProfileImage = String(formData.get("removeProfileImage") ?? "") === "true";
+
+  if (newProfileImage) {
+    if (!ALLOWED_PROFILE_IMAGE_TYPES.has(newProfileImage.type)) {
+      fieldErrors.files = "รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น";
+    } else if (newProfileImage.size > MAX_PROFILE_IMAGE_SIZE_BYTES) {
+      fieldErrors.files = "รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB";
+    }
+  }
 
   const remainingExistingFileCount = student.files.filter((file) => !removeFileIds.includes(file.id)).length;
 
@@ -304,7 +320,17 @@ export async function saveStudentFormAction(
     "student-files",
     student.id,
   );
+  const profileImageDirectory = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    "student-profile-images",
+    student.id,
+  );
   const filesToDelete = student.files.filter((file) => removeFileIds.includes(file.id));
+  const profileImageToDelete = student.profileImagePath
+    ? path.join(process.cwd(), "public", student.profileImagePath.replace(/^\//, ""))
+    : null;
   const writtenFiles: Array<{
     absolutePath: string;
     fileName: string;
@@ -312,10 +338,34 @@ export async function saveStudentFormAction(
     mimeType: string | null;
     sizeBytes: number;
   }> = [];
+  let writtenProfileImage: {
+    absolutePath: string;
+    fileName: string;
+    filePath: string;
+    mimeType: string | null;
+  } | null = null;
 
   try {
     if (newFiles.length > 0) {
       await mkdir(uploadedFileDirectory, { recursive: true });
+    }
+
+    if (newProfileImage) {
+      await mkdir(profileImageDirectory, { recursive: true });
+      const safeName = sanitizeFileName(newProfileImage.name || "profile-image");
+      const storedFileName = `${Date.now()}-${randomUUID()}-${safeName}`;
+      const absolutePath = path.join(profileImageDirectory, storedFileName);
+      const publicPath = `/uploads/student-profile-images/${student.id}/${storedFileName}`;
+      const bytes = Buffer.from(await newProfileImage.arrayBuffer());
+
+      await writeFile(absolutePath, bytes);
+
+      writtenProfileImage = {
+        absolutePath,
+        fileName: newProfileImage.name,
+        filePath: publicPath,
+        mimeType: newProfileImage.type || null,
+      };
     }
 
     for (const file of newFiles) {
@@ -351,6 +401,21 @@ export async function saveStudentFormAction(
           id: student.id,
         },
         data: {
+          profileImagePath: writtenProfileImage
+            ? writtenProfileImage.filePath
+            : removeProfileImage
+              ? null
+              : undefined,
+          profileImageName: writtenProfileImage
+            ? writtenProfileImage.fileName
+            : removeProfileImage
+              ? null
+              : undefined,
+          profileImageMimeType: writtenProfileImage
+            ? writtenProfileImage.mimeType
+            : removeProfileImage
+              ? null
+              : undefined,
           prefix: values.prefix || null,
           firstName: values.firstName,
           lastName: values.lastName,
@@ -448,6 +513,14 @@ export async function saveStudentFormAction(
         }
       }),
     );
+
+    if ((writtenProfileImage || removeProfileImage) && profileImageToDelete) {
+      try {
+        await unlink(profileImageToDelete);
+      } catch {
+        // Ignore missing old profile image file.
+      }
+    }
   } catch {
     await Promise.all(
       writtenFiles.map(async (file) => {
@@ -458,6 +531,14 @@ export async function saveStudentFormAction(
         }
       }),
     );
+
+    if (writtenProfileImage) {
+      try {
+        await unlink(writtenProfileImage.absolutePath);
+      } catch {
+        // Ignore cleanup failure for profile image.
+      }
+    }
 
     return {
       status: "error",
