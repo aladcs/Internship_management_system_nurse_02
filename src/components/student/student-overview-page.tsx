@@ -14,6 +14,7 @@ type SummaryItem = {
 type FileItem = {
   id: string;
   name: string;
+  href: string;
   meta: string;
 };
 
@@ -450,7 +451,12 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               {student.files.length > 0 ? (
                 <div className="mt-6 space-y-3">
                   {student.files.map((file) => (
-                    <div key={file.id} className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                    <a
+                      key={file.id}
+                      href={file.href}
+                      download={file.name}
+                      className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-slate-100"
+                    >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-(--color-student)">
                         <FileIcon />
                       </div>
@@ -458,7 +464,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                         <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
                         <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               ) : (

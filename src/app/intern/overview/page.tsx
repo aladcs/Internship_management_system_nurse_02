@@ -5,6 +5,7 @@ import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
+import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
 import { clearSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
@@ -185,6 +186,7 @@ export default async function InternOverviewPage() {
         select: {
           id: true,
           fileName: true,
+          filePath: true,
           mimeType: true,
           sizeBytes: true,
           createdAt: true,
@@ -299,6 +301,7 @@ export default async function InternOverviewPage() {
         return {
           id: file.id,
           name: file.fileName,
+          href: getStudentAttachmentDownloadHref(file.filePath),
           meta: metaParts.join(" • "),
         };
       }),

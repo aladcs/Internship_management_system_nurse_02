@@ -8,6 +8,10 @@ import { StudentFormPage, type StudentFormPageProps } from "@/components/student
 import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import {
+  getStudentAttachmentDownloadHref,
+  getStudentProfileImageSrc,
+} from "@/lib/student-file-path";
 
 export const metadata: Metadata = {
   title: "แบบฟอร์มนักศึกษา | ระบบจัดการฝึกงาน",
@@ -40,17 +44,6 @@ function formatFileSize(sizeBytes: number | null) {
   }
 
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getProfileImageSrc(value: string) {
-  if (value.startsWith("/uploads/student-profile-images/")) {
-    return value.replace(
-      "/uploads/student-profile-images/",
-      "/intern/api/student-profile-images/",
-    );
-  }
-
-  return value;
 }
 
 export default async function InternFormPage() {
@@ -108,6 +101,7 @@ export default async function InternFormPage() {
         select: {
           id: true,
           fileName: true,
+          filePath: true,
           mimeType: true,
           sizeBytes: true,
           createdAt: true,
@@ -171,13 +165,14 @@ export default async function InternFormPage() {
       return {
         id: file.id,
         name: file.fileName,
+          href: getStudentAttachmentDownloadHref(file.filePath),
         meta: metaParts.join(" • "),
       };
     }),
     profileImage:
       student.profileImagePath
         ? {
-            src: getProfileImageSrc(student.profileImagePath),
+            src: getStudentProfileImageSrc(student.profileImagePath),
             name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
           }
         : null,

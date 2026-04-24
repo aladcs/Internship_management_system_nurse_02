@@ -10,6 +10,7 @@ import {
   getNextInternshipStatus,
 } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
+import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
 
 export const metadata: Metadata = {
   title: "รายละเอียดนักศึกษา | ระบบจัดการฝึกงาน",
@@ -285,7 +286,7 @@ export default async function InternAdminStudentDetailPage({
         return {
           id: file.id,
           name: file.fileName,
-          href: file.filePath,
+          href: getStudentAttachmentDownloadHref(file.filePath),
           meta: metaParts.join(" • "),
         };
       }),

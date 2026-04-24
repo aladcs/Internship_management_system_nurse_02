@@ -577,8 +577,7 @@ export function AdminStudentDetailPage({
                     <a
                       key={file.id}
                       href={file.href}
-                      target="_blank"
-                      rel="noreferrer"
+                      download={file.name}
                       className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-slate-100"
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">

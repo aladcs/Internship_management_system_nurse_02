@@ -18,6 +18,7 @@ const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"
 type ExistingFileItem = {
   id: string;
   name: string;
+  href: string;
   meta: string;
 };
 
@@ -536,16 +537,16 @@ export function StudentFormPage({
 
   function validateIncomingFiles(incomingFiles: File[], queuedFiles: File[]) {
     if (visibleExistingFiles.length + queuedFiles.length + incomingFiles.length > MAX_FILE_COUNT) {
-      return `You can keep up to ${MAX_FILE_COUNT} files in total.`;
+      return `คุณสามารถเก็บไฟล์ได้รวมสูงสุด ${MAX_FILE_COUNT} ไฟล์`;
     }
 
     for (const file of incomingFiles) {
       if (!ALLOWED_FILE_TYPES.has(file.type)) {
-        return "Only PDF, JPG, and PNG files are allowed.";
+        return "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น";
       }
 
       if (file.size > MAX_FILE_SIZE_BYTES) {
-        return "Each file must be 5 MB or smaller.";
+        return "แต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
       }
     }
 
@@ -1009,17 +1010,23 @@ export function StudentFormPage({
                   {visibleExistingFiles.map((file) => (
                     <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                       <div className="flex items-start gap-3">
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
-                          <FileIcon />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
-                          <p className="mt-2 hidden items-center gap-1 text-xs font-medium text-emerald-600 sm:inline-flex">
-                            <CheckIcon />
-                            อัปโหลดแล้ว
-                          </p>
-                        </div>
+                        <a
+                          href={file.href}
+                          download={file.name}
+                          className="flex items-start gap-3 rounded-2xl transition hover:opacity-85"
+                        >
+                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                            <FileIcon />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+                            <p className="mt-2 hidden items-center gap-1 text-xs font-medium text-emerald-600 sm:inline-flex">
+                              <CheckIcon />
+                              อัปโหลดแล้ว กดเพื่อดาวน์โหลด
+                            </p>
+                          </div>
+                        </a>
                       </div>
                       <button
                         type="button"

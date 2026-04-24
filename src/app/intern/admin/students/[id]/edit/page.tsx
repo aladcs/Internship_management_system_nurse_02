@@ -10,6 +10,10 @@ import { StudentFormPage, type StudentFormPageProps } from "@/components/student
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import {
+  getStudentAttachmentDownloadHref,
+  getStudentProfileImageSrc,
+} from "@/lib/student-file-path";
 
 export const metadata: Metadata = {
   title: "แก้ไขข้อมูลนักศึกษา | ระบบจัดการฝึกงาน",
@@ -42,17 +46,6 @@ function formatFileSize(sizeBytes: number | null) {
   }
 
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function getProfileImageSrc(value: string) {
-  if (value.startsWith("/uploads/student-profile-images/")) {
-    return value.replace(
-      "/uploads/student-profile-images/",
-      "/intern/api/student-profile-images/",
-    );
-  }
-
-  return value;
 }
 
 function getDisplayName(student: {
@@ -126,6 +119,7 @@ export default async function InternAdminStudentEditPage({
         select: {
           id: true,
           fileName: true,
+          filePath: true,
           mimeType: true,
           sizeBytes: true,
           createdAt: true,
@@ -185,13 +179,14 @@ export default async function InternAdminStudentEditPage({
       return {
         id: file.id,
         name: file.fileName,
+          href: getStudentAttachmentDownloadHref(file.filePath),
         meta: metaParts.join(" • "),
       };
     }),
     profileImage:
       student.profileImagePath
         ? {
-            src: getProfileImageSrc(student.profileImagePath),
+            src: getStudentProfileImageSrc(student.profileImagePath),
             name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
           }
         : null,
