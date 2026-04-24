@@ -18,6 +18,12 @@ type FileItem = {
   meta: string;
 };
 
+type ProfileImageItem = {
+  src: string;
+  name: string;
+  downloadHref: string;
+};
+
 export type StudentOverviewPageProps = {
   currentUser: {
     email: string;
@@ -33,6 +39,7 @@ export type StudentOverviewPageProps = {
     canEdit: boolean;
     hasStartedForm: boolean;
     completionNote: string | null;
+    profileImage: ProfileImageItem | null;
     personal: SummaryItem[];
     internship: SummaryItem[];
     education: SummaryItem[];
@@ -83,6 +90,15 @@ function FileIcon() {
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-5 w-5">
       <path d="M6.5 2.75h5.25L15.5 6.5v8.75A2.25 2.25 0 0 1 13.25 17.5h-6.5A2.25 2.25 0 0 1 4.5 15.25v-10A2.5 2.5 0 0 1 7 2.75Z" />
       <path d="M11.5 2.75V6.5h3.75" />
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-5 w-5">
+      <path d="M6.5 5.25 7.4 3.75h5.2l.9 1.5h1.75A1.75 1.75 0 0 1 17 7v7.25A1.75 1.75 0 0 1 15.25 16h-10.5A1.75 1.75 0 0 1 3 14.25V7a1.75 1.75 0 0 1 1.75-1.75H6.5Z" />
+      <circle cx="10" cy="10.5" r="2.75" />
     </svg>
   );
 }
@@ -435,6 +451,60 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
           </div>
 
           <div className="space-y-6">
+            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">รูปโปรไฟล์</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    ดาวน์โหลดรูปโปรไฟล์ล่าสุดของคุณหรือกลับไปแก้ไขได้จากหน้าฟอร์ม
+                  </p>
+                </div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-(--color-student)">
+                  <CameraIcon />
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[24px] border border-orange-100 bg-student/10 text-(--color-student)">
+                    {student.profileImage ? (
+                      <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
+                    ) : (
+                      <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {student.profileImage ? "ใช้รูปนี้สำหรับโปรไฟล์นักศึกษาในระบบ" : "เพิ่มรูปโปรไฟล์ได้จากหน้าแบบฟอร์ม"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {student.profileImage ? (
+                    <a
+                      href={student.profileImage.downloadHref}
+                      download={student.profileImage.name}
+                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      ดาวน์โหลดรูป
+                    </a>
+                  ) : null}
+                  {student.canEdit ? (
+                    <Link
+                      href="/intern/form"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-student) px-4 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
+                    >
+                      จัดการรูปโปรไฟล์
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+
             <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>

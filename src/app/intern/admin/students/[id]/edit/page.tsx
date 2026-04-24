@@ -12,6 +12,7 @@ import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import {
   getStudentAttachmentDownloadHref,
+  getStudentProfileImageDownloadHref,
   getStudentProfileImageSrc,
 } from "@/lib/student-file-path";
 
@@ -188,6 +189,7 @@ export default async function InternAdminStudentEditPage({
         ? {
             src: getStudentProfileImageSrc(student.profileImagePath),
             name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
+            downloadHref: getStudentProfileImageDownloadHref(student.profileImagePath),
           }
         : null,
     initialState: createInitialStudentFormActionState(initialValues),

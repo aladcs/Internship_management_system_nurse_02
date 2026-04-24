@@ -19,6 +19,10 @@ import {
 import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import {
+  getPrivateStorageRoot,
+  resolveStoredAssetAbsolutePath,
+} from "@/lib/student-file-path";
 
 const GENDER_VALUES = ["male", "female", "other", "prefer_not_to_say"] as const;
 const EDUCATION_LEVEL_VALUES = ["diploma", "bachelor", "master", "doctorate", "other"] as const;
@@ -317,23 +321,20 @@ export async function saveStudentFormAction(
 
   const now = new Date();
   const fullName = [values.firstName, values.lastName].join(" ").trim();
+  const privateStorageRoot = getPrivateStorageRoot();
   const uploadedFileDirectory = path.join(
-    process.cwd(),
-    "public",
-    "uploads",
+    privateStorageRoot,
     "student-files",
     student.id,
   );
   const profileImageDirectory = path.join(
-    process.cwd(),
-    "public",
-    "uploads",
+    privateStorageRoot,
     "student-profile-images",
     student.id,
   );
   const filesToDelete = student.files.filter((file) => removeFileIds.includes(file.id));
   const profileImageToDelete = student.profileImagePath
-    ? path.join(process.cwd(), "public", student.profileImagePath.replace(/^\//, ""))
+    ? resolveStoredAssetAbsolutePath(student.profileImagePath)
     : null;
   const writtenFiles: Array<{
     absolutePath: string;
@@ -359,7 +360,7 @@ export async function saveStudentFormAction(
       const safeName = sanitizeFileName(newProfileImage.name || "profile-image");
       const storedFileName = `${Date.now()}-${randomUUID()}-${safeName}`;
       const absolutePath = path.join(profileImageDirectory, storedFileName);
-      const publicPath = `/uploads/student-profile-images/${student.id}/${storedFileName}`;
+      const storedPath = `/storage/student-profile-images/${student.id}/${storedFileName}`;
       const bytes = Buffer.from(await newProfileImage.arrayBuffer());
 
       await writeFile(absolutePath, bytes);
@@ -367,7 +368,7 @@ export async function saveStudentFormAction(
       writtenProfileImage = {
         absolutePath,
         fileName: newProfileImage.name,
-        filePath: publicPath,
+        filePath: storedPath,
         mimeType: newProfileImage.type || null,
       };
     }
@@ -376,7 +377,7 @@ export async function saveStudentFormAction(
       const safeName = sanitizeFileName(file.name || "attachment");
       const storedFileName = `${Date.now()}-${randomUUID()}-${safeName}`;
       const absolutePath = path.join(uploadedFileDirectory, storedFileName);
-      const publicPath = `/uploads/student-files/${student.id}/${storedFileName}`;
+      const storedPath = `/storage/student-files/${student.id}/${storedFileName}`;
       const bytes = Buffer.from(await file.arrayBuffer());
 
       await writeFile(absolutePath, bytes);
@@ -384,7 +385,7 @@ export async function saveStudentFormAction(
       writtenFiles.push({
         absolutePath,
         fileName: file.name,
-        filePath: publicPath,
+        filePath: storedPath,
         mimeType: file.type || null,
         sizeBytes: file.size,
       });
@@ -508,7 +509,11 @@ export async function saveStudentFormAction(
 
     await Promise.all(
       filesToDelete.map(async (file) => {
-        const absolutePath = path.join(process.cwd(), "public", file.filePath.replace(/^\//, ""));
+        const absolutePath = resolveStoredAssetAbsolutePath(file.filePath);
+
+        if (!absolutePath) {
+          return;
+        }
 
         try {
           await unlink(absolutePath);

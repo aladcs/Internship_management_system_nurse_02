@@ -25,6 +25,7 @@ type ExistingFileItem = {
 type ProfileImageItem = {
   src: string;
   name: string;
+  downloadHref: string;
 };
 
 type StudentFormServerAction = (
@@ -813,7 +814,8 @@ export function StudentFormPage({
                       className="object-cover"
                       unoptimized={
                         visibleProfileImage.src.startsWith("blob:") ||
-                        visibleProfileImage.src.startsWith("/uploads/")
+                        visibleProfileImage.src.startsWith("/uploads/") ||
+                        visibleProfileImage.src.startsWith("/intern/api/")
                       }
                     />
                   ) : (
@@ -848,6 +850,14 @@ export function StudentFormPage({
                 >
                   ดูตัวอย่าง
                 </button>
+                <a
+                  href={selectedProfileImagePreview ? selectedProfileImagePreview : profileImage?.downloadHref ?? "#"}
+                  download={visibleProfileImage?.name}
+                  aria-disabled={!visibleProfileImage}
+                  className={`inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${visibleProfileImage ? "" : "pointer-events-none opacity-60"}`}
+                >
+                  ดาวน์โหลดรูป
+                </a>
                 <button
                   type="button"
                   onClick={handleRemoveProfileImage}

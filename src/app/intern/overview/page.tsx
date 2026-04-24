@@ -7,6 +7,10 @@ import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
 import { clearSession } from "@/lib/auth/session";
+import {
+  getStudentProfileImageDownloadHref,
+  getStudentProfileImageSrc,
+} from "@/lib/student-file-path";
 
 export const metadata: Metadata = {
   title: "ภาพรวมของนักศึกษา | ระบบจัดการฝึกงาน",
@@ -163,6 +167,8 @@ export default async function InternOverviewPage() {
       submittedAt: true,
       lastStudentEditAt: true,
       updatedAt: true,
+      profileImagePath: true,
+      profileImageName: true,
       user: {
         select: {
           email: true,
@@ -242,6 +248,14 @@ export default async function InternOverviewPage() {
       completionNote:
         student.internshipStatus === "completed"
           ? "ข้อมูลฝึกงานของคุณเสร็จสมบูรณ์และเป็นแบบอ่านอย่างเดียวแล้ว"
+          : null,
+      profileImage:
+        student.profileImagePath
+          ? {
+              src: getStudentProfileImageSrc(student.profileImagePath),
+              name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
+              downloadHref: getStudentProfileImageDownloadHref(student.profileImagePath),
+            }
           : null,
       personal: [
         { label: "ชื่อ - นามสกุล", value: getDisplayName(student) },

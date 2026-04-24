@@ -10,7 +10,11 @@ import {
   getNextInternshipStatus,
 } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
-import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
+import {
+  getStudentAttachmentDownloadHref,
+  getStudentProfileImageDownloadHref,
+  getStudentProfileImageSrc,
+} from "@/lib/student-file-path";
 
 export const metadata: Metadata = {
   title: "รายละเอียดนักศึกษา | ระบบจัดการฝึกงาน",
@@ -159,6 +163,8 @@ export default async function InternAdminStudentDetailPage({
         submittedAt: true,
         lastStudentEditAt: true,
         updatedAt: true,
+        profileImagePath: true,
+        profileImageName: true,
         user: {
           select: {
             email: true,
@@ -223,6 +229,14 @@ export default async function InternAdminStudentDetailPage({
           submittedAt: student.submittedAt,
         }),
       },
+      profileImage:
+        student.profileImagePath
+          ? {
+              src: getStudentProfileImageSrc(student.profileImagePath),
+              name: student.profileImageName ?? "รูปโปรไฟล์นักศึกษา",
+              downloadHref: getStudentProfileImageDownloadHref(student.profileImagePath),
+            }
+          : null,
       personal: [
         { label: "ชื่อ - นามสกุล", value: getDisplayName(student) },
         { label: "อีเมล", value: student.user.email },
