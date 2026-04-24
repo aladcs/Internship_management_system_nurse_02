@@ -13,6 +13,7 @@ import {
   initialDeleteAdminActionState,
   initialSaveAdminActionState,
 } from "@/app/intern/admins/action-state";
+import { AccountMenu } from "@/components/auth/account-menu";
 
 type AdminListPageProps = {
   admins: AdminListItem[];
@@ -476,20 +477,13 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">
-                {currentUser.name ?? "Super Admin"}
-              </p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">ซูเปอร์แอดมิน</p>
-            </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                ออกจากระบบ
-              </button>
-            </form>
+            <AccountMenu
+              email={currentUser.email}
+              logoutAction={logoutAction}
+              name={currentUser.name ?? "Super Admin"}
+              roleLabel="ซูเปอร์แอดมิน"
+              tone="admin"
+            />
           </div>
 
           <button
@@ -533,6 +527,12 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 aria-current="page"
               >
                 รายชื่อผู้ดูแลระบบ
+              </a>
+              <a
+                href="/intern/account/password"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
+              >
+                เปลี่ยนรหัสผ่าน
               </a>
             </nav>
 

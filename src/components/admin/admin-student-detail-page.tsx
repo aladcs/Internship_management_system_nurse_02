@@ -16,6 +16,7 @@ import {
   AdminMobileNotificationsCard,
   AdminNotificationMenu,
 } from "@/components/admin/admin-notification-menu";
+import { AccountMenu } from "@/components/auth/account-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 
@@ -355,18 +356,13 @@ export function AdminStudentDetailPage({
 
           <div className="hidden items-center gap-3 md:flex">
             <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">ผู้ดูแล</p>
-            </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                ออกจากระบบ
-              </button>
-            </form>
+            <AccountMenu
+              email={currentUser.email}
+              logoutAction={logoutAction}
+              name={currentUser.name ?? "ผู้ดูแล"}
+              roleLabel="ผู้ดูแล"
+              tone="admin"
+            />
           </div>
 
           <button
@@ -415,6 +411,13 @@ export function AdminStudentDetailPage({
                 onClick={() => setMobileMenuOpen(false)}
               >
                 รายชื่อนักศึกษา
+              <Link
+                href="/intern/account/password"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                เปลี่ยนรหัสผ่าน
+              </Link>
               </Link>
             </nav>
 

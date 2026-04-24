@@ -9,6 +9,7 @@ import {
   logoutAction as defaultLogoutAction,
   saveStudentFormAction as defaultSaveStudentFormAction,
 } from "@/app/intern/form/actions";
+import { AccountMenu } from "@/components/auth/account-menu";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 
 const MAX_FILE_COUNT = 5;
@@ -689,18 +690,13 @@ export function StudentFormPage({
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">{isAdminMode ? (currentUser.name ?? "ผู้ดูแล") : student.displayName}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{isAdminMode ? "ผู้ดูแล" : "นักศึกษา"}</p>
-            </div>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                ออกจากระบบ
-              </button>
-            </form>
+            <AccountMenu
+              email={isAdminMode ? currentUser.email : student.email}
+              logoutAction={logoutAction}
+              name={isAdminMode ? (currentUser.name ?? "ผู้ดูแล") : student.displayName}
+              roleLabel={isAdminMode ? "ผู้ดูแล" : "นักศึกษา"}
+              tone={isAdminMode ? "admin" : "student"}
+            />
           </div>
 
           <button
@@ -752,6 +748,13 @@ export function StudentFormPage({
                   </Link>
                 </>
               )}
+              <Link
+                href="/intern/account/password"
+                className={`block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${isAdminMode ? "hover:bg-admin/6 hover:text-(--color-admin)" : "hover:bg-orange-50 hover:text-orange-700"}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                เปลี่ยนรหัสผ่าน
+              </Link>
             </nav>
 
             <div className="mt-auto pt-8">
