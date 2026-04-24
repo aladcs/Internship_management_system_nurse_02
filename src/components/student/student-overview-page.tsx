@@ -27,6 +27,7 @@ export type StudentOverviewPageProps = {
     email: string;
     status: "pending" | "in_progress" | "completed";
     statusLabel: string;
+    statusDescription: string;
     canEdit: boolean;
     hasStartedForm: boolean;
     completionNote: string | null;
@@ -41,11 +42,10 @@ export type StudentOverviewPageProps = {
   };
 };
 
-type TimelineStep = {
-  id: string;
-  title: string;
+type StatusDefinition = {
+  id: StudentOverviewPageProps["student"]["status"];
+  label: string;
   description: string;
-  tone: "complete" | "active" | "upcoming";
 };
 
 function MenuIcon() {
@@ -138,87 +138,35 @@ function getStatusClasses(status: StudentOverviewPageProps["student"]["status"])
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
 }
 
-function getTimelineSteps(student: StudentOverviewPageProps["student"]): TimelineStep[] {
-  if (student.status === "completed") {
-    return [
-      {
-        id: "form",
-        title: "ส่งแบบฟอร์มแล้ว",
-        description: "ข้อมูลการฝึกงานของคุณครบถ้วนแล้ว",
-        tone: "complete",
-      },
-      {
-        id: "review",
-        title: "เจ้าหน้าที่ตรวจสอบแล้ว",
-        description: "ข้อมูลที่คุณส่งได้รับการตรวจสอบเรียบร้อยแล้ว",
-        tone: "complete",
-      },
-      {
-        id: "done",
-        title: "เสร็จสิ้น",
-        description: "บันทึกนี้ถูกล็อกไว้สำหรับอ้างอิง",
-        tone: "complete",
-      },
-    ];
-  }
-
-  if (student.status === "in_progress") {
-    return [
-      {
-        id: "form",
-        title: "ส่งแบบฟอร์มแล้ว",
-        description: "ข้อมูลการฝึกงานของคุณถูกบันทึกไว้แล้ว",
-        tone: "complete",
-      },
-      {
-        id: "review",
-        title: "กำลังติดตามโดยเจ้าหน้าที่",
-        description: "ข้อมูลของคุณกำลังอยู่ระหว่างการติดตามและอัปเดต",
-        tone: "active",
-      },
-      {
-        id: "done",
-        title: "เสร็จสิ้น",
-        description: "ขั้นตอนนี้จะสมบูรณ์เมื่อการฝึกงานสิ้นสุดลง",
-        tone: "upcoming",
-      },
-    ];
-  }
-
+function getStatusDefinitions(): StatusDefinition[] {
   return [
     {
-      id: "form",
-      title: student.hasStartedForm ? "แก้ไขข้อมูล" : "เริ่มกรอกแบบฟอร์ม",
-      description: student.hasStartedForm
-        ? "ดำเนินการแก้ไขข้อมูลการฝึกงานของคุณต่อ"
-        : "เริ่มกรอกรายละเอียดการฝึกงานของคุณ",
-      tone: "active",
+      id: "pending",
+      label: "pending",
+      description: "ส่งข้อมูลแล้วและรอให้แอดมินตรวจสอบ คุณยังกลับไปแก้ไขแบบฟอร์มได้",
     },
     {
-      id: "review",
-      title: "รอตรวจสอบ",
-      description: "เจ้าหน้าที่จะเริ่มตรวจสอบหลังจากคุณส่งแบบฟอร์ม",
-      tone: "upcoming",
+      id: "in_progress",
+      label: "in_progress",
+      description: "ข้อมูลอยู่ระหว่างการติดตามหรือการฝึกงานกำลังดำเนินอยู่ และยังแก้ไขข้อมูลได้",
     },
     {
-      id: "done",
-      title: "เสร็จสิ้น",
-      description: "ข้อมูลที่เสร็จสิ้นแล้วจะกลายเป็นแบบอ่านอย่างเดียว",
-      tone: "upcoming",
+      id: "completed",
+      label: "completed",
+      description: "ข้อมูลฝึกงานเสร็จสิ้นแล้วและแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา",
     },
   ];
 }
 
-function getStepClasses(tone: TimelineStep["tone"]) {
-  if (tone === "complete") {
-    return "border-white/70 bg-white text-slate-900 shadow-lg shadow-orange-950/8";
+function getStatusCardClasses(
+  definitionId: StatusDefinition["id"],
+  currentStatus: StudentOverviewPageProps["student"]["status"],
+) {
+  if (definitionId === currentStatus) {
+    return "border-orange-200 bg-white text-slate-900 shadow-lg shadow-orange-950/8 ring-1 ring-orange-100";
   }
 
-  if (tone === "active") {
-    return "border-orange-200 bg-orange-50/90 text-slate-900 shadow-lg shadow-orange-950/8";
-  }
-
-  return "border-dashed border-orange-200/80 bg-white/55 text-slate-500";
+  return "border-white/70 bg-white/65 text-slate-600";
 }
 
 function SummaryCard({
@@ -261,7 +209,7 @@ function SummaryCard({
 export function StudentOverviewPage({ currentUser, student }: StudentOverviewPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const ctaLabel = student.hasStartedForm ? "แก้ไขแบบฟอร์ม" : "กรอกแบบฟอร์ม";
-  const timelineSteps = getTimelineSteps(student);
+  const statusDefinitions = getStatusDefinitions();
 
   return (
     <div className="min-h-screen bg-[#fff7f1] text-slate-950">
@@ -396,6 +344,11 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   </span>
                 ) : null}
               </div>
+
+              <div className="rounded-[28px] border border-white/70 bg-white/70 p-4 text-sm text-slate-700 shadow-lg shadow-orange-950/8 sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">ความหมายของสถานะปัจจุบัน</p>
+                <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base">{student.statusDescription}</p>
+              </div>
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-orange-950/8 backdrop-blur sm:p-5">
@@ -430,19 +383,26 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4">
-            {timelineSteps.map((step, index) => (
-              <div key={step.id} className={`rounded-3xl border p-4 ${getStepClasses(step.tone)}`}>
+          <div className="mt-8 grid gap-3 md:grid-cols-3 sm:gap-4">
+            {statusDefinitions.map((definition) => (
+              <div
+                key={definition.id}
+                className={`rounded-3xl border p-4 sm:p-5 ${getStatusCardClasses(definition.id, student.status)}`}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    ขั้นตอนที่ {index + 1}
+                    Internship status
                   </span>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-xs font-semibold text-slate-700 ring-1 ring-black/5">
-                    {index + 1}
-                  </span>
+                  {definition.id === student.status ? (
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusClasses(student.status)}`}>
+                      Current
+                    </span>
+                  ) : null}
                 </div>
-                <p className="mt-4 text-sm font-semibold text-current sm:text-base">{step.title}</p>
-                <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{step.description}</p>
+                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.12em] text-current sm:text-base">
+                  {definition.label}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{definition.description}</p>
               </div>
             ))}
           </div>

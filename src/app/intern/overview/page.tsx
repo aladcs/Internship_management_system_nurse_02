@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components/student/student-overview-page";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
@@ -15,14 +15,26 @@ const EMPTY_VALUE = "ยังไม่ได้ระบุ";
 
 function formatStatusLabel(status: StudentOverviewPageProps["student"]["status"]) {
   if (status === "in_progress") {
-    return "กำลังดำเนินการ";
+    return "กำลังติดตาม";
   }
 
   if (status === "pending") {
-    return "รอดำเนินการ";
+    return "รอตรวจสอบ";
   }
 
   return "เสร็จสิ้น";
+}
+
+function formatStatusDescription(status: StudentOverviewPageProps["student"]["status"]) {
+  if (status === "in_progress") {
+    return "ข้อมูลของคุณอยู่ระหว่างการติดตามหรือการฝึกงานกำลังดำเนินอยู่ และยังสามารถกลับไปแก้ไขแบบฟอร์มได้";
+  }
+
+  if (status === "pending") {
+    return "คุณได้ส่งข้อมูลแล้วและกำลังรอให้แอดมินตรวจสอบ โดยยังสามารถกลับไปแก้ไขข้อมูลของตัวเองได้";
+  }
+
+  return "ข้อมูลฝึกงานของคุณเสร็จสิ้นแล้ว และแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา";
 }
 
 function formatDate(value: Date | null | undefined) {
@@ -229,6 +241,7 @@ export default async function InternOverviewPage() {
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatStatusLabel(student.internshipStatus),
+      statusDescription: formatStatusDescription(student.internshipStatus),
       canEdit,
       hasStartedForm,
       completionNote:
