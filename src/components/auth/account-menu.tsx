@@ -8,7 +8,7 @@ type LogoutServerAction = () => Promise<void>;
 type AccountMenuProps = {
   email: string;
   logoutAction: LogoutServerAction;
-  name: string;
+  name: string | null;
   roleLabel: string;
   tone: "student" | "admin";
 };
@@ -26,6 +26,15 @@ function LockIcon() {
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
       <rect x="4.25" y="8.5" width="11.5" height="8" rx="2.25" />
       <path d="M6.75 8.5V6.75a3.25 3.25 0 1 1 6.5 0V8.5" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
+      <circle cx="10" cy="6.25" r="2.75" />
+      <path d="M4.5 16c1.16-2.73 3.03-4.1 5.5-4.1 2.47 0 4.34 1.37 5.5 4.1" />
     </svg>
   );
 }
@@ -49,6 +58,7 @@ export function AccountMenu({
 }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const displayName = name?.trim() || email;
 
   useEffect(() => {
     if (!open) {
@@ -101,7 +111,7 @@ export function AccountMenu({
         aria-expanded={open}
       >
         <div>
-          <p className="text-sm font-semibold text-slate-900">{name}</p>
+          <p className="text-sm font-semibold text-slate-900">{displayName}</p>
           <p className={`text-xs uppercase tracking-[0.2em] text-slate-500 ${accentClasses.badge}`}>
             {roleLabel}
           </p>
@@ -114,11 +124,20 @@ export function AccountMenu({
       {open ? (
         <div className="absolute right-0 top-[calc(100%+0.75rem)] z-40 w-72 rounded-[28px] border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-950/12">
           <div className="rounded-3xl bg-slate-50 px-4 py-3">
-            <p className="text-sm font-semibold text-slate-900">{name}</p>
+            <p className="text-sm font-semibold text-slate-900">{displayName}</p>
             <p className="mt-1 break-all text-xs text-slate-500">{email}</p>
           </div>
 
           <div className="mt-2 space-y-1">
+            <Link
+              href="/intern/account/name"
+              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${accentClasses.item}`}
+              onClick={() => setOpen(false)}
+            >
+              <ProfileIcon />
+              {name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
+            </Link>
+
             <Link
               href="/intern/account/password"
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${accentClasses.item}`}

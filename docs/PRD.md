@@ -180,11 +180,11 @@ Internship Management System คือระบบเว็บสำหรับ
 4. กด Create Admin
 5. กรอกข้อมูลอย่างน้อย:
 
-   * name
    * email
 6. ระบบ generate password
 7. บันทึก admin ลงฐานข้อมูล
-8. Super Admin สามารถ edit หรือ delete admin ได้
+8. เมื่อ admin เข้าสู่ระบบครั้งแรก สามารถตั้งชื่อที่แสดงได้จากเมนูบัญชีผู้ใช้
+9. Super Admin สามารถ edit หรือ delete admin ได้
 
 ข้อจำกัด:
 
@@ -325,7 +325,6 @@ Super Admin only
 
 Fields ขั้นต่ำ:
 
-* name
 * email
 
 System behavior:

@@ -310,7 +310,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
   const title = mode === "create" ? "สร้างผู้ดูแลระบบ" : "แก้ไขผู้ดูแลระบบ";
   const description =
     mode === "create"
-      ? "เพิ่มบัญชีผู้ดูแลระบบใหม่ ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
+      ? "เพิ่มบัญชีผู้ดูแลระบบใหม่ด้วยอีเมล ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก และผู้ดูแลสามารถตั้งชื่อเองได้ภายหลัง"
       : "อัปเดตข้อมูลบัญชีผู้ดูแลระบบที่เลือก";
 
   return (
@@ -319,21 +319,23 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
         <input type="hidden" name="intent" value={mode} />
         <input type="hidden" name="adminId" value={admin?.id ?? ""} />
 
-        <div className="space-y-2">
-          <label htmlFor="admin-name" className="text-sm font-medium text-slate-700">
-            ชื่อ
-          </label>
-          <input
-            id="admin-name"
-            name="name"
-            defaultValue={state.values.name}
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
-            placeholder="กรอกชื่อผู้ดูแลระบบ"
-          />
-          {state.fieldErrors.name ? (
-            <p className="text-sm text-red-600">{state.fieldErrors.name}</p>
-          ) : null}
-        </div>
+        {mode === "edit" ? (
+          <div className="space-y-2">
+            <label htmlFor="admin-name" className="text-sm font-medium text-slate-700">
+              ชื่อ
+            </label>
+            <input
+              id="admin-name"
+              name="name"
+              defaultValue={state.values.name}
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
+              placeholder="กรอกชื่อผู้ดูแลระบบ"
+            />
+            {state.fieldErrors.name ? (
+              <p className="text-sm text-red-600">{state.fieldErrors.name}</p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           <label htmlFor="admin-email" className="text-sm font-medium text-slate-700">
@@ -349,6 +351,11 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
           />
           {state.fieldErrors.email ? (
             <p className="text-sm text-red-600">{state.fieldErrors.email}</p>
+          ) : null}
+          {mode === "create" ? (
+            <p className="text-sm leading-6 text-slate-500">
+              ระบบจะสร้างบัญชีจากอีเมลนี้ก่อน และผู้ดูแลสามารถตั้งชื่อที่แสดงเองได้หลังเข้าสู่ระบบครั้งแรก
+            </p>
           ) : null}
         </div>
 
@@ -609,7 +616,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
             <AccountMenu
               email={currentUser.email}
               logoutAction={logoutAction}
-              name={currentUser.name ?? "Super Admin"}
+              name={currentUser.name}
               roleLabel="ซูเปอร์แอดมิน"
               tone="admin"
             />
@@ -635,7 +642,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {currentUser.name ?? "Super Admin"}
+                  {currentUser.name?.trim() || currentUser.email}
                 </p>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{currentUser.email}</p>
               </div>
@@ -656,6 +663,12 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 aria-current="page"
               >
                 รายชื่อผู้ดูแลระบบ
+              </a>
+              <a
+                href="/intern/account/name"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
+              >
+                {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
               </a>
               <a
                 href="/intern/account/password"

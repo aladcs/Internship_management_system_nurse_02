@@ -316,6 +316,13 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 ภาพรวม
               </Link>
               <Link
+                href="/intern/account/name"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-700"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
+              </Link>
+              <Link
                 href="/intern/account/password"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-700"
                 onClick={() => setMobileMenuOpen(false)}

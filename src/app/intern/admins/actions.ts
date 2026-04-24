@@ -65,10 +65,6 @@ export async function saveAdminAction(
   const email = normalizeEmail(formData.get("email"));
   const fieldErrors: SaveAdminActionState["fieldErrors"] = {};
 
-  if (!name) {
-    fieldErrors.name = "กรุณากรอกชื่อผู้ดูแลระบบ";
-  }
-
   if (!email) {
     fieldErrors.email = "กรุณากรอกอีเมลผู้ดูแลระบบ";
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

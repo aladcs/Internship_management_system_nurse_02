@@ -9,9 +9,9 @@ export const ROLE_REDIRECT_PATHS: Record<UserRole, string> = {
 };
 
 const ROLE_ALLOWED_PREFIXES: Record<UserRole, string[]> = {
-  super_admin: ["/intern/admins", "/intern/account/password"],
-  admin: ["/intern/dashboard", "/intern/admin/students", "/intern/account/password"],
-  student: [STUDENT_TOS_PATH, "/intern/overview", "/intern/form", "/intern/account/password"],
+  super_admin: ["/intern/admins", "/intern/account/name", "/intern/account/password"],
+  admin: ["/intern/dashboard", "/intern/admin/students", "/intern/account/name", "/intern/account/password"],
+  student: [STUDENT_TOS_PATH, "/intern/overview", "/intern/form", "/intern/account/name", "/intern/account/password"],
 };
 
 type AuthenticatedRedirectInput = {

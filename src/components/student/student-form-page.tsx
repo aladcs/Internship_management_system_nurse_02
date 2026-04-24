@@ -693,7 +693,7 @@ export function StudentFormPage({
             <AccountMenu
               email={isAdminMode ? currentUser.email : student.email}
               logoutAction={logoutAction}
-              name={isAdminMode ? (currentUser.name ?? "ผู้ดูแล") : student.displayName}
+              name={isAdminMode ? currentUser.name : student.displayName}
               roleLabel={isAdminMode ? "ผู้ดูแล" : "นักศึกษา"}
               tone={isAdminMode ? "admin" : "student"}
             />
@@ -715,7 +715,7 @@ export function StudentFormPage({
           <aside className="ml-auto flex h-full w-[84%] max-w-sm flex-col bg-white px-5 py-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{isAdminMode ? (currentUser.name ?? "ผู้ดูแล") : student.displayName}</p>
+                <p className="text-sm font-semibold text-slate-900">{isAdminMode ? (currentUser.name?.trim() || currentUser.email) : student.displayName}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{isAdminMode ? currentUser.email : student.email}</p>
               </div>
               <button
@@ -748,6 +748,13 @@ export function StudentFormPage({
                   </Link>
                 </>
               )}
+              <Link
+                href="/intern/account/name"
+                className={`block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${isAdminMode ? "hover:bg-admin/6 hover:text-(--color-admin)" : "hover:bg-orange-50 hover:text-orange-700"}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {isAdminMode ? (currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง") : (student.displayName.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง")}
+              </Link>
               <Link
                 href="/intern/account/password"
                 className={`block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${isAdminMode ? "hover:bg-admin/6 hover:text-(--color-admin)" : "hover:bg-orange-50 hover:text-orange-700"}`}

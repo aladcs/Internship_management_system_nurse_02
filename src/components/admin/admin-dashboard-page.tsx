@@ -205,7 +205,7 @@ export function AdminDashboardPage({
             <AccountMenu
               email={currentUser.email}
               logoutAction={logoutAction}
-              name={currentUser.name ?? "ผู้ดูแล"}
+              name={currentUser.name}
               roleLabel="ผู้ดูแล"
               tone="admin"
             />
@@ -230,7 +230,7 @@ export function AdminDashboardPage({
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{currentUser.name ?? "ผู้ดูแล"}</p>
+                <p className="text-sm font-semibold text-slate-900">{currentUser.name?.trim() || currentUser.email}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{currentUser.email}</p>
               </div>
               <button
@@ -258,6 +258,13 @@ export function AdminDashboardPage({
                 onClick={() => setMobileMenuOpen(false)}
               >
                 รายชื่อนักศึกษา
+              </Link>
+              <Link
+                href="/intern/account/name"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
               </Link>
               <Link
                 href="/intern/account/password"
