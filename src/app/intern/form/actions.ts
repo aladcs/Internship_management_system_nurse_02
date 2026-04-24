@@ -17,7 +17,7 @@ import {
   type StudentFormValues,
 } from "@/app/intern/form/action-state";
 import { clearSession, readSession } from "@/lib/auth/session";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 const GENDER_VALUES = ["male", "female", "other", "prefer_not_to_say"] as const;
@@ -91,6 +91,10 @@ async function requireStudentOrAdminSession() {
 
   if (session.role !== ("student" satisfies UserRole) && session.role !== ("admin" satisfies UserRole)) {
     redirect(getRoleRedirectPath(session.role));
+  }
+
+  if (session.role === ("student" satisfies UserRole) && !session.studentHasAcceptedTos) {
+    redirect(STUDENT_TOS_PATH);
   }
 
   return session;

@@ -3,8 +3,8 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { CMU_ENTRA_LOGIN_PATH, isCmuEntraConfigured } from "@/lib/auth/cmu-entra";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
-import { clearSession, readSession } from "@/lib/auth/session";
+import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
+import { clearSession, createSession, readSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
 const statusChips = [
@@ -80,6 +80,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         },
         select: {
           id: true,
+          tosAcceptedAt: true,
         },
       });
 
@@ -87,10 +88,27 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         await clearSession();
         initialError ??= CMU_LOGIN_ERRORS.student_profile_missing;
       } else {
-        redirect(getRoleRedirectPath(session.role));
+        const studentHasAcceptedTos = Boolean(studentProfile.tosAcceptedAt);
+
+        if (studentHasAcceptedTos !== Boolean(session.studentHasAcceptedTos)) {
+          await createSession({
+            userId: session.userId,
+            email: session.email,
+            role: session.role,
+            name: session.name,
+            studentHasAcceptedTos,
+          });
+        }
+
+        redirect(
+          getAuthenticatedRedirectPath({
+            role: session.role,
+            studentHasAcceptedTos,
+          }),
+        );
       }
     } else {
-      redirect(getRoleRedirectPath(session.role));
+      redirect(getAuthenticatedRedirectPath(session));
     }
   }
 

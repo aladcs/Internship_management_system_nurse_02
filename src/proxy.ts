@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { getAuthenticatedRedirectPath, getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session-token";
 
 const PUBLIC_INTERN_PREFIXES = [
@@ -22,6 +22,10 @@ const ROLE_PROTECTED_PREFIXES = [
   {
     prefix: "/intern/admin/students",
     role: "admin",
+  },
+  {
+    prefix: STUDENT_TOS_PATH,
+    role: "student",
   },
   {
     prefix: "/intern/overview",
@@ -71,11 +75,30 @@ export function proxy(request: NextRequest) {
   }
 
   if (!requiredRole) {
+    if (
+      session.role === "student" &&
+      !session.studentHasAcceptedTos &&
+      pathname.startsWith("/intern") &&
+      !pathname.startsWith(STUDENT_TOS_PATH)
+    ) {
+      return NextResponse.redirect(new URL(STUDENT_TOS_PATH, request.url));
+    }
+
     return NextResponse.next();
   }
 
   if (session.role !== requiredRole) {
-    return NextResponse.redirect(new URL(getRoleRedirectPath(session.role), request.url));
+    return NextResponse.redirect(new URL(getAuthenticatedRedirectPath(session), request.url));
+  }
+
+  if (session.role === "student") {
+    if (!session.studentHasAcceptedTos && !pathname.startsWith(STUDENT_TOS_PATH)) {
+      return NextResponse.redirect(new URL(STUDENT_TOS_PATH, request.url));
+    }
+
+    if (session.studentHasAcceptedTos && pathname.startsWith(STUDENT_TOS_PATH)) {
+      return NextResponse.redirect(new URL(getRoleRedirectPath(session.role), request.url));
+    }
   }
 
   return NextResponse.next();

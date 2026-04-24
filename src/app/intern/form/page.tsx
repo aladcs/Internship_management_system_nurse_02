@@ -6,7 +6,7 @@ import {
 } from "@/app/intern/form/action-state";
 import { StudentFormPage, type StudentFormPageProps } from "@/components/student/student-form-page";
 import { clearSession, readSession } from "@/lib/auth/session";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -62,6 +62,10 @@ export default async function InternFormPage() {
 
   if (session.role !== "student") {
     redirect(getRoleRedirectPath(session.role));
+  }
+
+  if (!session.studentHasAcceptedTos) {
+    redirect(STUDENT_TOS_PATH);
   }
 
   const student = await prisma.student.findUnique({

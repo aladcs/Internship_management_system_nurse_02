@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
 import { readSession } from "@/lib/auth/session";
 
 export default async function Home() {
@@ -9,5 +9,5 @@ export default async function Home() {
     redirect("/login");
   }
 
-  redirect(getRoleRedirectPath(session.role));
+  redirect(getAuthenticatedRedirectPath(session));
 }

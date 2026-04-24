@@ -28,7 +28,13 @@ export async function GET(request: NextRequest) {
   }
 
   const state = randomBytes(24).toString("base64url");
-  const nextPath = getSafePostLoginRedirectPath("student", request.nextUrl.searchParams.get("next"));
+  const nextPath = getSafePostLoginRedirectPath(
+    {
+      role: "student",
+      studentHasAcceptedTos: false,
+    },
+    request.nextUrl.searchParams.get("next"),
+  );
   const authorizationUrl = new URL(config.authorizeUrl);
 
   authorizationUrl.searchParams.set("client_id", config.clientId);

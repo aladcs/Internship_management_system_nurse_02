@@ -255,6 +255,7 @@ export async function GET(request: NextRequest) {
       studentProfile: {
         select: {
           id: true,
+          tosAcceptedAt: true,
         },
       },
     },
@@ -283,15 +284,30 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  const studentHasAcceptedTos =
+    user.role === ("student" satisfies UserRole)
+      ? Boolean(user.studentProfile?.tosAcceptedAt)
+      : undefined;
+
   await createSession({
     userId: user.id,
     email: user.email,
     role: user.role as UserRole,
     name: user.name ?? null,
+    studentHasAcceptedTos,
   });
 
   const response = NextResponse.redirect(
-    new URL(getSafePostLoginRedirectPath(user.role, nextPath), request.url),
+    new URL(
+      getSafePostLoginRedirectPath(
+        {
+          role: user.role as UserRole,
+          studentHasAcceptedTos,
+        },
+        nextPath,
+      ),
+      request.url,
+    ),
   );
   clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
 

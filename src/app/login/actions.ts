@@ -45,6 +45,11 @@ export async function loginAction(
       passwordHash: true,
       role: true,
       name: true,
+      studentProfile: {
+        select: {
+          tosAcceptedAt: true,
+        },
+      },
     },
   });
 
@@ -69,7 +74,22 @@ export async function loginAction(
     email: user.email,
     role: user.role as UserRole,
     name: user.name ?? null,
+    studentHasAcceptedTos:
+      user.role === ("student" satisfies UserRole)
+        ? Boolean(user.studentProfile?.tosAcceptedAt)
+        : undefined,
   });
 
-  redirect(getSafePostLoginRedirectPath(user.role, nextPath));
+  redirect(
+    getSafePostLoginRedirectPath(
+      {
+        role: user.role as UserRole,
+        studentHasAcceptedTos:
+          user.role === ("student" satisfies UserRole)
+            ? Boolean(user.studentProfile?.tosAcceptedAt)
+            : undefined,
+      },
+      nextPath,
+    ),
+  );
 }
