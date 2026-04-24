@@ -20,6 +20,7 @@ import {
   AdminNotificationMenu,
 } from "@/components/admin/admin-notification-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 
 type StudentListPageProps = {
   students: StudentListItem[];
@@ -52,9 +53,9 @@ const STATUS_FILTERS: Array<{
   label: string;
 }> = [
   { value: "all", label: "ทั้งหมด" },
-  { value: "pending", label: "รอดำเนินการ" },
-  { value: "in_progress", label: "กำลังดำเนินการ" },
-  { value: "completed", label: "เสร็จสิ้น" },
+  { value: "pending", label: formatInternshipStatusLabel("pending") },
+  { value: "in_progress", label: formatInternshipStatusLabel("in_progress") },
+  { value: "completed", label: formatInternshipStatusLabel("completed") },
 ];
 
 function MenuIcon() {
@@ -171,18 +172,6 @@ function getInitials(name: string, email: string) {
     .map((segment) => segment[0])
     .join("")
     .toUpperCase();
-}
-
-function formatStatusLabel(status: InternshipStatus) {
-  if (status === "pending") {
-    return "รอดำเนินการ";
-  }
-
-  if (status === "in_progress") {
-    return "กำลังดำเนินการ";
-  }
-
-  return "เสร็จสิ้น";
 }
 
 function getStatusClasses(status: InternshipStatus) {
@@ -822,7 +811,7 @@ export function StudentListPage({
                         </td>
                         <td className="border-t border-slate-100 px-6 py-4">
                           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusClasses(student.status)}`}>
-                            {formatStatusLabel(student.status)}
+                            {formatInternshipStatusLabel(student.status)}
                           </span>
                         </td>
                         <td className="border-t border-slate-100 px-6 py-4">
@@ -866,7 +855,7 @@ export function StudentListPage({
                         </div>
                       </div>
                       <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusClasses(student.status)}`}>
-                        {formatStatusLabel(student.status)}
+                        {formatInternshipStatusLabel(student.status)}
                       </span>
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">

@@ -4,24 +4,13 @@ import { AdminDashboardPage, type AdminDashboardPageProps } from "@/components/a
 import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "แดชบอร์ด | ระบบจัดการฝึกงาน",
   description: "แดชบอร์ดสำหรับผู้ดูแลเพื่อตรวจสอบจำนวนนักศึกษา รายการล่าสุด และการแจ้งเตือน",
 };
-
-function formatStatusLabel(status: AdminDashboardPageProps["recentStudents"][number]["status"]) {
-  if (status === "in_progress") {
-    return "กำลังดำเนินการ";
-  }
-
-  if (status === "pending") {
-    return "รอดำเนินการ";
-  }
-
-  return "เสร็จสิ้น";
-}
 
 function formatDateTime(value: Date) {
   return new Intl.DateTimeFormat("th-TH", {
@@ -101,7 +90,7 @@ export default async function InternDashboardPage() {
       name: getStudentDisplayName(student),
       email: student.user.email,
       status: student.internshipStatus,
-      statusLabel: formatStatusLabel(student.internshipStatus),
+      statusLabel: formatInternshipStatusLabel(student.internshipStatus),
       meta: student.major?.trim() || `อัปเดต ${formatDateTime(student.updatedAt)}`,
     })),
     notifications: notificationSummary.notifications,

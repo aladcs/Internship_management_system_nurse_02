@@ -4,6 +4,7 @@ import { AdminStudentDetailPage, type AdminStudentDetailPageProps } from "@/comp
 import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -12,18 +13,6 @@ export const metadata: Metadata = {
 };
 
 const EMPTY_VALUE = "ยังไม่ได้ระบุ";
-
-function formatStatusLabel(status: AdminStudentDetailPageProps["student"]["status"]) {
-  if (status === "in_progress") {
-    return "กำลังดำเนินการ";
-  }
-
-  if (status === "pending") {
-    return "รอดำเนินการ";
-  }
-
-  return "เสร็จสิ้น";
-}
 
 function formatDate(value: Date | null | undefined) {
   if (!value) {
@@ -216,7 +205,7 @@ export default async function InternAdminStudentDetailPage({
       displayName: getDisplayName(student),
       email: student.user.email,
       status: student.internshipStatus,
-      statusLabel: formatStatusLabel(student.internshipStatus),
+      statusLabel: formatInternshipStatusLabel(student.internshipStatus),
       completionNote:
         student.internshipStatus === "completed"
           ? "ข้อมูลฝึกงานนี้เสร็จสมบูรณ์แล้วและนักศึกษาไม่สามารถแก้ไขได้"
@@ -234,7 +223,7 @@ export default async function InternAdminStudentDetailPage({
       internship: [
         {
           label: "สถานะการฝึกงาน",
-          value: formatStatusLabel(student.internshipStatus),
+          value: formatInternshipStatusLabel(student.internshipStatus),
         },
         {
           label: "ตำแหน่ง",

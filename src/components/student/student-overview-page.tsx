@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { logoutAction } from "@/app/intern/overview/actions";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 
 type SummaryItem = {
   label: string;
@@ -142,17 +143,17 @@ function getStatusDefinitions(): StatusDefinition[] {
   return [
     {
       id: "pending",
-      label: "pending",
+      label: formatInternshipStatusLabel("pending"),
       description: "ส่งข้อมูลแล้วและรอให้แอดมินตรวจสอบ คุณยังกลับไปแก้ไขแบบฟอร์มได้",
     },
     {
       id: "in_progress",
-      label: "in_progress",
+      label: formatInternshipStatusLabel("in_progress"),
       description: "ข้อมูลอยู่ระหว่างการติดตามหรือการฝึกงานกำลังดำเนินอยู่ และยังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",
-      label: "completed",
+      label: formatInternshipStatusLabel("completed"),
       description: "ข้อมูลฝึกงานเสร็จสิ้นแล้วและแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา",
     },
   ];
@@ -391,15 +392,15 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Internship status
+                    สถานะการฝึกงาน
                   </span>
                   {definition.id === student.status ? (
                     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusClasses(student.status)}`}>
-                      Current
+                      สถานะปัจจุบัน
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.12em] text-current sm:text-base">
+                <p className="mt-4 text-sm font-semibold text-current sm:text-base">
                   {definition.label}
                 </p>
                 <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{definition.description}</p>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components/student/student-overview-page";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import { clearSession } from "@/lib/auth/session";
 
@@ -12,18 +13,6 @@ export const metadata: Metadata = {
 };
 
 const EMPTY_VALUE = "ยังไม่ได้ระบุ";
-
-function formatStatusLabel(status: StudentOverviewPageProps["student"]["status"]) {
-  if (status === "in_progress") {
-    return "กำลังติดตาม";
-  }
-
-  if (status === "pending") {
-    return "รอตรวจสอบ";
-  }
-
-  return "เสร็จสิ้น";
-}
 
 function formatStatusDescription(status: StudentOverviewPageProps["student"]["status"]) {
   if (status === "in_progress") {
@@ -244,7 +233,7 @@ export default async function InternOverviewPage() {
       displayName: getDisplayName(student),
       email: student.user.email,
       status: student.internshipStatus,
-      statusLabel: formatStatusLabel(student.internshipStatus),
+      statusLabel: formatInternshipStatusLabel(student.internshipStatus),
       statusDescription: formatStatusDescription(student.internshipStatus),
       canEdit,
       hasStartedForm,
@@ -264,7 +253,7 @@ export default async function InternOverviewPage() {
       internship: [
         {
           label: "สถานะการฝึกงาน",
-          value: formatStatusLabel(student.internshipStatus),
+          value: formatInternshipStatusLabel(student.internshipStatus),
         },
         {
           label: "ตำแหน่ง",

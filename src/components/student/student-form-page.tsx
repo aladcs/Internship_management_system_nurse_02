@@ -9,6 +9,7 @@ import {
   logoutAction as defaultLogoutAction,
   saveStudentFormAction as defaultSaveStudentFormAction,
 } from "@/app/intern/form/actions";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 
 const MAX_FILE_COUNT = 5;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -196,18 +197,6 @@ function CameraIcon() {
       <circle cx="10" cy="10.5" r="2.75" />
     </svg>
   );
-}
-
-function statusLabel(status: StudentFormPageProps["student"]["status"]) {
-  if (status === "pending") {
-    return "รอดำเนินการ";
-  }
-
-  if (status === "in_progress") {
-    return "กำลังดำเนินการ";
-  }
-
-  return "เสร็จสิ้น";
 }
 
 function getStatusClasses(status: StudentFormPageProps["student"]["status"]) {
@@ -645,7 +634,7 @@ export function StudentFormPage({
             </div>
             <h1 className="mt-6 text-3xl font-semibold tracking-tight text-slate-950">แบบฟอร์มนี้เป็นแบบอ่านอย่างเดียว</h1>
             <p className="mt-4 text-sm leading-7 text-slate-700 sm:text-base">
-              สถานะการฝึกงานของคุณคือ {statusLabel(student.status)} จึงไม่สามารถแก้ไขได้ แต่ยังสามารถตรวจสอบข้อมูลที่ส่งไว้จากหน้าภาพรวมได้
+              สถานะการฝึกงานของคุณคือ {formatInternshipStatusLabel(student.status)} จึงไม่สามารถแก้ไขได้ แต่ยังสามารถตรวจสอบข้อมูลที่ส่งไว้จากหน้าภาพรวมได้
             </p>
             <Link
               href="/intern/overview"
@@ -784,7 +773,7 @@ export function StudentFormPage({
             {resolvedBackLabel}
           </Link>
           <span className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold ring-1 ${getStatusClasses(student.status)}`}>
-            {statusLabel(student.status)}
+            {formatInternshipStatusLabel(student.status)}
           </span>
         </div>
 
