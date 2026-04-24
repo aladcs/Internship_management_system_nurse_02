@@ -131,7 +131,6 @@ export function AccountMenu({
             <form action={logoutAction}>
               <button
                 type="submit"
-                onClick={() => setOpen(false)}
                 className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 <LogoutIcon />
