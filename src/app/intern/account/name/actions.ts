@@ -22,6 +22,10 @@ export async function changeDisplayNameAction(
     redirect("/login");
   }
 
+  if (session.role === "student") {
+    redirect(getAuthenticatedRedirectPath(session));
+  }
+
   const name = normalizeName(formData.get("name"));
 
   if (!name) {

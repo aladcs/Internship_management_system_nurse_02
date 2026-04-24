@@ -748,13 +748,15 @@ export function StudentFormPage({
                   </Link>
                 </>
               )}
-              <Link
-                href="/intern/account/name"
-                className={`block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${isAdminMode ? "hover:bg-admin/6 hover:text-(--color-admin)" : "hover:bg-orange-50 hover:text-orange-700"}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {isAdminMode ? (currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง") : (student.displayName.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง")}
-              </Link>
+              {isAdminMode ? (
+                <Link
+                  href="/intern/account/name"
+                  className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
+                </Link>
+              ) : null}
               <Link
                 href="/intern/account/password"
                 className={`block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${isAdminMode ? "hover:bg-admin/6 hover:text-(--color-admin)" : "hover:bg-orange-50 hover:text-orange-700"}`}

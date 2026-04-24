@@ -16,7 +16,9 @@ export default async function InternAccountNamePage() {
     redirect("/login");
   }
 
-  const isStudent = session.role === "student";
+  if (session.role === "student") {
+    redirect(getAuthenticatedRedirectPath(session));
+  }
 
   return (
     <ChangeDisplayNameForm
@@ -24,9 +26,9 @@ export default async function InternAccountNamePage() {
       currentUser={{
         email: session.email,
         name: session.name,
-        roleLabel: isStudent ? "นักศึกษา" : session.role === "super_admin" ? "ซูเปอร์แอดมิน" : "ผู้ดูแล",
+        roleLabel: session.role === "super_admin" ? "ซูเปอร์แอดมิน" : "ผู้ดูแล",
       }}
-      theme={isStudent ? "student" : "admin"}
+      theme="admin"
     />
   );
 }

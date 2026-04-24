@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { logoutAction } from "@/app/intern/overview/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
@@ -56,6 +56,13 @@ type StatusDefinition = {
   id: StudentOverviewPageProps["student"]["status"];
   label: string;
   description: string;
+};
+
+type SummaryCardProps = {
+  title: string;
+  description: string;
+  icon: ReactNode;
+  items: SummaryItem[];
 };
 
 function MenuIcon() {
@@ -193,12 +200,7 @@ function SummaryCard({
   description,
   icon,
   items,
-}: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  items: SummaryItem[];
-}) {
+}: SummaryCardProps) {
   return (
     <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
       <div className="flex items-start justify-between gap-4">
@@ -476,7 +478,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
               <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[24px] border border-orange-100 bg-student/10 text-(--color-student)">
+                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-orange-100 bg-student/10 text-(--color-student)">
                     {student.profileImage ? (
                       <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
                     ) : (

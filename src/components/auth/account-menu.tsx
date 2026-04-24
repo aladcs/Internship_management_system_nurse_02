@@ -129,14 +129,16 @@ export function AccountMenu({
           </div>
 
           <div className="mt-2 space-y-1">
-            <Link
-              href="/intern/account/name"
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${accentClasses.item}`}
-              onClick={() => setOpen(false)}
-            >
-              <ProfileIcon />
-              {name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
-            </Link>
+            {tone === "admin" ? (
+              <Link
+                href="/intern/account/name"
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${accentClasses.item}`}
+                onClick={() => setOpen(false)}
+              >
+                <ProfileIcon />
+                {name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
+              </Link>
+            ) : null}
 
             <Link
               href="/intern/account/password"
