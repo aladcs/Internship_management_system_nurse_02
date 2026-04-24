@@ -198,6 +198,9 @@
 
   * completed
 
+* [ ] block admin status change before first student submit
+* [ ] preserve in_progress on student edit and notify admin
+
 ---
 
 ## 📂 Feature: File Upload

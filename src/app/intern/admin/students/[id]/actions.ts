@@ -2,19 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { type InternshipStatus, type UserRole } from "@prisma/client";
+import { type UserRole } from "@prisma/client";
 import {
   initialUpdateStudentStatusActionState,
   type UpdateStudentStatusActionState,
 } from "@/app/intern/admin/students/[id]/action-state";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
+import {
+  formatInternshipStatusLabel,
+  getAdminStatusTransitionBlockReason,
+  getNextInternshipStatus,
+} from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
-
-const NEXT_STATUS_BY_CURRENT: Partial<Record<InternshipStatus, InternshipStatus>> = {
-  pending: "in_progress",
-  in_progress: "completed",
-};
 
 async function requireAdminSession() {
   const session = await readSession();
@@ -53,7 +53,7 @@ export async function updateStudentStatusAction(
     select: {
       id: true,
       internshipStatus: true,
-      userId: true,
+      submittedAt: true,
     },
   });
 
@@ -65,7 +65,21 @@ export async function updateStudentStatusAction(
     };
   }
 
-  const nextStatus = NEXT_STATUS_BY_CURRENT[student.internshipStatus];
+  const blockedReason = getAdminStatusTransitionBlockReason({
+    status: student.internshipStatus,
+    submittedAt: student.submittedAt,
+  });
+
+  if (blockedReason) {
+    return {
+      ...initialUpdateStudentStatusActionState,
+      status: "error",
+      message: blockedReason,
+      updatedStatus: student.internshipStatus,
+    };
+  }
+
+  const nextStatus = getNextInternshipStatus(student.internshipStatus);
 
   if (!nextStatus) {
     return {
@@ -95,10 +109,7 @@ export async function updateStudentStatusAction(
 
   return {
     status: "success",
-    message:
-      updatedStudent.internshipStatus === "completed"
-        ? "อัปเดตสถานะการฝึกงานของนักศึกษาเป็นเสร็จสิ้นแล้ว"
-        : "อัปเดตสถานะการฝึกงานของนักศึกษาเป็นกำลังดำเนินการแล้ว",
+    message: `อัปเดตสถานะการฝึกงานของนักศึกษาเป็น${formatInternshipStatusLabel(updatedStudent.internshipStatus)}แล้ว`,
     updatedStatus: updatedStudent.internshipStatus,
   };
 }

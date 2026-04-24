@@ -17,6 +17,7 @@ import {
   AdminNotificationMenu,
 } from "@/components/admin/admin-notification-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
+import { formatInternshipStatusLabel } from "@/lib/internship-status";
 
 type SummaryItem = {
   label: string;
@@ -43,8 +44,13 @@ export type AdminStudentDetailPageProps = {
     displayName: string;
     email: string;
     status: InternshipStatus;
+    hasSubmitted: boolean;
     statusLabel: string;
     completionNote: string | null;
+    statusControl: {
+      nextStatus: InternshipStatus | null;
+      blockReason: string | null;
+    };
     personal: SummaryItem[];
     internship: SummaryItem[];
     education: SummaryItem[];
@@ -250,15 +256,15 @@ function getStepClasses(tone: TimelineStep["tone"]) {
   return "border-dashed border-admin/20 bg-white/55 text-slate-500";
 }
 
-function getNextStatusAction(status: InternshipStatus) {
-  if (status === "pending") {
+function getNextStatusAction(nextStatus: InternshipStatus | null) {
+  if (nextStatus === "in_progress") {
     return {
       label: "เปลี่ยนเป็นกำลังดำเนินการ",
       helper: "เลื่อนนักศึกษาคนนี้จากรอตรวจสอบไปสู่การติดตามการฝึกงานที่กำลังดำเนินอยู่",
     };
   }
 
-  if (status === "in_progress") {
+  if (nextStatus === "completed") {
     return {
       label: "เปลี่ยนเป็นเสร็จสิ้น",
       helper: "ปิดข้อมูลการฝึกงานนี้และล็อกการแก้ไขฝั่งนักศึกษา",
@@ -268,13 +274,14 @@ function getNextStatusAction(status: InternshipStatus) {
   return null;
 }
 
-function StatusSubmitButton({ label }: { label: string }) {
+function StatusSubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
   const { pending } = useFormStatus();
+  const isDisabled = pending || disabled;
 
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={isDisabled}
       className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-lg shadow-admin/25 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "กำลังอัปเดต..." : label}
@@ -331,8 +338,13 @@ export function AdminStudentDetailPage({
     initialUpdateStudentStatusActionState,
   );
   const router = useRouter();
-  const nextAction = getNextStatusAction(student.status);
+  const nextAction = getNextStatusAction(student.statusControl.nextStatus);
   const timelineSteps = getTimelineSteps(student.status);
+  const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && nextAction);
+  const statusButtonLabel = isStatusChangeBlocked ? "รอนักศึกษาส่งแบบฟอร์ม" : nextAction?.label;
+  const statusHelperText = isStatusChangeBlocked
+    ? `${student.statusControl.blockReason} เมื่อส่งแล้ว ผู้ดูแลจึงจะเปลี่ยนสถานะเป็น${student.statusControl.nextStatus ? ` ${formatInternshipStatusLabel(student.statusControl.nextStatus)}` : " ขั้นตอนถัดไป"}ได้`
+    : nextAction?.helper;
 
   useEffect(() => {
     if (statusState.status === "success") {
@@ -512,8 +524,8 @@ export function AdminStudentDetailPage({
                 {nextAction ? (
                   <form action={formAction} className="space-y-3">
                     <input type="hidden" name="studentId" value={student.id} />
-                    <StatusSubmitButton label={nextAction.label} />
-                    <p className="text-sm leading-6 text-slate-600">{nextAction.helper}</p>
+                    <StatusSubmitButton label={statusButtonLabel ?? nextAction.label} disabled={isStatusChangeBlocked} />
+                    <p className="text-sm leading-6 text-slate-600">{statusHelperText}</p>
                   </form>
                 ) : (
                   <div className="inline-flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
@@ -639,7 +651,7 @@ export function AdminStudentDetailPage({
             <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                การอัปเดตสถานะต้องเป็นไปตามลำดับที่กำหนดเท่านั้น: รอดำเนินการ ไปเป็น กำลังดำเนินการ และจากนั้นเป็น เสร็จสิ้น
+                การอัปเดตสถานะต้องเป็นไปตามลำดับที่กำหนดเท่านั้น และเริ่มได้หลังนักศึกษาส่งแบบฟอร์มครั้งแรกแล้ว: รอดำเนินการ ไปเป็น กำลังดำเนินการ และจากนั้นเป็น เสร็จสิ้น
               </p>
             </section>
           </div>

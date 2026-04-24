@@ -4,7 +4,11 @@ import { AdminStudentDetailPage, type AdminStudentDetailPageProps } from "@/comp
 import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
-import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import {
+  formatInternshipStatusLabel,
+  getAdminStatusTransitionBlockReason,
+  getNextInternshipStatus,
+} from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -205,11 +209,19 @@ export default async function InternAdminStudentDetailPage({
       displayName: getDisplayName(student),
       email: student.user.email,
       status: student.internshipStatus,
+      hasSubmitted: Boolean(student.submittedAt),
       statusLabel: formatInternshipStatusLabel(student.internshipStatus),
       completionNote:
         student.internshipStatus === "completed"
           ? "ข้อมูลฝึกงานนี้เสร็จสมบูรณ์แล้วและนักศึกษาไม่สามารถแก้ไขได้"
           : null,
+      statusControl: {
+        nextStatus: getNextInternshipStatus(student.internshipStatus),
+        blockReason: getAdminStatusTransitionBlockReason({
+          status: student.internshipStatus,
+          submittedAt: student.submittedAt,
+        }),
+      },
       personal: [
         { label: "ชื่อ - นามสกุล", value: getDisplayName(student) },
         { label: "อีเมล", value: student.user.email },
