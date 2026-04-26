@@ -1,13 +1,13 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
-  CMU_ENTRA_CALLBACK_PATH,
-  getCmuEntraConfig,
-} from "@/lib/auth/cmu-entra";
+  GOOGLE_OAUTH_CALLBACK_PATH,
+  getGoogleOAuthConfig,
+} from "@/lib/auth/google-oauth";
 import { normalizeOAuthNextPath, signInOAuthUser } from "@/lib/auth/oauth-login";
 
-const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
-const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
+const STATE_COOKIE_NAME = "google_oauth_state";
+const NEXT_COOKIE_NAME = "google_oauth_next";
 
 type TokenResponse = {
   access_token?: string;
@@ -15,20 +15,12 @@ type TokenResponse = {
 
 type UserinfoResponse = {
   email?: unknown;
-  mail?: unknown;
-  preferred_username?: unknown;
-  userPrincipalName?: unknown;
-  upn?: unknown;
-  cmuitaccount?: unknown;
-  student_email?: unknown;
-  studentEmail?: unknown;
-  account?: unknown;
-  username?: unknown;
+  verified_email?: unknown;
 };
 
 function createLoginRedirect(request: NextRequest, code: string) {
   const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("cmu", code);
+  loginUrl.searchParams.set("google", code);
 
   return loginUrl;
 }
@@ -49,60 +41,6 @@ function clearStateCookie(response: NextResponse, path: string) {
     path,
     expires: new Date(0),
   });
-}
-
-function getEmailFromUserinfo(profile: UserinfoResponse) {
-  const candidates = [
-    profile.email,
-    profile.mail,
-    profile.preferred_username,
-    profile.userPrincipalName,
-    profile.upn,
-    profile.student_email,
-    profile.studentEmail,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim()) {
-      return candidate.trim().toLowerCase();
-    }
-  }
-
-  return null;
-}
-
-function getEmailFromBasicInfo(profile: UserinfoResponse) {
-  const directEmail = getEmailFromUserinfo(profile);
-
-  if (directEmail) {
-    return directEmail;
-  }
-
-  const accountCandidates = [
-    profile.cmuitaccount,
-    profile.account,
-    profile.username,
-  ];
-
-  for (const candidate of accountCandidates) {
-    if (typeof candidate !== "string") {
-      continue;
-    }
-
-    const normalized = candidate.trim().toLowerCase();
-
-    if (!normalized) {
-      continue;
-    }
-
-    if (normalized.includes("@")) {
-      return normalized;
-    }
-
-    return `${normalized}@cmu.ac.th`;
-  }
-
-  return null;
 }
 
 async function exchangeCodeForAccessToken(
@@ -152,32 +90,22 @@ async function getUserEmail(userinfoUrl: string, accessToken: string) {
 
   const payload = (await response.json()) as UserinfoResponse;
 
-  return getEmailFromUserinfo(payload);
-}
-
-async function getUserEmailFromBasicInfo(basicInfoUrl: string, accessToken: string) {
-  const response = await fetch(basicInfoUrl, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
+  if (payload.verified_email === false) {
     return null;
   }
 
-  const payload = (await response.json()) as UserinfoResponse;
+  if (typeof payload.email !== "string" || !payload.email.trim()) {
+    return null;
+  }
 
-  return getEmailFromBasicInfo(payload);
+  return payload.email.trim().toLowerCase();
 }
 
 export async function GET(request: NextRequest) {
   let config;
 
   try {
-    config = getCmuEntraConfig();
+    config = getGoogleOAuthConfig();
   } catch {
     return NextResponse.redirect(createLoginRedirect(request, "not_configured"));
   }
@@ -197,14 +125,14 @@ export async function GET(request: NextRequest) {
         providerError === "access_denied" ? "access_denied" : "callback_failed",
       ),
     );
-    clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
+    clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
     return response;
   }
 
   if (!code || !state || !storedState || storedState !== state) {
     const response = NextResponse.redirect(createLoginRedirect(request, "invalid_state"));
-    clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
+    clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
     return response;
   }
@@ -219,18 +147,16 @@ export async function GET(request: NextRequest) {
 
   if (!accessToken) {
     const response = NextResponse.redirect(createLoginRedirect(request, "token_failed"));
-    clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
+    clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
     return response;
   }
 
-  const email = config.basicInfoUrl
-    ? await getUserEmailFromBasicInfo(config.basicInfoUrl, accessToken)
-    : await getUserEmail(config.userinfoUrl, accessToken);
+  const email = await getUserEmail(config.userinfoUrl, accessToken);
 
   if (!email) {
     const response = NextResponse.redirect(createLoginRedirect(request, "userinfo_failed"));
-    clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
+    clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
     return response;
   }
@@ -241,16 +167,16 @@ export async function GET(request: NextRequest) {
   });
 
   if (!result.ok) {
-    const response = NextResponse.redirect(createLoginRedirect(request, "email_not_allowed"));
-    clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
+    const response = NextResponse.redirect(
+      createLoginRedirect(request, result.errorCode),
+    );
+    clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
     return response;
   }
 
-  const response = NextResponse.redirect(
-    new URL(result.redirectPath, request.url),
-  );
-  clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
+  const response = NextResponse.redirect(new URL(result.redirectPath, request.url));
+  clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
   return response;
 }

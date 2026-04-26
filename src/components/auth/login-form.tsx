@@ -70,6 +70,8 @@ function SubmitButton() {
 
 type LoginFormProps = {
   initialError?: string | null;
+  googleLoginEnabled: boolean;
+  googleLoginHref: string;
   cmuLoginEnabled: boolean;
   cmuLoginHref: string;
   nextPath?: string | null;
@@ -77,6 +79,8 @@ type LoginFormProps = {
 
 export function LoginForm({
   initialError = null,
+  googleLoginEnabled,
+  googleLoginHref,
   cmuLoginEnabled,
   cmuLoginHref,
   nextPath = null,
@@ -158,6 +162,38 @@ export function LoginForm({
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
+      {googleLoginEnabled ? (
+        <a
+          href={googleLoginHref}
+          className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-admin/10"
+          aria-label="เข้าสู่ระบบด้วย Google"
+        >
+          <Image
+            src="/google-logo.svg"
+            alt="Google"
+            width={20}
+            height={20}
+            className="h-5 w-5"
+          />
+          <span>เข้าสู่ระบบด้วย Google</span>
+        </a>
+      ) : (
+        <div
+          aria-disabled="true"
+          className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-400 opacity-70 grayscale"
+          title="ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ Google สำหรับสภาพแวดล้อมนี้"
+        >
+          <Image
+            src="/google-logo.svg"
+            alt="Google"
+            width={20}
+            height={20}
+            className="h-5 w-5"
+          />
+          <span>เข้าสู่ระบบด้วย Google</span>
+        </div>
+      )}
+
       {cmuLoginEnabled ? (
         <a
           href={cmuLoginHref}
@@ -194,7 +230,7 @@ export function LoginForm({
         <div className="mt-3 space-y-2 leading-6">
           <p>ต้องมีบัญชีอยู่ในฐานข้อมูลก่อนจึงจะเข้าสู่ระบบได้</p>
           <p>super admin เป็นผู้สร้างบัญชี admin และ admin เป็นผู้สร้างบัญชีนักศึกษา</p>
-          <p>การเข้าสู่ระบบด้วย CMU Entra ใช้งานได้เมื่อเซิร์ฟเวอร์ตั้งค่าเรียบร้อยแล้วเท่านั้น</p>
+          <p>การเข้าสู่ระบบด้วย Google หรือ CMU Entra ใช้งานได้เมื่อเซิร์ฟเวอร์ตั้งค่าเรียบร้อยแล้วเท่านั้น</p>
         </div>
       </div>
     </div>

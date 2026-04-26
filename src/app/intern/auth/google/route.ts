@@ -2,18 +2,18 @@ import { randomBytes } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
-  CMU_ENTRA_CALLBACK_PATH,
-  getCmuEntraConfig,
-} from "@/lib/auth/cmu-entra";
+  GOOGLE_OAUTH_CALLBACK_PATH,
+  getGoogleOAuthConfig,
+} from "@/lib/auth/google-oauth";
 import { normalizeOAuthNextPath } from "@/lib/auth/oauth-login";
 
-const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
-const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
+const STATE_COOKIE_NAME = "google_oauth_state";
+const NEXT_COOKIE_NAME = "google_oauth_next";
 const STATE_TTL_SECONDS = 60 * 10;
 
 function createLoginRedirect(request: NextRequest, code: string) {
   const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("cmu", code);
+  loginUrl.searchParams.set("google", code);
 
   return loginUrl;
 }
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   let config;
 
   try {
-    config = getCmuEntraConfig();
+    config = getGoogleOAuthConfig();
   } catch {
     return NextResponse.redirect(createLoginRedirect(request, "not_configured"));
   }
@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
   authorizationUrl.searchParams.set("redirect_uri", config.callbackUrl);
   authorizationUrl.searchParams.set("scope", config.scope);
   authorizationUrl.searchParams.set("state", state);
-  authorizationUrl.searchParams.set("response_mode", "query");
+  authorizationUrl.searchParams.set("access_type", "online");
+  authorizationUrl.searchParams.set("include_granted_scopes", "true");
+  authorizationUrl.searchParams.set("prompt", "select_account");
 
   const response = NextResponse.redirect(authorizationUrl);
 
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    path: config.callbackPath || CMU_ENTRA_CALLBACK_PATH,
+    path: config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH,
     maxAge: STATE_TTL_SECONDS,
   });
 
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
-    path: config.callbackPath || CMU_ENTRA_CALLBACK_PATH,
+    path: config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH,
     maxAge: STATE_TTL_SECONDS,
   });
 

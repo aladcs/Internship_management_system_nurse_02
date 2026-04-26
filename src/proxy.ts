@@ -6,6 +6,8 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session-toke
 const PUBLIC_INTERN_PREFIXES = [
   "/intern/auth/cmu",
   "/intern/auth/cmu/callback",
+  "/intern/auth/google",
+  "/intern/auth/google/callback",
   "/intern/api/auth/callback",
   "/intern/api/student-profile-images",
   "/intern/api/student-files",

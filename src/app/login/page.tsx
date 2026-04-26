@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { CMU_ENTRA_LOGIN_PATH, isCmuEntraConfigured } from "@/lib/auth/cmu-entra";
+import { GOOGLE_OAUTH_LOGIN_PATH, isGoogleOAuthConfigured } from "@/lib/auth/google-oauth";
 import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
 import { clearSession, createSession, readSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
@@ -41,6 +42,16 @@ const CMU_LOGIN_ERRORS: Record<string, string> = {
   student_profile_missing: "บัญชีนักศึกษานี้มีข้อมูลโปรไฟล์ไม่ครบถ้วน กรุณาเข้าสู่ระบบใหม่อีกครั้ง",
 };
 
+const GOOGLE_LOGIN_ERRORS: Record<string, string> = {
+  not_configured: "ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ Google สำหรับสภาพแวดล้อมนี้",
+  access_denied: "การเข้าสู่ระบบ Google ถูกยกเลิกก่อนตรวจสอบบัญชีสำเร็จ",
+  invalid_state: "ไม่สามารถยืนยันการเข้าสู่ระบบ Google ได้ กรุณาลองใหม่อีกครั้ง",
+  token_failed: "การเข้าสู่ระบบ Google ไม่สามารถแลกเปลี่ยนโทเค็นได้สำเร็จ",
+  userinfo_failed: "ไม่สามารถอ่านอีเมลจากบัญชี Google ของคุณได้",
+  email_not_allowed: "บัญชี Google นี้ไม่มีสิทธิ์เข้าใช้งานระบบฝึกงาน",
+  callback_failed: "การเข้าสู่ระบบ Google ส่งผลลัพธ์กลับมาไม่ถูกต้อง",
+};
+
 type LoginPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -54,23 +65,31 @@ function readSearchParam(
   return typeof value === "string" ? value : null;
 }
 
+function buildOAuthLoginHref(basePath: string, nextPath: string | null) {
+  if (!nextPath) {
+    return basePath;
+  }
+
+  const loginUrl = new URL(basePath, "http://localhost");
+  loginUrl.searchParams.set("next", nextPath);
+
+  return `${loginUrl.pathname}${loginUrl.search}`;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await readSession();
   const resolvedSearchParams = (await searchParams) ?? {};
+  const googleErrorCode = readSearchParam(resolvedSearchParams, "google");
   const cmuErrorCode = readSearchParam(resolvedSearchParams, "cmu");
   const nextPath = readSearchParam(resolvedSearchParams, "next");
-  let initialError = cmuErrorCode ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null : null;
+  let initialError = googleErrorCode
+    ? GOOGLE_LOGIN_ERRORS[googleErrorCode] ?? null
+    : cmuErrorCode
+      ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null
+      : null;
 
-  const cmuLoginHref = (() => {
-    if (!nextPath) {
-      return CMU_ENTRA_LOGIN_PATH;
-    }
-
-    const loginUrl = new URL(CMU_ENTRA_LOGIN_PATH, "http://localhost");
-    loginUrl.searchParams.set("next", nextPath);
-
-    return `${loginUrl.pathname}${loginUrl.search}`;
-  })();
+  const googleLoginHref = buildOAuthLoginHref(GOOGLE_OAUTH_LOGIN_PATH, nextPath);
+  const cmuLoginHref = buildOAuthLoginHref(CMU_ENTRA_LOGIN_PATH, nextPath);
 
   if (session) {
     if (session.role === "student") {
@@ -137,6 +156,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="flex flex-1 items-center justify-center py-12">
             <LoginForm
               initialError={initialError}
+              googleLoginEnabled={isGoogleOAuthConfigured()}
+              googleLoginHref={googleLoginHref}
               cmuLoginEnabled={isCmuEntraConfigured()}
               cmuLoginHref={cmuLoginHref}
               nextPath={nextPath}
