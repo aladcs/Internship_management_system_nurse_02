@@ -124,13 +124,11 @@ function getInitials(name: string, email: string) {
 function StatCard({
   label,
   value,
-  hint,
   icon,
   tone,
 }: {
   label: string;
   value: number;
-  hint: string;
   icon: React.ReactNode;
   tone: string;
 }) {
@@ -145,7 +143,6 @@ function StatCard({
       <div className="mt-6 space-y-2">
         <p className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2rem]">{value}</p>
         <p className="text-sm font-medium text-slate-700">{label}</p>
-        <p className="text-sm leading-6 text-slate-500">{hint}</p>
       </div>
     </article>
   );
@@ -308,28 +305,24 @@ export function AdminDashboardPage({
           <StatCard
             label="นักศึกษาทั้งหมด"
             value={stats.totalStudents}
-            hint="ข้อมูลการฝึกงานของนักศึกษาทั้งหมดในระบบ"
             icon={<UsersIcon />}
             tone="bg-admin/12 text-(--color-admin)"
           />
           <StatCard
             label="รอดำเนินการ"
             value={stats.pendingStudents}
-            hint="นักศึกษาที่รอผู้ดูแลตรวจสอบหลังส่งข้อมูลแล้ว"
             icon={<PendingIcon />}
             tone="bg-amber-100 text-amber-700"
           />
           <StatCard
             label="กำลังฝึกงาน"
             value={stats.inProgressStudents}
-            hint="การฝึกงานที่ยังดำเนินอยู่และยังอัปเดตได้"
             icon={<ProgressIcon />}
             tone="bg-sky-100 text-sky-700"
           />
           <StatCard
             label="เสร็จสิ้น"
             value={stats.completedStudents}
-            hint="ข้อมูลที่ปิดงานแล้วและนักศึกษาแก้ไขไม่ได้"
             icon={<CompleteIcon />}
             tone="bg-emerald-100 text-emerald-700"
           />

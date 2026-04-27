@@ -73,7 +73,6 @@ export type AdminStudentDetailPageProps = {
 type StatusDefinition = {
   id: InternshipStatus;
   label: string;
-  description: string;
 };
 
 function MenuIcon() {
@@ -196,17 +195,14 @@ function getStatusDefinitions(): StatusDefinition[] {
     {
       id: "pending",
       label: formatInternshipStatusLabel("pending"),
-      description: "นักศึกษาได้ส่งข้อมูลแล้วและอยู่ในสถานะรอดำเนินการ โดยยังแก้ไขข้อมูลได้",
     },
     {
       id: "in_progress",
       label: formatInternshipStatusLabel("in_progress"),
-      description: "นักศึกษาอยู่ในสถานะกำลังฝึกงาน และยังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",
       label: formatInternshipStatusLabel("completed"),
-      description: "ข้อมูลฝึกงานเสร็จสิ้นแล้วและแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา",
     },
   ];
 }
@@ -223,14 +219,14 @@ function getNextStatusAction(nextStatus: InternshipStatus | null) {
   if (nextStatus === "in_progress") {
     return {
       label: "เปลี่ยนเป็นกำลังฝึกงาน",
-      helper: "เลื่อนนักศึกษาคนนี้จากรอดำเนินการไปสู่สถานะกำลังฝึกงาน",
+      helper: null,
     };
   }
 
   if (nextStatus === "completed") {
     return {
       label: "เปลี่ยนเป็นเสร็จสิ้น",
-      helper: "ปิดข้อมูลการฝึกงานนี้และล็อกการแก้ไขฝั่งนักศึกษา",
+      helper: null,
     };
   }
 
@@ -305,9 +301,7 @@ export function AdminStudentDetailPage({
   const statusDefinitions = getStatusDefinitions();
   const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && nextAction);
   const statusButtonLabel = isStatusChangeBlocked ? "รอนักศึกษาส่งแบบฟอร์ม" : nextAction?.label;
-  const statusHelperText = isStatusChangeBlocked
-    ? `${student.statusControl.blockReason} เมื่อส่งแล้ว ผู้ดูแลจึงจะเปลี่ยนสถานะเป็น${student.statusControl.nextStatus ? ` ${formatInternshipStatusLabel(student.statusControl.nextStatus)}` : " ขั้นตอนถัดไป"}ได้`
-    : nextAction?.helper;
+  const statusHelperText = isStatusChangeBlocked ? student.statusControl.blockReason : nextAction?.helper;
 
   useEffect(() => {
     if (statusState.status === "success") {
@@ -489,12 +483,6 @@ export function AdminStudentDetailPage({
                 ) : null}
               </div>
 
-              <div className="rounded-[28px] border border-white/70 bg-white/70 p-4 text-sm text-slate-700 shadow-lg shadow-admin/10 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">ความหมายของสถานะปัจจุบัน</p>
-                <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base">
-                  {statusDefinitions.find((definition) => definition.id === student.status)?.description}
-                </p>
-              </div>
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
@@ -504,7 +492,7 @@ export function AdminStudentDetailPage({
                   <form action={formAction} className="space-y-3">
                     <input type="hidden" name="studentId" value={student.id} />
                     <StatusSubmitButton label={statusButtonLabel ?? nextAction.label} disabled={isStatusChangeBlocked} />
-                    <p className="text-sm leading-6 text-slate-600">{statusHelperText}</p>
+                    {statusHelperText ? <p className="text-sm leading-6 text-slate-600">{statusHelperText}</p> : null}
                   </form>
                 ) : (
                   <div className="inline-flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
@@ -553,7 +541,6 @@ export function AdminStudentDetailPage({
                   </span>
                 </div>
                 <p className="mt-4 text-sm font-semibold text-current sm:text-base">{definition.label}</p>
-                <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{definition.description}</p>
               </div>
             ))}
           </div>
@@ -682,10 +669,9 @@ export function AdminStudentDetailPage({
             </section>
 
             <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
+            <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                การอัปเดตสถานะต้องอิงตามความหมายเดียวกับหน้าภาพรวมนักศึกษา เริ่มจาก รอดำเนินการ ไปเป็น กำลังฝึกงาน และจบที่ เสร็จสิ้น โดยจะเปลี่ยนสถานะได้หลังนักศึกษาส่งแบบฟอร์มครั้งแรกแล้วเท่านั้น
-              </p>
+            </section>
             </section>
           </div>
         </section>

@@ -36,7 +36,6 @@ export type StudentOverviewPageProps = {
     email: string;
     status: "pending" | "in_progress" | "completed";
     statusLabel: string;
-    statusDescription: string;
     canEdit: boolean;
     hasStartedForm: boolean;
     completionNote: string | null;
@@ -55,7 +54,6 @@ export type StudentOverviewPageProps = {
 type StatusDefinition = {
   id: StudentOverviewPageProps["student"]["status"];
   label: string;
-  description: string;
 };
 
 type SummaryCardProps = {
@@ -169,17 +167,14 @@ function getStatusDefinitions(): StatusDefinition[] {
     {
       id: "pending",
       label: formatInternshipStatusLabel("pending"),
-      description: "ส่งข้อมูลแล้วและอยู่ในสถานะรอดำเนินการ คุณยังกลับไปแก้ไขแบบฟอร์มได้",
     },
     {
       id: "in_progress",
       label: formatInternshipStatusLabel("in_progress"),
-      description: "คุณอยู่ในสถานะกำลังฝึกงาน และยังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",
       label: formatInternshipStatusLabel("completed"),
-      description: "ข้อมูลฝึกงานเสร็จสิ้นแล้วและแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา",
     },
   ];
 }
@@ -375,10 +370,6 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 ) : null}
               </div>
 
-              <div className="rounded-[28px] border border-white/70 bg-white/70 p-4 text-sm text-slate-700 shadow-lg shadow-orange-950/8 sm:p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">ความหมายของสถานะปัจจุบัน</p>
-                <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base">{student.statusDescription}</p>
-              </div>
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-orange-950/8 backdrop-blur sm:p-5">
@@ -432,7 +423,6 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 <p className="mt-4 text-sm font-semibold text-current sm:text-base">
                   {definition.label}
                 </p>
-                <p className="mt-2 text-xs leading-5 text-current/80 sm:text-sm">{definition.description}</p>
               </div>
             ))}
           </div>
@@ -571,16 +561,8 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             </section>
 
             <section className="rounded-[30px] border border-orange-200 bg-[#fff1e7] p-6 shadow-xl shadow-orange-950/6 sm:p-7">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-(--color-student)">
-                คำแนะนำและการช่วยเหลือ
-              </p>
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-950">
-                ดูแลให้ข้อมูลการฝึกงานถูกต้องเสมอ
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                ตรวจสอบข้อมูลสรุปก่อนเปิดแบบฟอร์ม เมื่อสถานะยังเป็นรอดำเนินการหรือกำลังฝึกงาน คุณยังสามารถแก้ไขข้อมูลของตนเองได้ แต่เมื่อสถานะเป็นเสร็จสิ้นแล้ว ข้อมูลจะยังแสดงที่นี่แต่ไม่สามารถแก้ไขได้
-              </p>
-              <div className="mt-5 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-700 ring-1 ring-orange-100">
+              <h2 className="text-xl font-semibold tracking-tight text-slate-950">บัญชีที่ใช้งานอยู่</h2>
+              <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-700 ring-1 ring-orange-100">
                 เข้าสู่ระบบด้วยบัญชี {currentUser.email}
               </div>
             </section>

@@ -19,18 +19,6 @@ export const metadata: Metadata = {
 
 const EMPTY_VALUE = "ยังไม่ได้ระบุ";
 
-function formatStatusDescription(status: StudentOverviewPageProps["student"]["status"]) {
-  if (status === "in_progress") {
-    return "คุณอยู่ในสถานะกำลังฝึกงาน และยังสามารถกลับไปแก้ไขแบบฟอร์มได้";
-  }
-
-  if (status === "pending") {
-    return "คุณได้ส่งข้อมูลแล้วและอยู่ในสถานะรอดำเนินการ โดยยังสามารถกลับไปแก้ไขข้อมูลของตัวเองได้";
-  }
-
-  return "ข้อมูลฝึกงานของคุณเสร็จสิ้นแล้ว และแบบฟอร์มจะเป็นแบบอ่านอย่างเดียวสำหรับนักศึกษา";
-}
-
 function formatDate(value: Date | null | undefined) {
   if (!value) {
     return EMPTY_VALUE;
@@ -242,7 +230,6 @@ export default async function InternOverviewPage() {
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatInternshipStatusLabel(student.internshipStatus),
-      statusDescription: formatStatusDescription(student.internshipStatus),
       canEdit,
       hasStartedForm,
       completionNote:
