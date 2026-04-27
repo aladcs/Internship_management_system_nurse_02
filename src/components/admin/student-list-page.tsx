@@ -611,18 +611,10 @@ export function StudentListPage({
     );
   }
 
-  function handleStudentUpdated(student: StudentListItem) {
-    setStudentItems((currentStudents) =>
-      currentStudents.map((currentStudent) =>
-        currentStudent.id === student.id ? student : currentStudent,
-      ),
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-310 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link href="/intern/dashboard" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -750,7 +742,7 @@ export function StudentListPage({
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className="mx-auto w-full max-w-310 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">

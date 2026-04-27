@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import {
-  AdminMobileNotificationsCard,
   AdminNotificationFeed,
   AdminNotificationMenu,
 } from "@/components/admin/admin-notification-menu";
@@ -156,11 +155,12 @@ export function AdminDashboardPage({
   notifications,
 }: AdminDashboardPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const recentNotifications = notifications.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-310 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link href="/intern/dashboard" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -270,9 +270,14 @@ export function AdminDashboardPage({
               >
                 เปลี่ยนรหัสผ่าน
               </Link>
+              <Link
+                href="/intern/notifications"
+                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                การแจ้งเตือน
+              </Link>
             </nav>
-
-            <AdminMobileNotificationsCard unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
 
             <div className="mt-auto pt-8">
               <form action={logoutAction}>
@@ -288,7 +293,7 @@ export function AdminDashboardPage({
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className="mx-auto w-full max-w-310 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
             พื้นที่ผู้ดูแล
@@ -379,24 +384,29 @@ export function AdminDashboardPage({
             )}
           </article>
 
-          <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+          <article id="notifications" className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-slate-950">การแจ้งเตือน</h2>
                 <p className="mt-1 text-sm text-slate-500">รายการส่งข้อมูลและอัปเดตล่าสุดของนักศึกษา</p>
               </div>
-              {unreadNotificationCount > 0 ? (
-                <form action={markAllNotificationsReadAction}>
-                  <button
-                    type="submit"
-                    className="text-sm font-medium text-(--color-admin) transition hover:opacity-80"
-                  >
-                    อ่านทั้งหมดแล้ว
-                  </button>
-                </form>
-              ) : null}
+              <div className="flex items-center gap-4">
+                <Link href="/intern/dashboard#notifications" className="text-sm font-medium text-(--color-admin) transition hover:opacity-80">
+                  ดูทั้งหมด
+                </Link>
+                {unreadNotificationCount > 0 ? (
+                  <form action={markAllNotificationsReadAction}>
+                    <button
+                      type="submit"
+                      className="text-sm font-medium text-(--color-admin) transition hover:opacity-80"
+                    >
+                      อ่านทั้งหมดแล้ว
+                    </button>
+                  </form>
+                ) : null}
+              </div>
             </div>
-            <AdminNotificationFeed items={notifications} />
+            <AdminNotificationFeed items={recentNotifications} maxHeightClass="max-h-[380px]" />
           </article>
         </section>
       </main>

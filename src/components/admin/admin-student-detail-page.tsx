@@ -349,7 +349,6 @@ export function AdminStudentDetailPage({
 
   useEffect(() => {
     if (statusState.status === "success") {
-      setConfirmStatus(null);
       router.refresh();
     }
   }, [router, statusState.status]);
@@ -360,7 +359,7 @@ export function AdminStudentDetailPage({
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-310 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Link href="/intern/admin/students" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -486,7 +485,7 @@ export function AdminStudentDetailPage({
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className="mx-auto w-full max-w-310 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/intern/admin/students"
@@ -737,7 +736,11 @@ export function AdminStudentDetailPage({
           title="ยืนยันการเปลี่ยนสถานะ"
           description={`คุณต้องการเปลี่ยนสถานะเป็น ${confirmStatusLabel} ใช่หรือไม่?`}
         >
-          <form action={formAction} className="space-y-4">
+          <form
+            action={formAction}
+            className="space-y-4"
+            onSubmit={() => setConfirmStatus(null)}
+          >
             <input type="hidden" name="studentId" value={student.id} />
             <input type="hidden" name="nextStatus" value={confirmStatus} />
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
