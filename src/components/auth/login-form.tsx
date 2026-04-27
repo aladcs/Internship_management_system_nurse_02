@@ -225,14 +225,14 @@ export function LoginForm({
         </div>
       )}
 
-      <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-sm text-slate-600">
+      {/* <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-sm text-slate-600">
         <p className="font-semibold text-slate-800">การเข้าถึงบัญชี</p>
         <div className="mt-3 space-y-2 leading-6">
           <p>ต้องมีบัญชีอยู่ในฐานข้อมูลก่อนจึงจะเข้าสู่ระบบได้</p>
           <p>super admin เป็นผู้สร้างบัญชี admin และ admin เป็นผู้สร้างบัญชีนักศึกษา</p>
           <p>การเข้าสู่ระบบด้วย Google หรือ CMU Entra ใช้งานได้เมื่อเซิร์ฟเวอร์ตั้งค่าเรียบร้อยแล้วเท่านั้น</p>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

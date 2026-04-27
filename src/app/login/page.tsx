@@ -149,7 +149,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <p className="font-semibold uppercase tracking-[0.18em] text-(--color-admin)">
                 ระบบ
               </p>
-              <p className="font-medium text-slate-700">จัดการฝึกงาน</p>
+              <p className="font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
             </div>
           </div>
 
@@ -165,7 +165,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
 
           <p className="text-center text-sm text-slate-500">
-            © 2026 ระบบจัดการฝึกงาน สงวนลิขสิทธิ์
+            © 2026 ระบบจัดการนักศึกษาฝึกงานทั้งหมด สงวนลิขสิทธิ์
           </p>
         </section>
 
