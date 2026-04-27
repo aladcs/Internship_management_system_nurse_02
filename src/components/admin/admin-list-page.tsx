@@ -576,7 +576,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
                   ระบบ
                 </p>
-                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
+                <p className="text-sm font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
               </div>
             </a>
 

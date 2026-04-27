@@ -242,11 +242,9 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   priority
                 />
               </div>
-              <div className="hidden sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">
-                  ระบบ
-                </p>
-                <p className="text-sm font-medium text-slate-700">จัดการฝึกงาน</p>
+             <div className="hidden sm:block">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
+                <p className="text-sm font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
               </div>
             </Link>
 

@@ -177,7 +177,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="relative z-10 flex flex-1 flex-col justify-between px-14 py-14 text-white">
             <div className="flex justify-end">
               <div className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/90 backdrop-blur">
-                พยาบาลศาสตร์ CMU
+                คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
               </div>
             </div>
 
@@ -185,7 +185,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-white/14 shadow-lg shadow-black/10 ring-1 ring-white/20 backdrop-blur-sm">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="โลโก้พยาบาล"
+                  alt="โลโก้คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
                   width={60}
                   height={60}
                   priority
@@ -197,7 +197,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   การเข้าถึงตามสิทธิ์อย่างปลอดภัย
                 </p>
                 <h2 className="text-4xl font-semibold leading-tight tracking-tight text-balance xl:text-5xl">
-                  จุดเข้าสู่ระบบเดียวสำหรับ super admin, admin และนักศึกษา
+                  จุดเข้าสู่ระบบสำหรับผู้ดูแลระบบและนักศึกษา
                 </h2>
                 <p className="max-w-lg text-base leading-7 text-white/82 xl:text-lg">
                   อนุญาตเฉพาะบัญชีที่มีอยู่ในฐานข้อมูล พร้อมเส้นทางการใช้งานที่แยกตามบทบาทสำหรับกระบวนการฝึกงาน
