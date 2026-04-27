@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { AdminStudentDetailPage, type AdminStudentDetailPageProps } from "@/components/admin/admin-student-detail-page";
-import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import {
@@ -138,66 +137,63 @@ export default async function InternAdminStudentDetailPage({
 
   const { id } = await params;
 
-  const [student, notificationSummary] = await Promise.all([
-    prisma.student.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        internshipStatus: true,
-        prefix: true,
-        firstName: true,
-        lastName: true,
-        gender: true,
-        dateOfBirth: true,
-        phoneNumber: true,
-        address: true,
-        parentPhone: true,
-        educationLevel: true,
-        institution: true,
-        faculty: true,
-        major: true,
-        coOpAdvisorName: true,
-        coOpAdvisorPhone: true,
-        submittedAt: true,
-        lastStudentEditAt: true,
-        updatedAt: true,
-        profileImagePath: true,
-        profileImageName: true,
-        user: {
-          select: {
-            email: true,
-            name: true,
-          },
-        },
-        internshipRecord: {
-          select: {
-            position: true,
-            departmentUnit: true,
-            supervisorName: true,
-            startDate: true,
-            endDate: true,
-            additionalDetails: true,
-          },
-        },
-        files: {
-          orderBy: {
-            createdAt: "desc",
-          },
-          select: {
-            id: true,
-            fileName: true,
-            filePath: true,
-            mimeType: true,
-            sizeBytes: true,
-            createdAt: true,
-          },
+  const student = await prisma.student.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      internshipStatus: true,
+      prefix: true,
+      firstName: true,
+      lastName: true,
+      gender: true,
+      dateOfBirth: true,
+      phoneNumber: true,
+      address: true,
+      parentPhone: true,
+      educationLevel: true,
+      institution: true,
+      faculty: true,
+      major: true,
+      coOpAdvisorName: true,
+      coOpAdvisorPhone: true,
+      submittedAt: true,
+      lastStudentEditAt: true,
+      updatedAt: true,
+      profileImagePath: true,
+      profileImageName: true,
+      user: {
+        select: {
+          email: true,
+          name: true,
         },
       },
-    }),
-    getAdminNotificationSummary(session.userId),
-  ]);
+      internshipRecord: {
+        select: {
+          position: true,
+          departmentUnit: true,
+          supervisorName: true,
+          startDate: true,
+          endDate: true,
+          additionalDetails: true,
+        },
+      },
+      files: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          id: true,
+          fileName: true,
+          filePath: true,
+          mimeType: true,
+          sizeBytes: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
 
   if (!student) {
     notFound();
@@ -208,8 +204,6 @@ export default async function InternAdminStudentDetailPage({
       email: session.email,
       name: session.name,
     },
-    unreadNotificationCount: notificationSummary.unreadNotificationCount,
-    notifications: notificationSummary.notifications,
     student: {
       id: student.id,
       firstName: getFirstName(student),

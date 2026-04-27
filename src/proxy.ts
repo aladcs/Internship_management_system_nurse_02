@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import type { UserRole } from "@prisma/client";
 import { getAuthenticatedRedirectPath, getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session-token";
 
@@ -16,32 +17,36 @@ const PUBLIC_INTERN_PREFIXES = [
 const ROLE_PROTECTED_PREFIXES = [
   {
     prefix: "/intern/admins",
-    role: "super_admin",
+    roles: ["super_admin"],
   },
   {
     prefix: "/intern/dashboard",
-    role: "admin",
+    roles: ["admin"],
   },
   {
     prefix: "/intern/admin/students",
-    role: "admin",
+    roles: ["admin"],
+  },
+  {
+    prefix: "/intern/notifications",
+    roles: ["admin", "super_admin"],
   },
   {
     prefix: STUDENT_TOS_PATH,
-    role: "student",
+    roles: ["student"],
   },
   {
     prefix: "/intern/overview",
-    role: "student",
+    roles: ["student"],
   },
   {
     prefix: "/intern/form",
-    role: "student",
+    roles: ["student"],
   },
 ] as const;
 
-function getRequiredRole(pathname: string) {
-  return ROLE_PROTECTED_PREFIXES.find(({ prefix }) => pathname.startsWith(prefix))?.role ?? null;
+function getRequiredRole(pathname: string): readonly UserRole[] | null {
+  return ROLE_PROTECTED_PREFIXES.find(({ prefix }) => pathname.startsWith(prefix))?.roles ?? null;
 }
 
 function isPublicInternPath(pathname: string) {
@@ -90,7 +95,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (session.role !== requiredRole) {
+  if (!requiredRole.includes(session.role)) {
     return NextResponse.redirect(new URL(getAuthenticatedRedirectPath(session), request.url));
   }
 

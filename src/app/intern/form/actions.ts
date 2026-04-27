@@ -132,6 +132,8 @@ async function createNotificationEvent(input: {
       title: input.title,
       message: input.message,
       targetPath: input.targetPath,
+      entityId: input.studentId,
+      entityType: "student",
       receipts: {
         createMany: {
           data: admins.map((admin) => ({

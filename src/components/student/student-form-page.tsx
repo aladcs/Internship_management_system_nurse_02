@@ -875,7 +875,7 @@ export function StudentFormPage({
                   <p className="text-sm text-slate-600">
                     {visibleProfileImage ? visibleProfileImage.name : "ยังไม่มีรูปโปรไฟล์"}
                   </p>
-                  <p className="text-xs leading-5 text-slate-500">รองรับ JPG และ PNG ขนาดไม่เกิน 5 MB</p>
+                  <p className="text-xs leading-5 text-orange-500">รูปถ่ายในชุดเครื่องแบบนักศึกษาที่ถ่ายไว้ระยะเวลาไม่เกิน 3 ถึง 6 เดือน*</p>
                 </div>
               </div>
 

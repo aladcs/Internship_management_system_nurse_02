@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { StudentListItem } from "@/app/intern/admin/students/action-state";
 import { StudentListPage } from "@/components/admin/student-list-page";
-import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
@@ -56,27 +55,24 @@ export default async function InternAdminStudentsPage() {
     redirect(getRoleRedirectPath(session.role));
   }
 
-  const [students, notificationSummary] = await Promise.all([
-    prisma.student.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        internshipStatus: true,
-        firstName: true,
-        lastName: true,
-        major: true,
-        user: {
-          select: {
-            email: true,
-            name: true,
-          },
+  const students = await prisma.student.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      internshipStatus: true,
+      firstName: true,
+      lastName: true,
+      major: true,
+      user: {
+        select: {
+          email: true,
+          name: true,
         },
       },
-    }),
-    getAdminNotificationSummary(session.userId),
-  ]);
+    },
+  });
 
   return (
     <StudentListPage
@@ -84,8 +80,6 @@ export default async function InternAdminStudentsPage() {
         email: session.email,
         name: session.name,
       }}
-      unreadNotificationCount={notificationSummary.unreadNotificationCount}
-      notifications={notificationSummary.notifications}
       students={students.map(toStudentListItem)}
     />
   );

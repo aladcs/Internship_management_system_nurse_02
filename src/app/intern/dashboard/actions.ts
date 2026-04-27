@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { resolveNotificationTargetPath } from "@/lib/admin/notifications";
 import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
@@ -41,6 +42,7 @@ export async function markAllNotificationsReadAction() {
 
   revalidatePath("/intern/dashboard");
   revalidatePath("/intern/admin/students");
+  revalidatePath("/intern/notifications");
 }
 
 export async function markNotificationReadAction(formData: FormData) {
@@ -63,6 +65,8 @@ export async function markNotificationReadAction(formData: FormData) {
       notificationEvent: {
         select: {
           targetPath: true,
+          entityId: true,
+          entityType: true,
         },
       },
     },
@@ -82,5 +86,11 @@ export async function markNotificationReadAction(formData: FormData) {
 
   revalidatePath("/intern/dashboard");
   revalidatePath("/intern/admin/students");
-  redirect(receipt?.notificationEvent.targetPath || fallbackTargetPath || "/intern/admin/students");
+  revalidatePath("/intern/notifications");
+
+  redirect(
+    receipt
+      ? resolveNotificationTargetPath(receipt.notificationEvent)
+      : fallbackTargetPath || "/intern/admin/students",
+  );
 }

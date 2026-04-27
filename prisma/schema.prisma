@@ -106,12 +106,15 @@ model NotificationEvent {
   title      String                     @db.VarChar(255)
   message    String                     @db.Text
   targetPath String?                    @db.VarChar(512)
+  entityId   String?                    @db.VarChar(191)
+  entityType String?                    @db.VarChar(64)
   createdAt  DateTime                   @default(now())
   updatedAt  DateTime                   @updatedAt
   student    Student?                   @relation(fields: [studentId], references: [id], onDelete: SetNull)
   receipts   AdminNotificationReceipt[]
 
   @@index([studentId])
+  @@index([entityType, entityId])
   @@index([createdAt])
   @@index([updatedAt])
 }
@@ -163,5 +166,7 @@ enum EducationLevel {
 
 enum NotificationType {
   form_submitted
+  form_updated
   form_updated_in_progress
+  status_changed
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -18,12 +17,7 @@ import {
   resetStudentPasswordAction,
   saveStudentAction,
 } from "@/app/intern/admin/students/actions";
-import {
-  AdminMobileNotificationsCard,
-  AdminNotificationMenu,
-} from "@/components/admin/admin-notification-menu";
-import { AccountMenu } from "@/components/auth/account-menu";
-import type { AdminNotificationItem } from "@/lib/admin/notifications";
+import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -33,9 +27,13 @@ type StudentListPageProps = {
     email: string;
     name: string | null;
   };
-  unreadNotificationCount: number;
-  notifications: AdminNotificationItem[];
 };
+
+const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
+  { href: "/intern/dashboard", label: "แดชบอร์ด" },
+  { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
+  { href: "/intern/notifications", label: "การแจ้งเตือน" },
+];
 
 type StudentDialogProps = {
   onClose: () => void;
@@ -64,16 +62,6 @@ const STATUS_FILTERS: Array<{
   { value: "in_progress", label: formatInternshipStatusLabel("in_progress") },
   { value: "completed", label: formatInternshipStatusLabel("completed") },
 ];
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-5 w-5">
-      <path d="M4 7h16" />
-      <path d="M4 12h16" />
-      <path d="M4 17h16" />
-    </svg>
-  );
-}
 
 function SearchIcon() {
   return (
@@ -551,13 +539,10 @@ function ResetStudentPasswordDialog({ student, onClose }: ResetPasswordDialogPro
 export function StudentListPage({
   students,
   currentUser,
-  unreadNotificationCount,
-  notifications,
 }: StudentListPageProps) {
   const [studentItems, setStudentItems] = useState(students);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<StudentStatusFilter>("all");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
   const [resettingStudent, setResettingStudent] = useState<StudentListItem | null>(null);
@@ -613,136 +598,14 @@ export function StudentListPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
-        <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
-          <div className="flex items-center gap-4">
-            <Link href="/intern/dashboard" className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image
-                  src="/nurse_logo.svg"
-                  alt="ระบบจัดการฝึกงาน"
-                  width={30}
-                  height={30}
-                  priority
-                />
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
-                  ระบบ
-                </p>
-                <p className="text-sm font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
-              </div>
-            </Link>
-
-            <nav className="hidden items-center gap-2 md:flex">
-              <Link
-                href="/intern/dashboard"
-                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-              >
-                แดชบอร์ด
-              </Link>
-              <Link
-                href="/intern/admin/students"
-                className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)"
-                aria-current="page"
-              >
-                รายชื่อนักศึกษา
-              </Link>
-            </nav>
-          </div>
-
-          <div className="hidden items-center gap-3 md:flex">
-            <AdminNotificationMenu unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
-            <AccountMenu
-              email={currentUser.email}
-              logoutAction={logoutAction}
-              name={currentUser.name}
-              roleLabel="ผู้ดูแลระบบ"
-              tone="admin"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm md:hidden"
-            aria-label="เปิดเมนูนำทาง"
-          >
-            <MenuIcon />
-          </button>
-        </div>
-      </header>
-
-      {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-40 bg-slate-950/40 md:hidden" onClick={() => setMobileMenuOpen(false)}>
-          <aside
-            className="ml-auto flex h-full w-[84%] max-w-sm flex-col bg-white px-5 py-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{currentUser.name?.trim() || currentUser.email}</p>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{currentUser.email}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-700"
-                aria-label="ปิดเมนูนำทาง"
-              >
-                <span className="text-lg">×</span>
-              </button>
-            </div>
-
-            <nav className="mt-8 space-y-2">
-              <Link
-                href="/intern/dashboard"
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                แดชบอร์ด
-              </Link>
-              <Link
-                href="/intern/admin/students"
-                className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)"
-                aria-current="page"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                รายชื่อนักศึกษา
-              </Link>
-              <Link
-                href="/intern/account/name"
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
-              </Link>
-              <Link
-                href="/intern/account/password"
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                เปลี่ยนรหัสผ่าน
-              </Link>
-            </nav>
-
-            <AdminMobileNotificationsCard unreadNotificationCount={unreadNotificationCount} notifications={notifications} />
-
-            <div className="mt-auto pt-8">
-              <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  ออกจากระบบ
-                </button>
-              </form>
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
+    <AdminLayoutShell
+      currentPath="/intern/admin/students"
+      currentUser={currentUser}
+      homeHref="/intern/dashboard"
+      logoutAction={logoutAction}
+      navItems={ADMIN_NAV_ITEMS}
+      roleLabel="ผู้ดูแลระบบ"
+    >
       <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
@@ -965,13 +828,12 @@ export function StudentListPage({
           onDeleted={handleStudentDeleted}
         />
       ) : null}
-
       {resettingStudent ? (
         <ResetStudentPasswordDialog
           student={resettingStudent}
           onClose={() => setResettingStudent(null)}
         />
       ) : null}
-    </div>
+    </AdminLayoutShell>
   );
 }

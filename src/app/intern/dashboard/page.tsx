@@ -84,7 +84,6 @@ export default async function InternDashboardPage() {
       inProgressStudents,
       completedStudents,
     },
-    unreadNotificationCount: notificationSummary.unreadNotificationCount,
     recentStudents: recentStudents.map((student) => ({
       id: student.id,
       name: getStudentDisplayName(student),
