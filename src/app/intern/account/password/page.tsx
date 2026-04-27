@@ -24,7 +24,7 @@ export default async function InternAccountPasswordPage() {
       currentUser={{
         email: session.email,
         name: session.name,
-        roleLabel: isStudent ? "นักศึกษา" : session.role === "super_admin" ? "ซูเปอร์แอดมิน" : "ผู้ดูแล",
+        roleLabel: isStudent ? "นักศึกษา" : session.role === "super_admin" ? "ผู้ดูแลระบบสูงสุด" : "ผู้ดูแล",
       }}
       theme={isStudent ? "student" : "admin"}
     />
