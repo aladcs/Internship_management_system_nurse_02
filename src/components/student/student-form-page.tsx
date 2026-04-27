@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState, useMemo, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
 import {
   logoutAction as defaultLogoutAction,
@@ -290,6 +289,7 @@ function TextInput({
   name,
   type = "text",
   value,
+  onChange,
   placeholder,
   error,
   inputFocusClass,
@@ -298,6 +298,7 @@ function TextInput({
   name: string;
   type?: string;
   value: string;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
   placeholder?: string;
   error?: string;
   inputFocusClass: string;
@@ -307,7 +308,8 @@ function TextInput({
       id={id}
       name={name}
       type={type}
-      defaultValue={value}
+      value={value}
+      onChange={onChange}
       placeholder={placeholder}
       className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
     />
@@ -318,6 +320,7 @@ function SelectInput({
   id,
   name,
   value,
+  onChange,
   options,
   placeholder,
   error,
@@ -326,6 +329,7 @@ function SelectInput({
   id: string;
   name: string;
   value: string;
+  onChange: React.ChangeEventHandler<HTMLSelectElement>;
   options: ReadonlyArray<{ value: string; label: string }>;
   placeholder: string;
   error?: string;
@@ -335,7 +339,8 @@ function SelectInput({
     <select
       id={id}
       name={name}
-      defaultValue={value}
+      value={value}
+      onChange={onChange}
       className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
     >
       <option value="">{placeholder}</option>
@@ -352,6 +357,7 @@ function TextArea({
   id,
   name,
   value,
+  onChange,
   placeholder,
   error,
   rows = 4,
@@ -360,6 +366,7 @@ function TextArea({
   id: string;
   name: string;
   value: string;
+  onChange: React.ChangeEventHandler<HTMLTextAreaElement>;
   placeholder?: string;
   error?: string;
   rows?: number;
@@ -369,7 +376,8 @@ function TextArea({
     <textarea
       id={id}
       name={name}
-      defaultValue={value}
+      value={value}
+      onChange={onChange}
       rows={rows}
       placeholder={placeholder}
       className={`w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
@@ -406,9 +414,15 @@ function SectionCard({
   );
 }
 
-function PrimaryActionButton({ label, className }: { label: string; className: string }) {
-  const { pending } = useFormStatus();
-
+function PrimaryActionButton({
+  label,
+  className,
+  pending,
+}: {
+  label: string;
+  className: string;
+  pending: boolean;
+}) {
   return (
     <button
       type="submit"
@@ -420,9 +434,7 @@ function PrimaryActionButton({ label, className }: { label: string; className: s
   );
 }
 
-function CancelLink({ href }: { href: string }) {
-  const { pending } = useFormStatus();
-
+function CancelLink({ href, pending }: { href: string; pending: boolean }) {
   return (
     <Link
       href={href}
@@ -448,7 +460,8 @@ export function StudentFormPage({
   logoutAction = defaultLogoutAction,
   hiddenFields = [],
 }: StudentFormPageProps) {
-  const [state, formAction] = useActionState(saveAction, initialState);
+  const [state, formAction, isPending] = useActionState(saveAction, initialState);
+  const [formValues, setFormValues] = useState(initialState.values);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
@@ -484,6 +497,27 @@ export function StudentFormPage({
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
   );
+
+  useEffect(() => {
+    setFormValues(state.values);
+  }, [state.values]);
+
+  function updateFormValue<Key extends keyof typeof formValues>(key: Key, value: (typeof formValues)[Key]) {
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [key]: value,
+    }));
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
 
   function handleProfileImageInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -798,7 +832,7 @@ export function StudentFormPage({
           </p>
         </div>
 
-        <form action={formAction} className="mt-8 space-y-6 pb-24">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6 pb-24">
           <SectionCard
             icon={<CameraIcon />}
             title="รูปโปรไฟล์นักศึกษา"
@@ -901,30 +935,30 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="คำนำหน้า" htmlFor="prefix" required error={state.fieldErrors.prefix}>
-                <SelectInput id="prefix" name="prefix" value={state.values.prefix} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="prefix" name="prefix" value={formValues.prefix} onChange={(event) => updateFormValue("prefix", event.target.value)} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="เพศ" htmlFor="gender" required error={state.fieldErrors.gender}>
-                <SelectInput id="gender" name="gender" value={state.values.gender} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="gender" name="gender" value={formValues.gender} onChange={(event) => updateFormValue("gender", event.target.value)} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="ชื่อ" htmlFor="firstName" required error={state.fieldErrors.firstName}>
-                <TextInput id="firstName" name="firstName" value={state.values.firstName} placeholder="ชื่อ" error={state.fieldErrors.firstName} inputFocusClass={theme.inputFocus} />
+                <TextInput id="firstName" name="firstName" value={formValues.firstName} onChange={(event) => updateFormValue("firstName", event.target.value)} placeholder="ชื่อ" error={state.fieldErrors.firstName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="นามสกุล" htmlFor="lastName" required error={state.fieldErrors.lastName}>
-                <TextInput id="lastName" name="lastName" value={state.values.lastName} placeholder="นามสกุล" error={state.fieldErrors.lastName} inputFocusClass={theme.inputFocus} />
+                <TextInput id="lastName" name="lastName" value={formValues.lastName} onChange={(event) => updateFormValue("lastName", event.target.value)} placeholder="นามสกุล" error={state.fieldErrors.lastName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเกิด" htmlFor="dateOfBirth" required error={state.fieldErrors.dateOfBirth}>
-                <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={state.values.dateOfBirth} error={state.fieldErrors.dateOfBirth} inputFocusClass={theme.inputFocus} />
+                <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={formValues.dateOfBirth} onChange={(event) => updateFormValue("dateOfBirth", event.target.value)} error={state.fieldErrors.dateOfBirth} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="หมายเลขโทรศัพท์" htmlFor="phoneNumber" required error={state.fieldErrors.phoneNumber}>
-                <TextInput id="phoneNumber" name="phoneNumber" value={state.values.phoneNumber} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} inputFocusClass={theme.inputFocus} />
+                <TextInput id="phoneNumber" name="phoneNumber" value={formValues.phoneNumber} onChange={(event) => updateFormValue("phoneNumber", event.target.value)} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <div className="md:col-span-2">
                 <FieldShell label="ที่อยู่" htmlFor="address" required error={state.fieldErrors.address}>
-                  <TextArea id="address" name="address" value={state.values.address} placeholder="ที่อยู่ปัจจุบัน" error={state.fieldErrors.address} inputFocusClass={theme.inputFocus} />
+                  <TextArea id="address" name="address" value={formValues.address} onChange={(event) => updateFormValue("address", event.target.value)} placeholder="ที่อยู่ปัจจุบัน" error={state.fieldErrors.address} inputFocusClass={theme.inputFocus} />
                 </FieldShell>
               </div>
               <FieldShell label="เบอร์โทรผู้ปกครอง" htmlFor="parentPhone" required error={state.fieldErrors.parentPhone}>
-                <TextInput id="parentPhone" name="parentPhone" value={state.values.parentPhone} placeholder="เบอร์โทรผู้ปกครอง" error={state.fieldErrors.parentPhone} inputFocusClass={theme.inputFocus} />
+                <TextInput id="parentPhone" name="parentPhone" value={formValues.parentPhone} onChange={(event) => updateFormValue("parentPhone", event.target.value)} placeholder="เบอร์โทรผู้ปกครอง" error={state.fieldErrors.parentPhone} inputFocusClass={theme.inputFocus} />
               </FieldShell>
             </div>
           </SectionCard>
@@ -937,22 +971,22 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ระดับการศึกษา" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
-                <SelectInput id="educationLevel" name="educationLevel" value={state.values.educationLevel} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="educationLevel" name="educationLevel" value={formValues.educationLevel} onChange={(event) => updateFormValue("educationLevel", event.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="สถานศึกษา" htmlFor="institution" required error={state.fieldErrors.institution}>
-                <TextInput id="institution" name="institution" value={state.values.institution} placeholder="สถานศึกษา" error={state.fieldErrors.institution} inputFocusClass={theme.inputFocus} />
+                <TextInput id="institution" name="institution" value={formValues.institution} onChange={(event) => updateFormValue("institution", event.target.value)} placeholder="สถานศึกษา" error={state.fieldErrors.institution} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="คณะ" htmlFor="faculty" required error={state.fieldErrors.faculty}>
-                <TextInput id="faculty" name="faculty" value={state.values.faculty} placeholder="คณะ" error={state.fieldErrors.faculty} inputFocusClass={theme.inputFocus} />
+                <TextInput id="faculty" name="faculty" value={formValues.faculty} onChange={(event) => updateFormValue("faculty", event.target.value)} placeholder="คณะ" error={state.fieldErrors.faculty} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="สาขา" htmlFor="major" required error={state.fieldErrors.major}>
-                <TextInput id="major" name="major" value={state.values.major} placeholder="สาขา" error={state.fieldErrors.major} inputFocusClass={theme.inputFocus} />
+                <TextInput id="major" name="major" value={formValues.major} onChange={(event) => updateFormValue("major", event.target.value)} placeholder="สาขา" error={state.fieldErrors.major} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="ชื่ออาจารย์ที่ปรึกษาสหกิจ" htmlFor="coOpAdvisorName" required error={state.fieldErrors.coOpAdvisorName}>
-                <TextInput id="coOpAdvisorName" name="coOpAdvisorName" value={state.values.coOpAdvisorName} placeholder="ชื่ออาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorName} inputFocusClass={theme.inputFocus} />
+                <TextInput id="coOpAdvisorName" name="coOpAdvisorName" value={formValues.coOpAdvisorName} onChange={(event) => updateFormValue("coOpAdvisorName", event.target.value)} placeholder="ชื่ออาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="เบอร์โทรอาจารย์ที่ปรึกษาสหกิจ" htmlFor="coOpAdvisorPhone" required error={state.fieldErrors.coOpAdvisorPhone}>
-                <TextInput id="coOpAdvisorPhone" name="coOpAdvisorPhone" value={state.values.coOpAdvisorPhone} placeholder="เบอร์โทรอาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorPhone} inputFocusClass={theme.inputFocus} />
+                <TextInput id="coOpAdvisorPhone" name="coOpAdvisorPhone" value={formValues.coOpAdvisorPhone} onChange={(event) => updateFormValue("coOpAdvisorPhone", event.target.value)} placeholder="เบอร์โทรอาจารย์ที่ปรึกษา" error={state.fieldErrors.coOpAdvisorPhone} inputFocusClass={theme.inputFocus} />
               </FieldShell>
             </div>
           </SectionCard>
@@ -965,23 +999,23 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ตำแหน่ง" htmlFor="position" required error={state.fieldErrors.position}>
-                <TextInput id="position" name="position" value={state.values.position} placeholder="ตำแหน่งฝึกงาน" error={state.fieldErrors.position} inputFocusClass={theme.inputFocus} />
+                <TextInput id="position" name="position" value={formValues.position} onChange={(event) => updateFormValue("position", event.target.value)} placeholder="ตำแหน่งฝึกงาน" error={state.fieldErrors.position} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="แผนก / หน่วยงาน" htmlFor="departmentUnit" required error={state.fieldErrors.departmentUnit}>
-                <TextInput id="departmentUnit" name="departmentUnit" value={state.values.departmentUnit} placeholder="แผนกหรือหน่วยงาน" error={state.fieldErrors.departmentUnit} inputFocusClass={theme.inputFocus} />
+                <TextInput id="departmentUnit" name="departmentUnit" value={formValues.departmentUnit} onChange={(event) => updateFormValue("departmentUnit", event.target.value)} placeholder="แผนกหรือหน่วยงาน" error={state.fieldErrors.departmentUnit} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="ชื่อผู้ควบคุม" htmlFor="supervisorName" required error={state.fieldErrors.supervisorName}>
-                <TextInput id="supervisorName" name="supervisorName" value={state.values.supervisorName} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} inputFocusClass={theme.inputFocus} />
+                <TextInput id="supervisorName" name="supervisorName" value={formValues.supervisorName} onChange={(event) => updateFormValue("supervisorName", event.target.value)} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเริ่มฝึกงาน" htmlFor="startDate" required error={state.fieldErrors.startDate}>
-                <TextInput id="startDate" name="startDate" type="date" value={state.values.startDate} error={state.fieldErrors.startDate} inputFocusClass={theme.inputFocus} />
+                <TextInput id="startDate" name="startDate" type="date" value={formValues.startDate} onChange={(event) => updateFormValue("startDate", event.target.value)} error={state.fieldErrors.startDate} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันสิ้นสุดฝึกงาน" htmlFor="endDate" required error={state.fieldErrors.endDate}>
-                <TextInput id="endDate" name="endDate" type="date" value={state.values.endDate} error={state.fieldErrors.endDate} inputFocusClass={theme.inputFocus} />
+                <TextInput id="endDate" name="endDate" type="date" value={formValues.endDate} onChange={(event) => updateFormValue("endDate", event.target.value)} error={state.fieldErrors.endDate} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <div className="md:col-span-2">
                 <FieldShell label="รายละเอียดเพิ่มเติม" htmlFor="additionalDetails" error={state.fieldErrors.additionalDetails}>
-                  <TextArea id="additionalDetails" name="additionalDetails" value={state.values.additionalDetails} placeholder="บันทึกเพิ่มเติมหรือรายละเอียดการฝึกงาน" error={state.fieldErrors.additionalDetails} rows={5} inputFocusClass={theme.inputFocus} />
+                  <TextArea id="additionalDetails" name="additionalDetails" value={formValues.additionalDetails} onChange={(event) => updateFormValue("additionalDetails", event.target.value)} placeholder="บันทึกเพิ่มเติมหรือรายละเอียดการฝึกงาน" error={state.fieldErrors.additionalDetails} rows={5} inputFocusClass={theme.inputFocus} />
                 </FieldShell>
               </div>
             </div>
@@ -1098,8 +1132,8 @@ export function StudentFormPage({
 
           <div className={`sticky bottom-0 z-20 -mx-4 border-t px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ${theme.stickyBar}`}>
             <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-              <CancelLink href={resolvedCancelHref} />
-              <PrimaryActionButton label={primaryButtonLabel} className={theme.primaryButton} />
+              <CancelLink href={resolvedCancelHref} pending={isPending} />
+              <PrimaryActionButton label={primaryButtonLabel} className={theme.primaryButton} pending={isPending} />
             </div>
           </div>
         </form>
