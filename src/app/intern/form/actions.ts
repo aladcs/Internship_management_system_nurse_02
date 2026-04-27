@@ -18,6 +18,7 @@ import {
 } from "@/app/intern/form/action-state";
 import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
+import { sendTelegramAdminAlert } from "@/lib/admin/telegram";
 import { prisma } from "@/lib/prisma";
 import {
   getPrivateStorageRoot,
@@ -139,6 +140,12 @@ async function createNotificationEvent(input: {
         },
       },
     },
+  });
+
+  await sendTelegramAdminAlert({
+    title: input.title,
+    message: input.message,
+    targetPath: input.targetPath,
   });
 }
 
