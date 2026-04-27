@@ -1,15 +1,13 @@
-import { type UserRole } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
   CMU_ENTRA_CALLBACK_PATH,
   getCmuEntraConfig,
 } from "@/lib/auth/cmu-entra";
-import { createSession } from "@/lib/auth/session";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
-import { prisma } from "@/lib/prisma";
+import { normalizeOAuthNextPath, signInOAuthUser } from "@/lib/auth/oauth-login";
 
 const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
+const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
 
 type TokenResponse = {
   access_token?: string;
@@ -37,6 +35,14 @@ function createLoginRedirect(request: NextRequest, code: string) {
 
 function clearStateCookie(response: NextResponse, path: string) {
   response.cookies.set(STATE_COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path,
+    expires: new Date(0),
+  });
+
+  response.cookies.set(NEXT_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -180,6 +186,9 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const storedState = request.cookies.get(STATE_COOKIE_NAME)?.value;
+  const nextPath = normalizeOAuthNextPath(
+    request.cookies.get(NEXT_COOKIE_NAME)?.value ?? null,
+  );
 
   if (providerError) {
     const response = NextResponse.redirect(
@@ -226,31 +235,21 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      name: true,
-    },
+  const result = await signInOAuthUser({
+    email,
+    nextPath,
   });
 
-  if (!user) {
+  if (!result.ok) {
     const response = NextResponse.redirect(createLoginRedirect(request, "email_not_allowed"));
     clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
 
     return response;
   }
 
-  await createSession({
-    userId: user.id,
-    email: user.email,
-    role: user.role as UserRole,
-    name: user.name ?? null,
-  });
-
-  const response = NextResponse.redirect(new URL(getRoleRedirectPath(user.role), request.url));
+  const response = NextResponse.redirect(
+    new URL(result.redirectPath, request.url),
+  );
   clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
 
   return response;

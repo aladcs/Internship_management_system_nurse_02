@@ -3,40 +3,53 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { CMU_ENTRA_LOGIN_PATH, isCmuEntraConfigured } from "@/lib/auth/cmu-entra";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
-import { readSession } from "@/lib/auth/session";
+import { GOOGLE_OAUTH_LOGIN_PATH, isGoogleOAuthConfigured } from "@/lib/auth/google-oauth";
+import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
+import { clearSession, createSession, readSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
 
 const statusChips = [
   {
-    label: "Account access",
-    value: "Server-side",
+    label: "การเข้าถึงบัญชี",
+    value: "ฝั่งเซิร์ฟเวอร์",
     accent: "text-sky-700",
   },
   {
-    label: "Role routing",
-    value: "Automatic",
+    label: "เส้นทางตามสิทธิ์",
+    value: "อัตโนมัติ",
     accent: "text-[color:var(--color-admin)]",
   },
   {
-    label: "Student flow",
-    value: "Protected",
+    label: "ขั้นตอนนักศึกษา",
+    value: "ปลอดภัย",
     accent: "text-emerald-700",
   },
 ] as const;
 
 export const metadata: Metadata = {
-  title: "Login | Internship Management System",
-  description: "Sign in to access the internship management system.",
+  title: "เข้าสู่ระบบ | ระบบจัดการฝึกงาน",
+  description: "เข้าสู่ระบบเพื่อใช้งานระบบจัดการฝึกงาน",
 };
 
 const CMU_LOGIN_ERRORS: Record<string, string> = {
-  not_configured: "CMU Entra login is not configured for this environment.",
-  access_denied: "CMU login was canceled before the account could be verified.",
-  invalid_state: "CMU login could not be verified. Please try again.",
-  token_failed: "CMU login could not complete the secure token exchange.",
-  userinfo_failed: "CMU login could not read your CMU account profile.",
-  email_not_allowed: "This CMU account does not have access to the internship system.",
-  callback_failed: "CMU login returned an unexpected response.",
+  not_configured: "ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ CMU Entra สำหรับสภาพแวดล้อมนี้",
+  access_denied: "การเข้าสู่ระบบ CMU ถูกยกเลิกก่อนตรวจสอบบัญชีสำเร็จ",
+  invalid_state: "ไม่สามารถยืนยันการเข้าสู่ระบบ CMU ได้ กรุณาลองใหม่อีกครั้ง",
+  token_failed: "การเข้าสู่ระบบ CMU ไม่สามารถแลกเปลี่ยนโทเค็นได้สำเร็จ",
+  userinfo_failed: "ไม่สามารถอ่านข้อมูลโปรไฟล์บัญชี CMU ของคุณได้",
+  email_not_allowed: "บัญชี CMU นี้ไม่มีสิทธิ์เข้าใช้งานระบบฝึกงาน",
+  callback_failed: "การเข้าสู่ระบบ CMU ส่งผลลัพธ์กลับมาไม่ถูกต้อง",
+  student_profile_missing: "บัญชีนักศึกษานี้มีข้อมูลโปรไฟล์ไม่ครบถ้วน กรุณาเข้าสู่ระบบใหม่อีกครั้ง",
+};
+
+const GOOGLE_LOGIN_ERRORS: Record<string, string> = {
+  not_configured: "ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ Google สำหรับสภาพแวดล้อมนี้",
+  access_denied: "การเข้าสู่ระบบ Google ถูกยกเลิกก่อนตรวจสอบบัญชีสำเร็จ",
+  invalid_state: "ไม่สามารถยืนยันการเข้าสู่ระบบ Google ได้ กรุณาลองใหม่อีกครั้ง",
+  token_failed: "การเข้าสู่ระบบ Google ไม่สามารถแลกเปลี่ยนโทเค็นได้สำเร็จ",
+  userinfo_failed: "ไม่สามารถอ่านอีเมลจากบัญชี Google ของคุณได้",
+  email_not_allowed: "บัญชี Google นี้ไม่มีสิทธิ์เข้าใช้งานระบบฝึกงาน",
+  callback_failed: "การเข้าสู่ระบบ Google ส่งผลลัพธ์กลับมาไม่ถูกต้อง",
 };
 
 type LoginPageProps = {
@@ -52,14 +65,70 @@ function readSearchParam(
   return typeof value === "string" ? value : null;
 }
 
+function buildOAuthLoginHref(basePath: string, nextPath: string | null) {
+  if (!nextPath) {
+    return basePath;
+  }
+
+  const loginUrl = new URL(basePath, "http://localhost");
+  loginUrl.searchParams.set("next", nextPath);
+
+  return `${loginUrl.pathname}${loginUrl.search}`;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await readSession();
   const resolvedSearchParams = (await searchParams) ?? {};
+  const googleErrorCode = readSearchParam(resolvedSearchParams, "google");
   const cmuErrorCode = readSearchParam(resolvedSearchParams, "cmu");
-  const initialError = cmuErrorCode ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null : null;
+  const nextPath = readSearchParam(resolvedSearchParams, "next");
+  let initialError = googleErrorCode
+    ? GOOGLE_LOGIN_ERRORS[googleErrorCode] ?? null
+    : cmuErrorCode
+      ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null
+      : null;
+
+  const googleLoginHref = buildOAuthLoginHref(GOOGLE_OAUTH_LOGIN_PATH, nextPath);
+  const cmuLoginHref = buildOAuthLoginHref(CMU_ENTRA_LOGIN_PATH, nextPath);
 
   if (session) {
-    redirect(getRoleRedirectPath(session.role));
+    if (session.role === "student") {
+      const studentProfile = await prisma.student.findUnique({
+        where: {
+          userId: session.userId,
+        },
+        select: {
+          id: true,
+          tosAcceptedAt: true,
+        },
+      });
+
+      if (!studentProfile) {
+        await clearSession();
+        initialError ??= CMU_LOGIN_ERRORS.student_profile_missing;
+      } else {
+        const studentHasAcceptedTos = Boolean(studentProfile.tosAcceptedAt);
+
+        if (studentHasAcceptedTos !== Boolean(session.studentHasAcceptedTos)) {
+          await createSession({
+            userId: session.userId,
+            email: session.email,
+            role: session.role,
+            name: session.name,
+            studentHasAcceptedTos,
+          });
+        }
+
+        redirect(
+          getAuthenticatedRedirectPath({
+            role: session.role,
+            studentHasAcceptedTos,
+          }),
+        );
+      }
+    } else {
+      redirect(getAuthenticatedRedirectPath(session));
+    }
   }
 
   return (
@@ -70,7 +139,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
               <Image
                 src="/nurse_logo.svg"
-                alt="Internship Management System"
+                alt="ระบบจัดการฝึกงาน"
                 width={32}
                 height={32}
                 priority
@@ -78,22 +147,25 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
             <div className="text-sm leading-5 text-slate-600">
               <p className="font-semibold uppercase tracking-[0.18em] text-(--color-admin)">
-                Internship
+                ระบบ
               </p>
-              <p className="font-medium text-slate-700">Management System</p>
+              <p className="font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
             </div>
           </div>
 
           <div className="flex flex-1 items-center justify-center py-12">
             <LoginForm
               initialError={initialError}
+              googleLoginEnabled={isGoogleOAuthConfigured()}
+              googleLoginHref={googleLoginHref}
               cmuLoginEnabled={isCmuEntraConfigured()}
-              cmuLoginHref={CMU_ENTRA_LOGIN_PATH}
+              cmuLoginHref={cmuLoginHref}
+              nextPath={nextPath}
             />
           </div>
 
           <p className="text-center text-sm text-slate-500">
-            © 2026 Internship Management System. All rights reserved.
+            © 2026 ระบบจัดการนักศึกษาฝึกงานทั้งหมด สงวนลิขสิทธิ์
           </p>
         </section>
 
@@ -105,7 +177,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="relative z-10 flex flex-1 flex-col justify-between px-14 py-14 text-white">
             <div className="flex justify-end">
               <div className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white/90 backdrop-blur">
-                CMU Nursing
+                คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่
               </div>
             </div>
 
@@ -113,7 +185,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-white/14 shadow-lg shadow-black/10 ring-1 ring-white/20 backdrop-blur-sm">
                 <Image
                   src="/nurse_logo.svg"
-                  alt="Nurse logo"
+                  alt="โลโก้คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
                   width={60}
                   height={60}
                   priority
@@ -122,13 +194,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
               <div className="max-w-xl space-y-4">
                 <p className="text-sm font-semibold uppercase tracking-[0.26em] text-white/80">
-                  Secure role-based access
+                  การเข้าถึงตามสิทธิ์อย่างปลอดภัย
                 </p>
                 <h2 className="text-4xl font-semibold leading-tight tracking-tight text-balance xl:text-5xl">
-                  One sign-in point for super admins, admins, and students.
+                  จุดเข้าสู่ระบบสำหรับผู้ดูแลระบบและนักศึกษา
                 </h2>
                 <p className="max-w-lg text-base leading-7 text-white/82 xl:text-lg">
-                  Access is granted only to accounts provisioned in the database, with role-aware routing prepared for the internship workflow.
+                  อนุญาตเฉพาะบัญชีที่มีอยู่ในฐานข้อมูล พร้อมเส้นทางการใช้งานที่แยกตามบทบาทสำหรับกระบวนการฝึกงาน
                 </p>
               </div>
 
@@ -148,7 +220,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
 
             <div className="text-sm leading-6 text-white/70">
-              Internship workflows remain role-scoped and ready for route protection in the next slice.
+              กระบวนการฝึกงานทั้งหมดถูกจำกัดตามบทบาท และพร้อมสำหรับการป้องกันเส้นทางการใช้งาน
             </div>
           </div>
         </aside>

@@ -1,0 +1,49 @@
+
+> internship_management_system@0.1.0 build
+> next build
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./src/components/admin/student-list-page.tsx:857:19
+Expression expected
+  [90m855 |[0m                       </tr>
+  [90m856 |[0m                     ))}
+[31m[1m>[0m [90m857 |[0m                   </tbody>
+  [90m    |[0m                   [31m[1m^[0m
+  [90m858 |[0m                 </table>
+  [90m859 |[0m               </div>
+  [90m860 |[0m
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/admin/student-list-page.tsx
+    ./src/app/intern/admin/students/page.tsx
+
+
+./src/components/admin/student-list-page.tsx:857:20
+Unterminated regexp literal
+  [90m855 |[0m                       </tr>
+  [90m856 |[0m                     ))}
+[31m[1m>[0m [90m857 |[0m                   </tbody>
+  [90m    |[0m                    [31m[1m^^^^^^^[0m
+  [90m858 |[0m                 </table>
+  [90m859 |[0m               </div>
+  [90m860 |[0m
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/admin/student-list-page.tsx
+    ./src/app/intern/admin/students/page.tsx
+
+
+    at <unknown> (./src/components/admin/student-list-page.tsx:857:19)
+    at <unknown> (./src/components/admin/student-list-page.tsx:857:20)

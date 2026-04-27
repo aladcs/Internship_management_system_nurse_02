@@ -59,10 +59,10 @@ function SubmitButton() {
       {pending ? (
         <>
           <SpinnerIcon />
-          Signing in...
+          กำลังเข้าสู่ระบบ...
         </>
       ) : (
-        "Sign in"
+        "เข้าสู่ระบบ"
       )}
     </button>
   );
@@ -70,14 +70,20 @@ function SubmitButton() {
 
 type LoginFormProps = {
   initialError?: string | null;
+  googleLoginEnabled: boolean;
+  googleLoginHref: string;
   cmuLoginEnabled: boolean;
   cmuLoginHref: string;
+  nextPath?: string | null;
 };
 
 export function LoginForm({
   initialError = null,
+  googleLoginEnabled,
+  googleLoginHref,
   cmuLoginEnabled,
   cmuLoginHref,
+  nextPath = null,
 }: LoginFormProps) {
   const [state, formAction] = useActionState(loginAction, initialLoginActionState);
   const [showPassword, setShowPassword] = useState(false);
@@ -87,10 +93,10 @@ export function LoginForm({
     <div className="w-full max-w-md space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-          Sign in to continue
+          เข้าสู่ระบบเพื่อดำเนินการต่อ
         </h1>
         <p className="text-sm leading-6 text-slate-600 sm:text-base">
-          Use the account assigned to you in the internship management system.
+          ใช้บัญชีที่ได้รับมอบหมายในระบบจัดการนักศึกษาฝึกงาน
         </p>
       </div>
 
@@ -104,9 +110,11 @@ export function LoginForm({
       ) : null}
 
       <form action={formAction} className="space-y-4">
+        {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
+
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-slate-700">
-            Email
+            อีเมล
           </label>
           <input
             id="email"
@@ -122,7 +130,7 @@ export function LoginForm({
 
         <div className="space-y-2">
           <label htmlFor="password" className="text-sm font-medium text-slate-700">
-            Password
+            รหัสผ่าน
           </label>
           <div className="relative">
             <input
@@ -131,14 +139,14 @@ export function LoginForm({
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 pr-12 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
-              placeholder="Enter your password"
+              placeholder="กรอกรหัสผ่าน"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword((current) => !current)}
               className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center text-slate-400 transition hover:text-slate-600"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
             >
               <EyeIcon open={showPassword} />
             </button>
@@ -150,19 +158,51 @@ export function LoginForm({
 
       <div className="flex items-center gap-4 text-xs font-medium uppercase tracking-[0.24em] text-slate-400">
         <span className="h-px flex-1 bg-slate-200" />
-        <span>or</span>
+        <span>หรือ</span>
         <span className="h-px flex-1 bg-slate-200" />
       </div>
+
+      {googleLoginEnabled ? (
+        <a
+          href={googleLoginHref}
+          className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm outline-none transition hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-admin/10"
+          aria-label="เข้าสู่ระบบด้วย Google"
+        >
+          <Image
+            src="/google-logo.svg"
+            alt="Google"
+            width={20}
+            height={20}
+            className="h-5 w-5"
+          />
+          <span>เข้าสู่ระบบด้วย Google</span>
+        </a>
+      ) : (
+        <div
+          aria-disabled="true"
+          className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-400 opacity-70 grayscale"
+          title="ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ Google สำหรับสภาพแวดล้อมนี้"
+        >
+          <Image
+            src="/google-logo.svg"
+            alt="Google"
+            width={20}
+            height={20}
+            className="h-5 w-5"
+          />
+          <span>เข้าสู่ระบบด้วย Google</span>
+        </div>
+      )}
 
       {cmuLoginEnabled ? (
         <a
           href={cmuLoginHref}
           className="block rounded-[22px] outline-none transition hover:opacity-95 focus-visible:ring-4 focus-visible:ring-admin/15"
-          aria-label="Sign in with CMU Account"
+          aria-label="เข้าสู่ระบบด้วยบัญชี CMU"
         >
           <Image
             src="/login_cmu.png"
-            alt="Sign in with CMU Account"
+            alt="เข้าสู่ระบบด้วยบัญชี CMU"
             width={640}
             height={186}
             className="h-auto w-full rounded-[22px]"
@@ -173,11 +213,11 @@ export function LoginForm({
         <div
           aria-disabled="true"
           className="rounded-[22px] opacity-60 grayscale"
-          title="CMU Entra login is not configured for this environment."
+          title="ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ CMU Entra สำหรับสภาพแวดล้อมนี้"
         >
           <Image
             src="/login_cmu.png"
-            alt="CMU Account sign-in is unavailable"
+            alt="ไม่สามารถเข้าสู่ระบบด้วยบัญชี CMU ได้ในขณะนี้"
             width={640}
             height={186}
             className="h-auto w-full rounded-[22px]"
@@ -185,14 +225,14 @@ export function LoginForm({
         </div>
       )}
 
-      <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-sm text-slate-600">
-        <p className="font-semibold text-slate-800">Account access</p>
+      {/* <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 p-5 text-sm text-slate-600">
+        <p className="font-semibold text-slate-800">การเข้าถึงบัญชี</p>
         <div className="mt-3 space-y-2 leading-6">
-          <p>Accounts must already exist in the database before sign-in is allowed.</p>
-          <p>Super admin creates admins, and admins create student accounts.</p>
-          <p>CMU Entra sign-in is available only when the server environment is configured.</p>
+          <p>ต้องมีบัญชีอยู่ในฐานข้อมูลก่อนจึงจะเข้าสู่ระบบได้</p>
+          <p>ผู้ดูแลระบบสูงสุด เป็นผู้สร้างบัญชี admin และ admin เป็นผู้สร้างบัญชีนักศึกษา</p>
+          <p>การเข้าสู่ระบบด้วย Google หรือ CMU Entra ใช้งานได้เมื่อเซิร์ฟเวอร์ตั้งค่าเรียบร้อยแล้วเท่านั้น</p>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -67,8 +67,8 @@ docs/ui/admin-list.md
   - Empty-state create button.
 - Inputs
   - Search field with embedded search icon.
-  - Name input in dialog.
-  - Email input in dialog.
+  - Create dialog: email input.
+  - Edit dialog: name input and email input.
 - Tables
   - Desktop table with columns for admin, email, created, actions.
 - Cards
@@ -107,6 +107,7 @@ docs/ui/admin-list.md
 - “Create Admin” opens a centered modal.
 - Edit icon opens the same modal in edit mode.
 - Delete icon opens a confirmation alert dialog.
+- Create flow asks only for email; name can be added later by the admin from the account menu.
 - Copy password icon changes to a confirmation check mark briefly after copying.
 - Modal close behavior supports explicit cancel/close and final “Done” action.
 - Table rows are informational; the row itself is not clickable.

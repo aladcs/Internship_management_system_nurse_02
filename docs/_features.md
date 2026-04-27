@@ -34,7 +34,7 @@
 
 * [x] ตรวจสอบ email ต้องมีใน DB
 * [x] ตรวจ password
-* [~] Redirect ตาม role:
+* [x] Redirect ตาม role:
 
   * super_admin → `/intern/admins`
   * admin → `/intern/dashboard`
@@ -47,7 +47,7 @@
 ### Feature: Route Protection
 
 * [x] สร้าง middleware / guard
-* [~] block route ตาม role:
+* [x] block route ตาม role:
 
 | Route                  | Role        |
 | ---------------------- | ----------- |
@@ -77,23 +77,24 @@
 
 ### Route
 
-* [ ] `/intern/admins`
+* [x] `/intern/admins`
 
 ### UI
 
-* [ ] Table:
+* [x] Table:
 
   * name
   * email
-* [ ] Button: Create Admin
-* [ ] Actions: Edit / Delete
+* [x] Button: Create Admin
+* [x] Actions: Edit / Delete
 
 ### Logic
 
-* [~] super_admin only
-* [ ] create admin (generate password)
-* [ ] update admin
-* [ ] delete admin
+* [x] super_admin only
+* [x] create admin (generate password)
+* [x] update admin
+* [x] delete admin
+* [x] reset admin password (super_admin only, generate temporary password)
 
 ---
 
@@ -101,29 +102,30 @@
 
 ### Route
 
-* [ ] `/intern/admin/students`
+* [x] `/intern/admin/students`
 
 ### UI
 
-* [ ] Table:
+* [x] Table:
 
   * name
   * email
   * status
-* [ ] Filter by status
-* [ ] Search (optional)
-* [ ] Button: Create Student
+* [x] Filter by status
+* [x] Search (optional)
+* [x] Button: Create Student
 
 ### Actions
 
-* [ ] View
-* [ ] Edit
-* [ ] Delete
+* [x] View
+* [x] Edit
+* [x] Delete
 
 ### Logic
 
-* [~] admin only
-* [ ] fetch from Prisma
+* [x] admin only
+* [x] fetch from Prisma
+* [x] reset student password (admin only, generate temporary password)
 
 ---
 
@@ -131,16 +133,16 @@
 
 ### UI
 
-* [ ] Modal form
+* [x] Modal form
 
   * email
   * name
 
 ### Logic
 
-* [ ] create user (role=student)
-* [ ] generate password
-* [ ] create student record
+* [x] create user (role=student)
+* [x] generate password
+* [x] create student record
 
 ---
 
@@ -152,18 +154,18 @@
 
 ### Route
 
-* [ ] `/intern/overview`
+* [x] `/intern/overview`
 
 ### UI
 
-* [ ] Status badge
-* [ ] Summary card
-* [ ] Edit button
+* [x] Status badge
+* [x] Summary card
+* [x] Edit button
 
 ### Logic
 
-* [~] student only
-* [ ] fetch own data
+* [x] student only
+* [x] fetch own data
 
 ---
 
@@ -171,32 +173,35 @@
 
 ### Route
 
-* [ ] `/intern/form`
+* [x] `/intern/form`
 
 ### Sections
 
-* [ ] Personal Info
-* [ ] Education
-* [ ] Internship Details
-* [ ] File Upload
+* [x] Personal Info
+* [x] Education
+* [x] Internship Details
+* [x] File Upload
 
 ### UI
 
-* [ ] Inputs
-* [ ] Upload zone
-* [ ] Submit button
+* [x] Inputs
+* [x] Upload zone
+* [x] Submit button
 
 ### Logic
 
-* [ ] save/update data
-* [ ] submit → status = pending
-* [ ] editable when:
+* [x] save/update data
+* [x] submit → status = pending
+* [x] editable when:
 
   * pending
   * in_progress
-* [ ] read-only when:
+* [x] read-only when:
 
   * completed
+
+* [ ] block admin status change before first student submit
+* [ ] preserve in_progress on student edit and notify admin
 
 ---
 
@@ -204,15 +209,15 @@
 
 ### UI
 
-* [ ] drag & drop
-* [ ] file list
+* [x] drag & drop
+* [x] file list
 
 ### Logic
 
-* [ ] max 5 files
-* [ ] max 5MB/file
-* [ ] allowed types: PDF, JPG, PNG
-* [ ] store file path in DB
+* [x] max 5 files
+* [x] max 5MB/file
+* [x] allowed types: PDF, JPG, PNG
+* [x] store file path in DB
 
 ---
 
@@ -224,20 +229,20 @@
 
 ### Route
 
-* [ ] `/intern/admin/students/[id]`
+* [x] `/intern/admin/students/[id]`
 
 ### UI
 
-* [ ] Personal info
-* [ ] Education info
-* [ ] Internship info
-* [ ] File list
-* [ ] Status control
+* [x] Personal info
+* [x] Education info
+* [x] Internship info
+* [x] File list
+* [x] Status control
 
 ### Logic
 
-* [~] admin only
-* [ ] change status:
+* [x] admin only
+* [x] change status:
 
   * pending → in_progress
   * in_progress → completed
@@ -248,22 +253,22 @@
 
 ### Route
 
-* [ ] `/intern/dashboard`
+* [x] `/intern/dashboard`
 
 ### UI
 
-* [ ] Cards:
+* [x] Cards:
 
   * total students
   * pending
   * in_progress
   * completed
-* [ ] recent activity
+* [x] recent activity
 
 ### Logic
 
-* [~] admin only
-* [ ] aggregate Prisma data
+* [x] admin only
+* [x] aggregate Prisma data
 
 ---
 
@@ -275,9 +280,9 @@
 
 ### UI
 
-* [ ] icon in navbar
-* [ ] badge count
-* [ ] dropdown list
+* [x] icon in navbar
+* [x] badge count
+* [x] dropdown list
 
 ---
 
@@ -285,14 +290,14 @@
 
 ### Trigger
 
-* [ ] student submits form
-* [ ] student edits while status = in_progress
+* [x] student submits form
+* [x] student edits while status = in_progress
 
 ### Behavior
 
-* [ ] store in DB
-* [ ] mark as read
-* [ ] show latest first
+* [x] store in DB
+* [x] mark as read
+* [x] show latest first
 
 ---
 
@@ -302,18 +307,18 @@
 
 ## 📱 Responsive UI
 
-* [ ] mobile navbar (hamburger)
-* [ ] table responsive
-* [ ] form responsive
+* [x] mobile navbar (hamburger)
+* [x] table responsive
+* [x] form responsive
 
 ---
 
 ## 🎨 UI Consistency
 
-* [~] Admin theme: #aa74ab
-* [~] Student theme: #f26e2c
-* [~] consistent spacing
-* [ ] consistent components
+* [x] Admin theme: #aa74ab
+* [x] Student theme: #f26e2c
+* [x] consistent spacing
+* [x] consistent components
 
 ---
 

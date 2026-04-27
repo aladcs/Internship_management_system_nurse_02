@@ -1,33 +1,56 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import type { UserRole } from "@prisma/client";
+import { getAuthenticatedRedirectPath, getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session-token";
+
+const PUBLIC_INTERN_PREFIXES = [
+  "/intern/auth/cmu",
+  "/intern/auth/cmu/callback",
+  "/intern/auth/google",
+  "/intern/auth/google/callback",
+  "/intern/api/auth/callback",
+  "/intern/api/student-profile-images",
+  "/intern/api/student-files",
+] as const;
 
 const ROLE_PROTECTED_PREFIXES = [
   {
     prefix: "/intern/admins",
-    role: "super_admin",
+    roles: ["super_admin"],
   },
   {
     prefix: "/intern/dashboard",
-    role: "admin",
+    roles: ["admin"],
   },
   {
     prefix: "/intern/admin/students",
-    role: "admin",
+    roles: ["admin"],
+  },
+  {
+    prefix: "/intern/notifications",
+    roles: ["admin"],
+  },
+  {
+    prefix: STUDENT_TOS_PATH,
+    roles: ["student"],
   },
   {
     prefix: "/intern/overview",
-    role: "student",
+    roles: ["student"],
   },
   {
     prefix: "/intern/form",
-    role: "student",
+    roles: ["student"],
   },
 ] as const;
 
-function getRequiredRole(pathname: string) {
-  return ROLE_PROTECTED_PREFIXES.find(({ prefix }) => pathname.startsWith(prefix))?.role ?? null;
+function getRequiredRole(pathname: string): readonly UserRole[] | null {
+  return ROLE_PROTECTED_PREFIXES.find(({ prefix }) => pathname.startsWith(prefix))?.roles ?? null;
+}
+
+function isPublicInternPath(pathname: string) {
+  return PUBLIC_INTERN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 function redirectToLogin(request: NextRequest) {
@@ -45,20 +68,45 @@ function redirectToLogin(request: NextRequest) {
 }
 
 export function proxy(request: NextRequest) {
-  const requiredRole = getRequiredRole(request.nextUrl.pathname);
+  const pathname = request.nextUrl.pathname;
 
-  if (!requiredRole) {
+  if (isPublicInternPath(pathname)) {
     return NextResponse.next();
   }
+
+  const requiredRole = getRequiredRole(pathname);
 
   const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
   if (!session) {
-    return redirectToLogin(request);
+    return pathname.startsWith("/intern") ? redirectToLogin(request) : NextResponse.next();
   }
 
-  if (session.role !== requiredRole) {
-    return NextResponse.redirect(new URL(getRoleRedirectPath(session.role), request.url));
+  if (!requiredRole) {
+    if (
+      session.role === "student" &&
+      !session.studentHasAcceptedTos &&
+      pathname.startsWith("/intern") &&
+      !pathname.startsWith(STUDENT_TOS_PATH)
+    ) {
+      return NextResponse.redirect(new URL(STUDENT_TOS_PATH, request.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  if (!requiredRole.includes(session.role)) {
+    return NextResponse.redirect(new URL(getAuthenticatedRedirectPath(session), request.url));
+  }
+
+  if (session.role === "student") {
+    if (!session.studentHasAcceptedTos && !pathname.startsWith(STUDENT_TOS_PATH)) {
+      return NextResponse.redirect(new URL(STUDENT_TOS_PATH, request.url));
+    }
+
+    if (session.studentHasAcceptedTos && pathname.startsWith(STUDENT_TOS_PATH)) {
+      return NextResponse.redirect(new URL(getRoleRedirectPath(session.role), request.url));
+    }
   }
 
   return NextResponse.next();
@@ -66,10 +114,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/intern/admins/:path*",
-    "/intern/dashboard/:path*",
-    "/intern/admin/students/:path*",
-    "/intern/overview/:path*",
-    "/intern/form/:path*",
+    "/intern/:path*",
   ],
 };

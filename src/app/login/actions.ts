@@ -4,7 +4,7 @@ import { type UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
-import { getRoleRedirectPath } from "@/lib/auth/roles";
+import { getSafePostLoginRedirectPath } from "@/lib/auth/roles";
 import { createSession } from "@/lib/auth/session";
 import type { LoginActionState } from "@/app/login/action-state";
 
@@ -16,16 +16,23 @@ function normalizePassword(value: FormDataEntryValue | null) {
   return String(value ?? "");
 }
 
+function normalizeNextPath(value: FormDataEntryValue | null) {
+  const nextPath = String(value ?? "").trim();
+
+  return nextPath || null;
+}
+
 export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> {
   const email = normalizeEmail(formData.get("email"));
   const password = normalizePassword(formData.get("password"));
+  const nextPath = normalizeNextPath(formData.get("next"));
 
   if (!email || !password) {
     return {
-      error: "Enter both email and password.",
+      error: "กรุณากรอกอีเมลและรหัสผ่าน",
       email,
     };
   }
@@ -38,12 +45,17 @@ export async function loginAction(
       passwordHash: true,
       role: true,
       name: true,
+      studentProfile: {
+        select: {
+          tosAcceptedAt: true,
+        },
+      },
     },
   });
 
   if (!user) {
     return {
-      error: "Invalid email or password.",
+      error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
       email,
     };
   }
@@ -52,7 +64,7 @@ export async function loginAction(
 
   if (!passwordMatches) {
     return {
-      error: "Invalid email or password.",
+      error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
       email,
     };
   }
@@ -62,7 +74,22 @@ export async function loginAction(
     email: user.email,
     role: user.role as UserRole,
     name: user.name ?? null,
+    studentHasAcceptedTos:
+      user.role === ("student" satisfies UserRole)
+        ? Boolean(user.studentProfile?.tosAcceptedAt)
+        : undefined,
   });
 
-  redirect(getRoleRedirectPath(user.role));
+  redirect(
+    getSafePostLoginRedirectPath(
+      {
+        role: user.role as UserRole,
+        studentHasAcceptedTos:
+          user.role === ("student" satisfies UserRole)
+            ? Boolean(user.studentProfile?.tosAcceptedAt)
+            : undefined,
+      },
+      nextPath,
+    ),
+  );
 }

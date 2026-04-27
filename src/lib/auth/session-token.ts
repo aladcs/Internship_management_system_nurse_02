@@ -10,6 +10,7 @@ export type AuthSession = {
   email: string;
   role: UserRole;
   name: string | null;
+  studentHasAcceptedTos?: boolean;
   expiresAt: number;
 };
 
@@ -95,6 +96,7 @@ export function verifySessionToken(token: string | undefined) {
       email: parsed.email,
       role: parsed.role,
       name: parsed.name,
+      studentHasAcceptedTos: parsed.studentHasAcceptedTos,
       expiresAt: parsed.exp,
     } satisfies AuthSession;
   } catch {
