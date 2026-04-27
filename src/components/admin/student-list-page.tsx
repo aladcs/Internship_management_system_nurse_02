@@ -36,11 +36,8 @@ type StudentListPageProps = {
 };
 
 type StudentDialogProps = {
-  mode: "create" | "edit";
-  student: StudentListItem | null;
   onClose: () => void;
   onCreated: (student: StudentListItem) => void;
-  onUpdated: (student: StudentListItem) => void;
 };
 
 type DeleteDialogProps = {
@@ -292,22 +289,14 @@ function ActionIconButton({
   );
 }
 
-function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: StudentDialogProps) {
+function StudentDialog({ onClose, onCreated }: StudentDialogProps) {
   const [state, formAction] = useActionState(saveStudentAction, {
     ...initialSaveStudentActionState,
     values: {
-      name: student?.name ?? "",
-      email: student?.email ?? "",
+      email: "",
     },
   });
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (state.status === "updated" && state.student) {
-      onUpdated(state.student);
-      onClose();
-    }
-  }, [onClose, onUpdated, state.status, state.student]);
 
   useEffect(() => {
     if (!copied) {
@@ -340,7 +329,7 @@ function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: Student
     return (
       <ModalFrame
         title="สร้างบัญชีนักศึกษาเรียบร้อยแล้ว"
-        description="กรุณาเก็บรหัสผ่านที่ระบบสร้างให้อย่างปลอดภัยก่อนปิดหน้าต่างนี้ เนื่องจากจะแสดงเพียงครั้งเดียวในขั้นตอนนี้"
+        description="เก็บรหัสผ่านนี้ไว้ก่อนปิดหน้าต่าง เนื่องจากจะแสดงเพียงครั้งเดียว"
       >
         <div className="space-y-5">
           <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
@@ -363,7 +352,6 @@ function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: Student
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p className="font-medium text-slate-800">{state.student.name}</p>
             <p>{state.student.email}</p>
           </div>
 
@@ -383,32 +371,10 @@ function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: Student
 
   return (
     <ModalFrame
-      title={mode === "create" ? "สร้างนักศึกษา" : "แก้ไขนักศึกษา"}
-      description={
-        mode === "create"
-          ? "เพิ่มบัญชีนักศึกษา ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
-          : "อัปเดตชื่อและอีเมลของบัญชีนักศึกษาที่เลือก"
-      }
+      title="สร้างนักศึกษา"
+      description="เพิ่มบัญชีนักศึกษา ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
     >
       <form action={formAction} className="space-y-5">
-        <input type="hidden" name="intent" value={mode} />
-        <input type="hidden" name="studentId" value={student?.id ?? ""} />
-        <div className="space-y-2">
-          <label htmlFor="student-name" className="text-sm font-medium text-slate-700">
-            ชื่อ
-          </label>
-          <input
-            id="student-name"
-            name="name"
-            defaultValue={state.values.name}
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:ring-4 focus:ring-admin/10"
-            placeholder="กรอกชื่อนักศึกษา"
-          />
-          {state.fieldErrors.name ? (
-            <p className="text-sm text-red-600">{state.fieldErrors.name}</p>
-          ) : null}
-        </div>
-
         <div className="space-y-2">
           <label htmlFor="student-email" className="text-sm font-medium text-slate-700">
             อีเมล
@@ -432,11 +398,9 @@ function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: Student
           </div>
         ) : null}
 
-        {mode === "create" ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            ระบบจะสร้างโปรไฟล์นักศึกษาพร้อมสถานะเริ่มต้นเป็นรอดำเนินการ
-          </div>
-        ) : null}
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          ระบบจะสร้างบัญชีนักศึกษาและสถานะเริ่มต้นเป็นรอดำเนินการ ชื่อจะถูกบันทึกเมื่อนักศึกษากรอกแบบฟอร์ม
+        </div>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
@@ -446,7 +410,7 @@ function StudentDialog({ mode, student, onClose, onCreated, onUpdated }: Student
           >
             ยกเลิก
           </button>
-          <ActionButton>{mode === "create" ? "สร้างนักศึกษา" : "บันทึกการเปลี่ยนแปลง"}</ActionButton>
+          <ActionButton>สร้างนักศึกษา</ActionButton>
         </div>
       </form>
     </ModalFrame>
@@ -1017,11 +981,8 @@ export function StudentListPage({
 
       {createOpen ? (
         <StudentDialog
-          mode="create"
-          student={null}
           onClose={() => setCreateOpen(false)}
           onCreated={handleStudentCreated}
-          onUpdated={handleStudentUpdated}
         />
       ) : null}
       {deletingStudent ? (

@@ -9,14 +9,12 @@ export type StudentListItem = {
 };
 
 export type SaveStudentActionState = {
-  status: "idle" | "validation-error" | "created" | "updated" | "error";
+  status: "idle" | "validation-error" | "created" | "error";
   message: string | null;
   fieldErrors: {
-    name?: string;
     email?: string;
   };
   values: {
-    name: string;
     email: string;
   };
   student: StudentListItem | null;
@@ -28,7 +26,6 @@ export const initialSaveStudentActionState: SaveStudentActionState = {
   message: null,
   fieldErrors: {},
   values: {
-    name: "",
     email: "",
   },
   student: null,

@@ -15,21 +15,8 @@ import { generatePassword, hashPassword } from "@/lib/auth/password";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
-function normalizeName(value: FormDataEntryValue | null) {
-  return String(value ?? "").trim();
-}
-
 function normalizeEmail(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().toLowerCase();
-}
-
-function splitStudentName(name: string) {
-  const parts = name.split(/\s+/).filter(Boolean);
-
-  return {
-    firstName: parts[0] ?? null,
-    lastName: parts.length > 1 ? parts.slice(1).join(" ") : null,
-  };
 }
 
 function toStudentListItem(student: {
@@ -74,15 +61,8 @@ export async function saveStudentAction(
   formData: FormData,
 ): Promise<SaveStudentActionState> {
   const session = await requireAdminSession();
-  const intent = String(formData.get("intent") ?? "create");
-  const studentId = String(formData.get("studentId") ?? "").trim();
-  const name = normalizeName(formData.get("name"));
   const email = normalizeEmail(formData.get("email"));
   const fieldErrors: SaveStudentActionState["fieldErrors"] = {};
-
-  if (!name) {
-    fieldErrors.name = "กรุณากรอกชื่อนักศึกษา";
-  }
 
   if (!email) {
     fieldErrors.email = "กรุณากรอกอีเมลนักศึกษา";
@@ -95,7 +75,7 @@ export async function saveStudentAction(
       status: "validation-error",
       message: null,
       fieldErrors,
-      values: { name, email },
+      values: { email },
       student: null,
       generatedPassword: null,
     };
@@ -106,110 +86,27 @@ export async function saveStudentAction(
     select: { id: true },
   });
 
-  if (existingByEmail && (intent !== "edit" || existingByEmail.id !== studentId)) {
+  if (existingByEmail) {
     return {
       status: "validation-error",
       message: null,
       fieldErrors: {
         email: "มีบัญชีที่ใช้อีเมลนี้อยู่แล้ว",
       },
-      values: { name, email },
+      values: { email },
       student: null,
-      generatedPassword: null,
-    };
-  }
-
-  if (intent === "edit") {
-    const existingStudent = await prisma.student.findFirst({
-      where: {
-        id: studentId,
-        user: {
-          role: "student",
-        },
-      },
-      select: {
-        id: true,
-        userId: true,
-        internshipStatus: true,
-        major: true,
-        user: {
-          select: {
-            email: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    if (!existingStudent) {
-      return {
-        status: "error",
-        message: "ไม่พบนักศึกษาที่เลือก",
-        fieldErrors: {},
-        values: { name, email },
-        student: null,
-        generatedPassword: null,
-      };
-    }
-
-    const { firstName, lastName } = splitStudentName(name);
-
-    const updatedStudent = await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: existingStudent.userId },
-        data: {
-          name,
-          email,
-        },
-      });
-
-      return tx.student.update({
-        where: { id: existingStudent.id },
-        data: {
-          firstName,
-          lastName,
-        },
-        select: {
-          id: true,
-          internshipStatus: true,
-          major: true,
-          user: {
-            select: {
-              email: true,
-              name: true,
-            },
-          },
-        },
-      });
-    });
-
-    revalidatePath("/intern/admin/students");
-    revalidatePath(`/intern/admin/students/${updatedStudent.id}`);
-    revalidatePath("/intern/overview");
-    revalidatePath("/intern/form");
-
-    return {
-      status: "updated",
-      message: "อัปเดตข้อมูลนักศึกษาเรียบร้อยแล้ว",
-      fieldErrors: {},
-      values: {
-        name: updatedStudent.user.name?.trim() || "",
-        email: updatedStudent.user.email,
-      },
-      student: toStudentListItem(updatedStudent),
       generatedPassword: null,
     };
   }
 
   const generatedPassword = generatePassword();
   const passwordHash = await hashPassword(generatedPassword);
-  const { firstName, lastName } = splitStudentName(name);
 
   const createdStudent = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         email,
-        name,
+        name: null,
         role: "student",
         createdById: session.userId,
         passwordHash,
@@ -222,8 +119,6 @@ export async function saveStudentAction(
     return tx.student.create({
       data: {
         userId: user.id,
-        firstName,
-        lastName,
       },
       select: {
         id: true,
@@ -243,10 +138,9 @@ export async function saveStudentAction(
 
   return {
     status: "created",
-    message: "สร้างบัญชีนักศึกษาเรียบร้อยแล้ว",
+    message: "สร้างบัญชีนักศึกษาแล้ว",
     fieldErrors: {},
     values: {
-      name,
       email,
     },
     student: toStudentListItem(createdStudent),
