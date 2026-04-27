@@ -6,8 +6,8 @@ import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import {
   formatInternshipStatusLabel,
+  getAllowedAdminStatusTransitions,
   getAdminStatusTransitionBlockReason,
-  getNextInternshipStatus,
 } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import {
@@ -223,7 +223,7 @@ export default async function InternAdminStudentDetailPage({
           ? "ข้อมูลฝึกงานนี้เสร็จสมบูรณ์แล้วและนักศึกษาไม่สามารถแก้ไขได้"
           : null,
       statusControl: {
-        nextStatus: getNextInternshipStatus(student.internshipStatus),
+          allowedTransitions: getAllowedAdminStatusTransitions(student.internshipStatus),
         blockReason: getAdminStatusTransitionBlockReason({
           status: student.internshipStatus,
           submittedAt: student.submittedAt,

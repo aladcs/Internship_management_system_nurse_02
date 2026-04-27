@@ -11,8 +11,7 @@ import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import {
   formatInternshipStatusLabel,
-  getAdminStatusTransitionBlockReason,
-  getNextInternshipStatus,
+  getAdminStatusTransitionError,
 } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 
@@ -37,12 +36,21 @@ export async function updateStudentStatusAction(
   await requireAdminSession();
 
   const studentId = String(formData.get("studentId") ?? "").trim();
+  const requestedStatus = String(formData.get("nextStatus") ?? "").trim();
 
   if (!studentId) {
     return {
       ...initialUpdateStudentStatusActionState,
       status: "error",
       message: "ไม่พบข้อมูลนักศึกษาที่เลือก",
+    };
+  }
+
+  if (requestedStatus !== "pending" && requestedStatus !== "in_progress" && requestedStatus !== "completed") {
+    return {
+      ...initialUpdateStudentStatusActionState,
+      status: "error",
+      message: "สถานะที่ส่งมาไม่ถูกต้อง",
     };
   }
 
@@ -65,27 +73,17 @@ export async function updateStudentStatusAction(
     };
   }
 
-  const blockedReason = getAdminStatusTransitionBlockReason({
-    status: student.internshipStatus,
+  const transitionError = getAdminStatusTransitionError({
+    currentStatus: student.internshipStatus,
+    nextStatus: requestedStatus,
     submittedAt: student.submittedAt,
   });
 
-  if (blockedReason) {
+  if (transitionError) {
     return {
       ...initialUpdateStudentStatusActionState,
       status: "error",
-      message: blockedReason,
-      updatedStatus: student.internshipStatus,
-    };
-  }
-
-  const nextStatus = getNextInternshipStatus(student.internshipStatus);
-
-  if (!nextStatus) {
-    return {
-      ...initialUpdateStudentStatusActionState,
-      status: "error",
-      message: "ข้อมูลฝึกงานนี้เสร็จสมบูรณ์แล้ว",
+      message: transitionError,
       updatedStatus: student.internshipStatus,
     };
   }
@@ -95,7 +93,7 @@ export async function updateStudentStatusAction(
       id: student.id,
     },
     data: {
-      internshipStatus: nextStatus,
+      internshipStatus: requestedStatus,
     },
     select: {
       internshipStatus: true,

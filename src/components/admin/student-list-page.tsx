@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { ModalFrame } from "@/components/admin/modal-frame";
 import type { InternshipStatus } from "@prisma/client";
 import {
   initialDeleteStudentActionState,
@@ -235,28 +236,6 @@ function DeleteButton() {
   );
 }
 
-function ModalFrame({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-950/15 sm:p-7">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">{title}</h2>
-          <p className="text-sm leading-6 text-slate-600">{description}</p>
-        </div>
-        <div className="mt-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 function ActionIconButton({
   label,
   children,
@@ -373,6 +352,7 @@ function StudentDialog({ onClose, onCreated }: StudentDialogProps) {
     <ModalFrame
       title="สร้างนักศึกษา"
       description="เพิ่มบัญชีนักศึกษา ระบบจะสร้างรหัสผ่านให้หลังจากบันทึก"
+      maxWidth="2xl"
     >
       <form action={formAction} className="space-y-5">
         <div className="space-y-2">

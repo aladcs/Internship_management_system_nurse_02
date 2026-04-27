@@ -16,6 +16,7 @@ import {
   AdminMobileNotificationsCard,
   AdminNotificationMenu,
 } from "@/components/admin/admin-notification-menu";
+import { ModalFrame } from "@/components/admin/modal-frame";
 import { AccountMenu } from "@/components/auth/account-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
@@ -55,7 +56,7 @@ export type AdminStudentDetailPageProps = {
     statusLabel: string;
     completionNote: string | null;
     statusControl: {
-      nextStatus: InternshipStatus | null;
+      allowedTransitions: InternshipStatus[];
       blockReason: string | null;
     };
     profileImage: ProfileImageItem | null;
@@ -215,25 +216,69 @@ function getStatusCardClasses(definitionId: InternshipStatus, currentStatus: Int
   return "border-white/70 bg-white/65 text-slate-600";
 }
 
-function getNextStatusAction(nextStatus: InternshipStatus | null) {
-  if (nextStatus === "in_progress") {
+function getStatusAction(status: InternshipStatus) {
+  if (status === "pending") {
     return {
-      label: "เปลี่ยนเป็นกำลังฝึกงาน",
-      helper: null,
+      label: "ย้อนกลับเป็นรอดำเนินการ",
+      tone: "secondary" as const,
     };
   }
 
-  if (nextStatus === "completed") {
+  if (status === "in_progress") {
+    return {
+      label: "เปลี่ยนเป็นกำลังฝึกงาน",
+      tone: "primary" as const,
+    };
+  }
+
+  if (status === "completed") {
     return {
       label: "เปลี่ยนเป็นเสร็จสิ้น",
-      helper: null,
+      tone: "primary" as const,
     };
   }
 
   return null;
 }
 
-function StatusSubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
+function getStatusButtonClass(tone: "primary" | "secondary") {
+  return tone === "secondary"
+    ? "inline-flex h-12 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+    : "inline-flex h-12 w-full items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-lg shadow-admin/25 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70";
+}
+
+function StatusActionButton({
+  label,
+  onClick,
+  disabled,
+  tone = "primary",
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: "primary" | "secondary";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={getStatusButtonClass(tone)}
+    >
+      {label}
+    </button>
+  );
+}
+
+function StatusSubmitButton({
+  label,
+  disabled,
+  tone = "primary",
+}: {
+  label: string;
+  disabled?: boolean;
+  tone?: "primary" | "secondary";
+}) {
   const { pending } = useFormStatus();
   const isDisabled = pending || disabled;
 
@@ -241,7 +286,7 @@ function StatusSubmitButton({ label, disabled }: { label: string; disabled?: boo
     <button
       type="submit"
       disabled={isDisabled}
-      className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-lg shadow-admin/25 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+      className={getStatusButtonClass(tone)}
     >
       {pending ? "กำลังอัปเดต..." : label}
     </button>
@@ -292,22 +337,25 @@ export function AdminStudentDetailPage({
   student,
 }: AdminStudentDetailPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [confirmStatus, setConfirmStatus] = useState<InternshipStatus | null>(null);
   const [statusState, formAction] = useActionState<UpdateStudentStatusActionState, FormData>(
     updateStudentStatusAction,
     initialUpdateStudentStatusActionState,
   );
   const router = useRouter();
-  const nextAction = getNextStatusAction(student.statusControl.nextStatus);
   const statusDefinitions = getStatusDefinitions();
-  const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && nextAction);
-  const statusButtonLabel = isStatusChangeBlocked ? "รอนักศึกษาส่งแบบฟอร์ม" : nextAction?.label;
-  const statusHelperText = isStatusChangeBlocked ? student.statusControl.blockReason : nextAction?.helper;
+  const hasStatusActions = student.statusControl.allowedTransitions.length > 0;
+  const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && hasStatusActions);
 
   useEffect(() => {
     if (statusState.status === "success") {
+      setConfirmStatus(null);
       router.refresh();
     }
   }, [router, statusState.status]);
+
+  const confirmAction = confirmStatus ? getStatusAction(confirmStatus) : null;
+  const confirmStatusLabel = confirmStatus ? formatInternshipStatusLabel(confirmStatus) : null;
 
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
@@ -488,12 +536,19 @@ export function AdminStudentDetailPage({
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">การควบคุมสถานะ</p>
               <div className="mt-3 space-y-3">
-                {nextAction ? (
-                  <form action={formAction} className="space-y-3">
-                    <input type="hidden" name="studentId" value={student.id} />
-                    <StatusSubmitButton label={statusButtonLabel ?? nextAction.label} disabled={isStatusChangeBlocked} />
-                    {statusHelperText ? <p className="text-sm leading-6 text-slate-600">{statusHelperText}</p> : null}
-                  </form>
+                {hasStatusActions ? (
+                  <div className="space-y-3">
+                    {student.statusControl.allowedTransitions.map((nextStatus) => (
+                      <StatusActionButton
+                        key={nextStatus}
+                        label={getStatusAction(nextStatus)?.label ?? formatInternshipStatusLabel(nextStatus)}
+                        onClick={() => setConfirmStatus(nextStatus)}
+                        disabled={isStatusChangeBlocked}
+                        tone={getStatusAction(nextStatus)?.tone}
+                      />
+                    ))}
+                    {student.statusControl.blockReason ? <p className="text-sm leading-6 text-slate-600">{student.statusControl.blockReason}</p> : null}
+                  </div>
                 ) : (
                   <div className="inline-flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
                     <span className="mt-0.5 text-slate-500">
@@ -586,7 +641,7 @@ export function AdminStudentDetailPage({
 
               <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[24px] border border-admin/15 bg-admin/10 text-(--color-admin)">
+                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-admin/15 bg-admin/10 text-(--color-admin)">
                     {student.profileImage ? (
                       <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
                     ) : (
@@ -676,6 +731,28 @@ export function AdminStudentDetailPage({
           </div>
         </section>
       </main>
+
+      {confirmStatus && confirmAction && confirmStatusLabel ? (
+        <ModalFrame
+          title="ยืนยันการเปลี่ยนสถานะ"
+          description={`คุณต้องการเปลี่ยนสถานะเป็น ${confirmStatusLabel} ใช่หรือไม่?`}
+        >
+          <form action={formAction} className="space-y-4">
+            <input type="hidden" name="studentId" value={student.id} />
+            <input type="hidden" name="nextStatus" value={confirmStatus} />
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmStatus(null)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                ยกเลิก
+              </button>
+              <StatusSubmitButton label="ยืนยัน" tone="primary" />
+            </div>
+          </form>
+        </ModalFrame>
+      ) : null}
     </div>
   );
 }
