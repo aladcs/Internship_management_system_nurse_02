@@ -196,12 +196,12 @@ function getStatusDefinitions(): StatusDefinition[] {
     {
       id: "pending",
       label: formatInternshipStatusLabel("pending"),
-      description: "นักศึกษาได้ส่งข้อมูลแล้วและกำลังรอให้แอดมินตรวจสอบ โดยยังแก้ไขข้อมูลได้",
+      description: "นักศึกษาได้ส่งข้อมูลแล้วและอยู่ในสถานะรอดำเนินการ โดยยังแก้ไขข้อมูลได้",
     },
     {
       id: "in_progress",
       label: formatInternshipStatusLabel("in_progress"),
-      description: "การฝึกงานกำลังดำเนินการอยู่หรืออยู่ในช่วงกำลังฝึกงาน และนักศึกษายังแก้ไขข้อมูลได้",
+      description: "นักศึกษาอยู่ในสถานะกำลังฝึกงาน และยังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",
@@ -222,8 +222,8 @@ function getStatusCardClasses(definitionId: InternshipStatus, currentStatus: Int
 function getNextStatusAction(nextStatus: InternshipStatus | null) {
   if (nextStatus === "in_progress") {
     return {
-      label: "เปลี่ยนเป็นกำลังดำเนินการ",
-      helper: "เลื่อนนักศึกษาคนนี้จากรอตรวจสอบไปสู่การติดตามการฝึกงานที่กำลังดำเนินอยู่",
+      label: "เปลี่ยนเป็นกำลังฝึกงาน",
+      helper: "เลื่อนนักศึกษาคนนี้จากรอดำเนินการไปสู่สถานะกำลังฝึกงาน",
     };
   }
 
@@ -684,7 +684,7 @@ export function AdminStudentDetailPage({
             <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                การอัปเดตสถานะต้องอิงตามความหมายเดียวกับหน้าภาพรวมนักศึกษา เริ่มจาก รอตรวจสอบ ไปเป็น กำลังดำเนินการ และจบที่ เสร็จสิ้น โดยจะเปลี่ยนสถานะได้หลังนักศึกษาส่งแบบฟอร์มครั้งแรกแล้วเท่านั้น
+                การอัปเดตสถานะต้องอิงตามความหมายเดียวกับหน้าภาพรวมนักศึกษา เริ่มจาก รอดำเนินการ ไปเป็น กำลังฝึกงาน และจบที่ เสร็จสิ้น โดยจะเปลี่ยนสถานะได้หลังนักศึกษาส่งแบบฟอร์มครั้งแรกแล้วเท่านั้น
               </p>
             </section>
           </div>

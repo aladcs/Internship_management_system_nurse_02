@@ -320,7 +320,7 @@ export function AdminDashboardPage({
             tone="bg-amber-100 text-amber-700"
           />
           <StatCard
-            label="กำลังดำเนินการ"
+            label="กำลังฝึกงาน"
             value={stats.inProgressStudents}
             hint="การฝึกงานที่ยังดำเนินอยู่และยังอัปเดตได้"
             icon={<ProgressIcon />}

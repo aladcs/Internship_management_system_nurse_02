@@ -7,11 +7,11 @@ const NEXT_STATUS_BY_CURRENT: Partial<Record<InternshipStatus, InternshipStatus>
 
 export function formatInternshipStatusLabel(status: InternshipStatus) {
   if (status === "pending") {
-    return "รอตรวจสอบ";
+    return "รอดำเนินการ";
   }
 
   if (status === "in_progress") {
-    return "กำลังดำเนินการ";
+    return "กำลังฝึกงาน";
   }
 
   return "เสร็จสิ้น";

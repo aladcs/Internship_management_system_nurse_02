@@ -169,12 +169,12 @@ function getStatusDefinitions(): StatusDefinition[] {
     {
       id: "pending",
       label: formatInternshipStatusLabel("pending"),
-      description: "ส่งข้อมูลแล้วและรอให้แอดมินตรวจสอบ คุณยังกลับไปแก้ไขแบบฟอร์มได้",
+      description: "ส่งข้อมูลแล้วและอยู่ในสถานะรอดำเนินการ คุณยังกลับไปแก้ไขแบบฟอร์มได้",
     },
     {
       id: "in_progress",
       label: formatInternshipStatusLabel("in_progress"),
-      description: "การฝึกงานกำลังดำเนินการอยู่หรืออยู่ในช่วงกำลังฝึกงาน และยังแก้ไขข้อมูลได้",
+      description: "คุณอยู่ในสถานะกำลังฝึกงาน และยังแก้ไขข้อมูลได้",
     },
     {
       id: "completed",
@@ -396,7 +396,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                     <span className="mt-0.5 text-slate-500">
                       <LockIcon />
                     </span>
-                    <span>แบบฟอร์มถูกล็อกเพราะสถานะการฝึกงานของคุณเสร็จสิ้นแล้ว</span>
+                    <span>แบบฟอร์มถูกล็อกเพราะสถานะการฝึกงานของคุณเป็นเสร็จสิ้นแล้ว</span>
                   </div>
                 )}
                 <div className="grid gap-3 rounded-2xl bg-white/70 p-4 text-sm text-slate-600 sm:grid-cols-2">
@@ -578,7 +578,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 ดูแลให้ข้อมูลการฝึกงานถูกต้องเสมอ
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                ตรวจสอบข้อมูลสรุปก่อนเปิดแบบฟอร์ม เมื่อสถานะยังเป็นรอดำเนินการหรือกำลังดำเนินการ คุณยังสามารถแก้ไขข้อมูลของตนเองได้ แต่เมื่อสถานะเป็นเสร็จสิ้นแล้ว ข้อมูลจะยังแสดงที่นี่แต่ไม่สามารถแก้ไขได้
+                ตรวจสอบข้อมูลสรุปก่อนเปิดแบบฟอร์ม เมื่อสถานะยังเป็นรอดำเนินการหรือกำลังฝึกงาน คุณยังสามารถแก้ไขข้อมูลของตนเองได้ แต่เมื่อสถานะเป็นเสร็จสิ้นแล้ว ข้อมูลจะยังแสดงที่นี่แต่ไม่สามารถแก้ไขได้
               </p>
               <div className="mt-5 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-700 ring-1 ring-orange-100">
                 เข้าสู่ระบบด้วยบัญชี {currentUser.email}

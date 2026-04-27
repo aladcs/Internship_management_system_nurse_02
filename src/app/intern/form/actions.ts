@@ -509,7 +509,7 @@ export async function saveStudentFormAction(
         studentId: student.id,
         type: "form_updated_in_progress",
         title: "นักศึกษาอัปเดตแบบฟอร์มฝึกงาน",
-        message: `${fullName} อัปเดตข้อมูลฝึกงานขณะที่สถานะเป็นกำลังดำเนินการ`,
+        message: `${fullName} อัปเดตข้อมูลฝึกงานขณะที่สถานะเป็นกำลังฝึกงาน`,
         targetPath: `/intern/admin/students/${student.id}`,
       });
     }
