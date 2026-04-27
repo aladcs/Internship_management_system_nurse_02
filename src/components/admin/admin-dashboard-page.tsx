@@ -138,7 +138,7 @@ function StatCard({
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>
           {icon}
         </div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">สด</p>
+        {/* <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">สด</p> */}
       </div>
       <div className="mt-6 space-y-2">
         <p className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2rem]">{value}</p>

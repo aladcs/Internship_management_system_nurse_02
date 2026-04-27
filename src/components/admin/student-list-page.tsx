@@ -116,15 +116,6 @@ function ViewStudentLink({ email, href }: { email: string; href: string }) {
   );
 }
 
-function EditIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
-      <path d="m13.75 3.75 2.5 2.5" />
-      <path d="M4.75 15.25 7.5 14.5l7.5-7.5a1.77 1.77 0 0 0-2.5-2.5L5 12l-.25 3.25Z" />
-    </svg>
-  );
-}
-
 function TrashIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
@@ -623,7 +614,6 @@ export function StudentListPage({
   const [activeFilter, setActiveFilter] = useState<StudentStatusFilter>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<StudentListItem | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
   const [resettingStudent, setResettingStudent] = useState<StudentListItem | null>(null);
 
@@ -964,12 +954,6 @@ export function StudentListPage({
                               <KeyIcon />
                             </ActionIconButton>
                             <ActionIconButton
-                              label={`แก้ไข ${student.email}`}
-                              onClick={() => setEditingStudent(student)}
-                            >
-                              <EditIcon />
-                            </ActionIconButton>
-                            <ActionIconButton
                               label={`ลบ ${student.email}`}
                               tone="destructive"
                               onClick={() => setDeletingStudent(student)}
@@ -1016,12 +1000,6 @@ export function StudentListPage({
                         <KeyIcon />
                       </ActionIconButton>
                       <ActionIconButton
-                        label={`แก้ไข ${student.email}`}
-                        onClick={() => setEditingStudent(student)}
-                      >
-                        <EditIcon />
-                      </ActionIconButton>
-                      <ActionIconButton
                         label={`ลบ ${student.email}`}
                         tone="destructive"
                         onClick={() => setDeletingStudent(student)}
@@ -1042,15 +1020,6 @@ export function StudentListPage({
           mode="create"
           student={null}
           onClose={() => setCreateOpen(false)}
-          onCreated={handleStudentCreated}
-          onUpdated={handleStudentUpdated}
-        />
-      ) : null}
-      {editingStudent ? (
-        <StudentDialog
-          mode="edit"
-          student={editingStudent}
-          onClose={() => setEditingStudent(null)}
           onCreated={handleStudentCreated}
           onUpdated={handleStudentUpdated}
         />
