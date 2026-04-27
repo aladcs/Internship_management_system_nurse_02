@@ -69,6 +69,7 @@ export function AdminLayoutShell({
   roleLabel,
 }: AdminLayoutShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const hasDisplayName = Boolean(currentUser.name?.trim());
 
   return (
     <div className={`min-h-screen ${backgroundClassName}`}>
@@ -130,6 +131,25 @@ export function AdminLayoutShell({
             <MenuIcon />
           </button>
         </div>
+
+        {!hasDisplayName ? (
+          <div className="border-t border-admin/10 bg-linear-to-r from-admin/8 via-white to-admin/5">
+            <div className={`${appShellClass} flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between`}>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  กรุณาตั้งชื่อที่แสดงสำหรับบัญชีของคุณ
+                </p>
+                
+              </div>
+              <Link
+                href="/intern/account/name"
+                className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+              >
+                ตั้งชื่อที่แสดง
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       {mobileMenuOpen ? (

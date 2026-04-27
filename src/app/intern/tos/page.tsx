@@ -105,9 +105,7 @@ export default async function InternStudentTosPage({ searchParams }: TosPageProp
                 <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                   ยอมรับข้อตกลงก่อนเข้าใช้งานในฐานะนักศึกษา
                 </h1>
-                <p className="mt-4 text-sm leading-6 text-slate-600 sm:text-base">
-                  กรุณายืนยันว่าคุณเข้าใจขอบเขตการใช้งานระบบจัดการฝึกงานก่อนเข้าสู่หน้า Overview และแบบฟอร์มของตนเอง
-                </p>
+               
               </div>
 
               <div className="rounded-[28px] border border-white/70 bg-white/80 px-5 py-4 shadow-lg shadow-orange-950/8">
@@ -129,12 +127,7 @@ export default async function InternStudentTosPage({ searchParams }: TosPageProp
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-orange-100 bg-[#fff8f2] p-5 text-sm leading-6 text-slate-700 sm:p-6">
-                <p className="font-semibold text-slate-900">สรุปสั้น ๆ</p>
-                <p className="mt-2">
-                  การกดยอมรับจะถูกบันทึกไว้ในระบบและใช้เป็นเงื่อนไขก่อนเข้าถึงหน้า Overview และแบบฟอร์มของนักศึกษาเป็นครั้งแรก
-                </p>
-              </div>
+             
             </section>
 
             <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
