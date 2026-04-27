@@ -26,7 +26,7 @@ export default async function InternAccountNamePage() {
       currentUser={{
         email: session.email,
         name: session.name,
-        roleLabel: session.role === "super_admin" ? "ผู้ดูแลระบบสูงสุด" : "ผู้ดูแล",
+        roleLabel: session.role === "super_admin" ? "ผู้ดูแลระบบสูงสุด" : "ผู้ดูแลระบบ",
       }}
       theme="admin"
     />

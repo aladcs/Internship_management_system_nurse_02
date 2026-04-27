@@ -10,6 +10,7 @@ import {
 import { logoutAction, markAllNotificationsReadAction } from "@/app/intern/dashboard/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
+import { appShellClass } from "@/lib/page-shell";
 
 type RecentStudent = {
   id: string;
@@ -132,7 +133,7 @@ function StatCard({
   tone: string;
 }) {
   return (
-    <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-6">
+    <article className="h-full rounded-[26px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>
           {icon}
@@ -160,7 +161,7 @@ export function AdminDashboardPage({
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-310 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
             <Link href="/intern/dashboard" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -203,7 +204,7 @@ export function AdminDashboardPage({
               email={currentUser.email}
               logoutAction={logoutAction}
               name={currentUser.name}
-              roleLabel="ผู้ดูแล"
+              roleLabel="ผู้ดูแลระบบ"
               tone="admin"
             />
           </div>
@@ -293,7 +294,7 @@ export function AdminDashboardPage({
         </div>
       ) : null}
 
-      <main className="mx-auto w-full max-w-310 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
             พื้นที่ผู้ดูแล
@@ -306,7 +307,7 @@ export function AdminDashboardPage({
           </p>
         </div>
 
-        <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="นักศึกษาทั้งหมด"
             value={stats.totalStudents}
@@ -333,8 +334,8 @@ export function AdminDashboardPage({
           />
         </section>
 
-        <section className="mt-8 grid gap-6 xl:grid-cols-3">
-          <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 xl:col-span-2">
+        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+          <article className="h-full overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-slate-950">นักศึกษาล่าสุด</h2>
@@ -384,7 +385,7 @@ export function AdminDashboardPage({
             )}
           </article>
 
-          <article id="notifications" className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+          <article id="notifications" className="h-full overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-slate-950">การแจ้งเตือน</h2>

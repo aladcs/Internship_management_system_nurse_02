@@ -6,6 +6,7 @@ import { type ReactNode, useState } from "react";
 import { logoutAction } from "@/app/intern/overview/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import { appShellClass } from "@/lib/page-shell";
 
 type SummaryItem = {
   label: string;
@@ -230,7 +231,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
   return (
     <div className="min-h-screen bg-[#fff7f1] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-orange-100/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
             <Link href="/intern/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -340,7 +341,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className={`${appShellClass} py-8 lg:py-10`}>
         <section className="overflow-hidden rounded-[36px] border border-orange-100 bg-linear-to-br from-[#fff2e5] via-[#fff9f5] to-[#ffe9db] p-6 shadow-xl shadow-orange-950/8 sm:p-8 lg:p-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl space-y-5">
@@ -426,7 +427,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
           <div className="space-y-6">
             <SummaryCard
               title="ข้อมูลส่วนตัว"

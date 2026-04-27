@@ -20,6 +20,7 @@ import { ModalFrame } from "@/components/admin/modal-frame";
 import { AccountMenu } from "@/components/auth/account-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import { appShellClass } from "@/lib/page-shell";
 
 type SummaryItem = {
   label: string;
@@ -359,7 +360,7 @@ export function AdminStudentDetailPage({
   return (
     <div className="min-h-screen bg-[#fbf7f4] text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-310 items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
             <Link href="/intern/admin/students" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -401,7 +402,7 @@ export function AdminStudentDetailPage({
               email={currentUser.email}
               logoutAction={logoutAction}
               name={currentUser.name}
-              roleLabel="ผู้ดูแล"
+              roleLabel="ผู้ดูแลระบบ"
               tone="admin"
             />
           </div>
@@ -452,6 +453,7 @@ export function AdminStudentDetailPage({
                 onClick={() => setMobileMenuOpen(false)}
               >
                 รายชื่อนักศึกษา
+              </Link>
               <Link
                 href="/intern/account/name"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
@@ -465,7 +467,6 @@ export function AdminStudentDetailPage({
                 onClick={() => setMobileMenuOpen(false)}
               >
                 เปลี่ยนรหัสผ่าน
-              </Link>
               </Link>
             </nav>
 
@@ -485,7 +486,7 @@ export function AdminStudentDetailPage({
         </div>
       ) : null}
 
-      <main className="mx-auto w-full max-w-310 px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/intern/admin/students"
@@ -600,7 +601,7 @@ export function AdminStudentDetailPage({
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
           <div className="space-y-6">
             <SummaryCard
               title="ข้อมูลส่วนตัว"
@@ -723,9 +724,7 @@ export function AdminStudentDetailPage({
             </section>
 
             <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
-            <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
-            </section>
             </section>
           </div>
         </section>

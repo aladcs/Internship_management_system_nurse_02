@@ -94,7 +94,7 @@ export function ChangeDisplayNameForm({
 
   return (
     <main className={`min-h-screen px-4 py-10 sm:px-6 lg:px-8 ${accentClasses.page}`}>
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto w-full max-w-5xl">
         <Link
           href={backHref}
           className={`inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition ${accentClasses.back}`}

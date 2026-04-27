@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useActionState, useMemo, useRef, useState } from "react";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
 import {
   logoutAction as defaultLogoutAction,
@@ -10,6 +10,7 @@ import {
 } from "@/app/intern/form/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import { appShellClass } from "@/lib/page-shell";
 
 const MAX_FILE_COUNT = 5;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -390,16 +391,18 @@ function SectionCard({
   title,
   description,
   accentTileClass,
+  className,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   accentTileClass: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+    <section className={`overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 ${className ?? ""}`}>
       <div className="flex items-start gap-4 border-b border-slate-200 px-5 py-5 sm:px-6">
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${accentTileClass}`}>
           {icon}
@@ -497,10 +500,6 @@ export function StudentFormPage({
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
   );
-
-  useEffect(() => {
-    setFormValues(state.values);
-  }, [state.values]);
 
   function updateFormValue<Key extends keyof typeof formValues>(key: Key, value: (typeof formValues)[Key]) {
     setFormValues((currentValues) => ({
@@ -642,7 +641,7 @@ export function StudentFormPage({
     return (
       <div className="min-h-screen bg-[#fff7f1] text-slate-950">
         <header className="sticky top-0 z-30 border-b border-orange-100/80 bg-white/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
             <Link href="/intern/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
@@ -664,8 +663,8 @@ export function StudentFormPage({
           </div>
         </header>
 
-        <main className="mx-auto flex min-h-[calc(100vh-81px)] max-w-3xl items-center px-4 py-10 sm:px-6 lg:px-8">
-          <section className="w-full rounded-4xl border border-orange-200 bg-[#fff1e7] p-8 text-center shadow-xl shadow-orange-950/8 sm:p-10">
+        <main className={`${appShellClass} flex min-h-[calc(100vh-81px)] items-center py-10`}>
+          <section className="mx-auto w-full max-w-5xl rounded-4xl border border-orange-200 bg-[#fff1e7] p-8 text-center shadow-xl shadow-orange-950/8 sm:p-10 lg:p-12">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-(--color-student) shadow-sm">
               <LockIcon />
             </div>
@@ -688,7 +687,7 @@ export function StudentFormPage({
   return (
     <div className={`min-h-screen text-slate-950 ${theme.pageBackground}`}>
       <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${theme.headerBorder}`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
             <Link href={isAdminMode ? "/intern/admin/students" : "/intern/overview"} className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
@@ -727,7 +726,7 @@ export function StudentFormPage({
               email={isAdminMode ? currentUser.email : student.email}
               logoutAction={logoutAction}
               name={isAdminMode ? currentUser.name : student.displayName}
-              roleLabel={isAdminMode ? "ผู้ดูแล" : "นักศึกษา"}
+              roleLabel={isAdminMode ? "ผู้ดูแลระบบ" : "นักศึกษา"}
               tone={isAdminMode ? "admin" : "student"}
             />
           </div>
@@ -813,7 +812,7 @@ export function StudentFormPage({
         </div>
       ) : null}
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:pb-28 lg:pt-10">
+      <main className={`${appShellClass} py-8 lg:pb-28 lg:pt-10`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link href={resolvedBackHref} className={`inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition ${theme.backHoverText}`}>
             <BackIcon />
@@ -824,19 +823,20 @@ export function StudentFormPage({
           </span>
         </div>
 
-        <div className="mt-5 max-w-3xl space-y-2">
+        <div className="mt-5 max-w-4xl space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{pageTitle}</h1>
           <p className="text-sm leading-6 text-slate-600 sm:text-base">
             {pageDescription}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6 pb-24">
+        <form onSubmit={handleSubmit} className="mt-8 grid gap-6 pb-24 xl:grid-cols-12">
           <SectionCard
             icon={<CameraIcon />}
             title="รูปโปรไฟล์นักศึกษา"
             description="นักศึกษาหรือผู้ดูแลสามารถอัปโหลด เปลี่ยน ดูตัวอย่าง หรือเอารูปโปรไฟล์ออกได้จากส่วนนี้"
             accentTileClass={theme.accentTile}
+            className="xl:col-span-5"
           >
             <input
               ref={profileImageInputRef}
@@ -921,7 +921,7 @@ export function StudentFormPage({
             <input key={`${field.name}-${field.value}`} type="hidden" name={field.name} value={field.value} />
           ))}
           {state.message ? (
-            <div className={`rounded-2xl border px-4 py-3 text-sm ${state.status === "error" ? "border-red-200 bg-red-50 text-red-700" : theme.successMessage}`}>
+            <div className={`xl:col-span-12 rounded-2xl border px-4 py-3 text-sm ${state.status === "error" ? "border-red-200 bg-red-50 text-red-700" : theme.successMessage}`}>
               {state.message}
             </div>
           ) : null}
@@ -931,6 +931,7 @@ export function StudentFormPage({
             title="ข้อมูลส่วนตัว"
             description="กรอกรายละเอียดส่วนตัวหลักที่ใช้ในข้อมูลการฝึกงานและการติดต่อ"
             accentTileClass={theme.accentTile}
+            className="xl:col-span-7"
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="คำนำหน้า" htmlFor="prefix" required error={state.fieldErrors.prefix}>
@@ -967,6 +968,7 @@ export function StudentFormPage({
             title="ข้อมูลการศึกษา"
             description="ระบุข้อมูลการศึกษาให้ถูกต้องเพื่อให้ผู้ดูแลตรวจสอบบริบทการฝึกงานได้อย่างเหมาะสม"
             accentTileClass={theme.accentTile}
+            className="xl:col-span-6"
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ระดับการศึกษา" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
@@ -995,6 +997,7 @@ export function StudentFormPage({
             title="รายละเอียดการฝึกงาน"
             description="ระบุรายละเอียดหลักของสถานที่ฝึกงานและช่วงเวลาการติดตามตรวจสอบ"
             accentTileClass={theme.accentTile}
+            className="xl:col-span-6"
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ตำแหน่ง" htmlFor="position" required error={state.fieldErrors.position}>
@@ -1025,6 +1028,7 @@ export function StudentFormPage({
             title="ไฟล์แนบ"
             description="อัปโหลดไฟล์ PDF หรือรูปภาพเพื่อประกอบข้อมูลการฝึกงานของคุณ สามารถเก็บได้สูงสุด 5 ไฟล์ และแต่ละไฟล์ต้องไม่เกิน 5 MB"
             accentTileClass={theme.accentTile}
+            className="xl:col-span-12"
           >
             <div>
               <input
@@ -1129,7 +1133,7 @@ export function StudentFormPage({
             </div>
           </SectionCard>
 
-          <div className={`sticky bottom-0 z-20 -mx-4 border-t px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ${theme.stickyBar}`}>
+          <div className={`sticky bottom-0 z-20 xl:col-span-12 -mx-4 border-t px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ${theme.stickyBar}`}>
             <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
               <CancelLink href={resolvedCancelHref} pending={isPending} />
               <PrimaryActionButton label={primaryButtonLabel} className={theme.primaryButton} pending={isPending} />
