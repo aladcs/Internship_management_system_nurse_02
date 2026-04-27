@@ -559,12 +559,12 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               )}
             </section>
 
-            <section className="rounded-[30px] border border-orange-200 bg-[#fff1e7] p-6 shadow-xl shadow-orange-950/6 sm:p-7">
+            {/* <section className="rounded-[30px] border border-orange-200 bg-[#fff1e7] p-6 shadow-xl shadow-orange-950/6 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บัญชีที่ใช้งานอยู่</h2>
               <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm text-slate-700 ring-1 ring-orange-100">
                 เข้าสู่ระบบด้วยบัญชี {currentUser.email}
               </div>
-            </section>
+            </section> */}
           </div>
         </section>
       </main>

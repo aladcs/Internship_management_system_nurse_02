@@ -589,9 +589,9 @@ export function AdminStudentDetailPage({
               )}
             </section>
 
-            <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
+            {/* <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
               <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
-            </section>
+            </section> */}
           </div>
         </section>
       </main>
