@@ -572,10 +572,10 @@ export function AdminStudentDetailPage({
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">อัปเดตล่าสุด</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.lastUpdatedLabel}</p>
                   </div>
-                  <div>
+                  {/* <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ส่งข้อมูลแล้ว</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.submittedAtLabel}</p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
