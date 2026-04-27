@@ -29,7 +29,7 @@ const ROLE_PROTECTED_PREFIXES = [
   },
   {
     prefix: "/intern/notifications",
-    roles: ["admin", "super_admin"],
+    roles: ["admin"],
   },
   {
     prefix: STUDENT_TOS_PATH,

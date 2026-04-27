@@ -47,7 +47,6 @@ type ResetPasswordDialogProps = {
 
 const SUPER_ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/admins", label: "รายชื่อผู้ดูแลระบบ" },
-  { href: "/intern/notifications", label: "การแจ้งเตือน" },
 ];
 
 function SearchIcon() {

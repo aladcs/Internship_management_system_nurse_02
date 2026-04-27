@@ -158,7 +158,7 @@ export function AdminDashboardPage({
       <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-            พื้นที่ผู้ดูแล
+            พื้นที่ผู้ดูแลระบบ
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             แดชบอร์ด

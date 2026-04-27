@@ -610,7 +610,7 @@ export function StudentListPage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-              พื้นที่ผู้ดูแล
+              พื้นที่ผู้ดูแลระบบ
             </p>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">

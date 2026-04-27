@@ -549,7 +549,7 @@ export function AdminStudentDetailPage({
                 <div>
                   <h2 className="text-xl font-semibold tracking-tight text-slate-950">ไฟล์</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    ตรวจสอบไฟล์ที่นักศึกษาอัปโหลดได้จากพื้นที่ผู้ดูแลโดยตรง
+                    ตรวจสอบไฟล์ที่นักศึกษาอัปโหลดได้จากพื้นที่ผู้ดูแลระบบโดยตรง
                   </p>
                 </div>
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">

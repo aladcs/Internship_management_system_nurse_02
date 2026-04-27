@@ -17,18 +17,11 @@ export default async function InternNotificationsPage() {
     redirect("/login");
   }
 
-  if (session.role !== "admin" && session.role !== "super_admin") {
+  if (session.role !== "admin") {
     redirect(getRoleRedirectPath(session.role));
   }
 
-  const notificationPageData =
-    session.role === "admin"
-      ? await getAdminNotificationsPageData(session.userId)
-      : {
-          allNotifications: [],
-          unreadNotificationCount: 0,
-          unreadNotifications: [],
-        };
+  const notificationPageData = await getAdminNotificationsPageData(session.userId);
 
   return (
     <AdminNotificationsPage
@@ -38,7 +31,6 @@ export default async function InternNotificationsPage() {
       }}
       allNotifications={notificationPageData.allNotifications}
       unreadNotifications={notificationPageData.unreadNotifications}
-      roleLabel={session.role === "super_admin" ? "ผู้ดูแลระบบสูงสุด" : "ผู้ดูแลระบบ"}
     />
   );
 }
