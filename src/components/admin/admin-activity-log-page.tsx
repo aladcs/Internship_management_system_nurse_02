@@ -54,16 +54,6 @@ function SearchIcon() {
   );
 }
 
-function DownloadIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
-      <path d="M10 3.75v7.5" />
-      <path d="m6.75 8.75 3.25 3.5 3.25-3.5" />
-      <path d="M4 15.75h12" />
-    </svg>
-  );
-}
-
 function ClockIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
@@ -181,24 +171,6 @@ export function AdminActivityLogPage({
     role: roleFilter,
     category: categoryFilter,
   });
-
-  const exportParams = new URLSearchParams();
-
-  if (query.trim()) {
-    exportParams.set("q", query.trim());
-  }
-
-  if (roleFilter !== "all") {
-    exportParams.set("role", roleFilter);
-  }
-
-  if (categoryFilter !== "all") {
-    exportParams.set("category", categoryFilter);
-  }
-
-  const exportHref = exportParams.size > 0
-    ? `/intern/activity-logs/export?${exportParams.toString()}`
-    : "/intern/activity-logs/export";
 
   return (
     <AdminLayoutShell
@@ -380,22 +352,6 @@ export function AdminActivityLogPage({
                     label="สถานะ"
                     onClick={() => setCategoryFilter("status")}
                   />
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">ส่งออกเป็น Excel</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      ดาวน์โหลด {filteredLogs.length.toLocaleString("th-TH")} รายการตามตัวกรองปัจจุบัน
-                    </p>
-                  </div>
-                  <Link
-                    href={exportHref}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white transition hover:opacity-90"
-                  >
-                    <DownloadIcon />
-                    Export Excel
-                  </Link>
                 </div>
               </div>
             </div>
