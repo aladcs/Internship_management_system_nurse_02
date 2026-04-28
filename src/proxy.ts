@@ -32,6 +32,10 @@ const ROLE_PROTECTED_PREFIXES = [
     roles: ["admin"],
   },
   {
+    prefix: "/intern/activity-logs",
+    roles: ["admin"],
+  },
+  {
     prefix: STUDENT_TOS_PATH,
     roles: ["student"],
   },
