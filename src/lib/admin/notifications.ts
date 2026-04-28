@@ -13,6 +13,7 @@ export type AdminNotificationItem = {
   type: string;
   entityId: string | null;
   entityType: string | null;
+  studentName: string | null;
 };
 
 export type AdminNotificationSummary = {
@@ -66,6 +67,23 @@ export async function createAdminNotificationEvent(input: {
     message: input.message,
     targetPath: input.targetPath,
   });
+}
+
+function getStudentDisplayName(student: {
+  firstName: string | null;
+  lastName: string | null;
+  user: {
+    name: string | null;
+    email: string;
+  };
+} | null) {
+  if (!student) {
+    return null;
+  }
+
+  const profileName = [student.firstName, student.lastName].filter(Boolean).join(" ").trim();
+
+  return student.user.name?.trim() || profileName || student.user.email;
 }
 
 function getRelativeTimeLabel(value: Date, now = new Date()) {
@@ -126,6 +144,14 @@ function toAdminNotificationItem(
     entityId: string | null;
     entityType: string | null;
     createdAt: Date;
+    student: {
+      firstName: string | null;
+      lastName: string | null;
+      user: {
+        name: string | null;
+        email: string;
+      };
+    } | null;
     receipts: Array<{
       isRead: boolean;
     }>;
@@ -142,6 +168,7 @@ function toAdminNotificationItem(
     targetPath: resolveNotificationTargetPath(notification),
     entityId: notification.entityId,
     entityType: notification.entityType,
+    studentName: getStudentDisplayName(notification.student),
   };
 }
 
@@ -171,6 +198,18 @@ async function getAdminNotifications(adminUserId: string, options?: { take?: num
       entityId: true,
       entityType: true,
       createdAt: true,
+      student: {
+        select: {
+          firstName: true,
+          lastName: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
       receipts: {
         where: {
           adminUserId,
