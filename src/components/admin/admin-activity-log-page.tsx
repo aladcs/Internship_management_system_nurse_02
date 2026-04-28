@@ -1,18 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useState } from "react";
-import { logoutAction } from "@/app/intern/dashboard/actions";
-import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
+import { useDeferredValue, useState, type ReactNode } from "react";
+import { logoutAction } from "../../app/intern/dashboard/actions";
+import { AdminLayoutShell, type AdminShellNavItem } from "./admin-layout-shell";
 import {
   filterAdminActivityLogs,
   getActorRoleLabel,
   type ActivityCategoryFilter,
   type ActivityRoleFilter,
-  type AdminActivityCategory,
   type AdminActivityLogItem,
-} from "@/lib/admin/activity-log-shared";
-import { appShellClass } from "@/lib/page-shell";
+} from "../../lib/admin/activity-log-shared";
+import { appShellClass } from "../../lib/page-shell";
 
 type AdminActivityLogPageProps = {
   currentUser: {
@@ -26,6 +25,23 @@ type AdminActivityLogPageProps = {
     lastUpdatedByLabel: string | null;
     lastUpdatedByEmail: string | null;
   };
+};
+
+type SummaryChipProps = {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  subvalue?: string | null;
+};
+
+type FilterSelectProps<T extends string> = {
+  value: T;
+  onChange: (value: T) => void;
+  options: Array<{
+    value: T;
+    label: string;
+    count: number;
+  }>;
 };
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
@@ -112,39 +128,46 @@ function getActorInitials(label: string) {
     return parts[0].slice(0, 2).toUpperCase();
   }
 
-  return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
-function FilterButton({
-  active,
-  count,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  count: number;
-  label: string;
-  onClick: () => void;
-}) {
+function SummaryChip({ icon, label, value, subvalue }: SummaryChipProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={active
-        ? "inline-flex items-center gap-2 rounded-full bg-admin px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-admin/20"
-        : "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-admin/25 hover:text-(--color-admin)"}
-    >
-      <span>{label}</span>
-      <span className={active ? "text-white/90" : "text-slate-400"}>{count}</span>
-    </button>
+    <article className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-900/5">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <p className="mt-2 text-base font-semibold tracking-tight text-slate-950">{value}</p>
+      {subvalue ? <p className="mt-1 truncate text-xs text-slate-500">{subvalue}</p> : null}
+    </article>
   );
 }
 
-export function AdminActivityLogPage({
-  currentUser,
-  activityLogs,
-  summary,
-}: AdminActivityLogPageProps) {
+function FilterSelect<T extends string>({ value, onChange, options }: FilterSelectProps<T>) {
+  return (
+    <label className="relative block min-w-42">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as T)}
+        className="h-10 w-full appearance-none rounded-2xl border border-slate-200 bg-white px-3 pr-9 text-sm text-slate-700 outline-none transition focus:border-admin/30 focus:ring-4 focus:ring-admin/10"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label} ({option.count})
+          </option>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">▾</span>
+    </label>
+  );
+}
+
+export function AdminActivityLogPage({ currentUser, activityLogs, summary }: AdminActivityLogPageProps) {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<ActivityRoleFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<ActivityCategoryFilter>("all");
@@ -166,11 +189,28 @@ export function AdminActivityLogPage({
     other: activityLogs.filter((entry) => entry.actionCategory === "other").length,
   };
 
+  const roleOptions: FilterSelectProps<ActivityRoleFilter>["options"] = [
+    { value: "all", label: "ทุกคน", count: roleCounts.all },
+    { value: "admin", label: "ผู้ดูแล", count: roleCounts.admin },
+    { value: "student", label: "นักศึกษา", count: roleCounts.student },
+  ];
+
+  const categoryOptions: FilterSelectProps<ActivityCategoryFilter>["options"] = [
+    { value: "all", label: "ทุกประเภท", count: categoryCounts.all },
+    { value: "submission", label: "ส่งฟอร์ม", count: categoryCounts.submission },
+    { value: "edit", label: "แก้ไข", count: categoryCounts.edit },
+    { value: "file", label: "ไฟล์", count: categoryCounts.file },
+    { value: "status", label: "สถานะ", count: categoryCounts.status },
+    { value: "other", label: "อื่น ๆ", count: categoryCounts.other },
+  ];
+
   const filteredLogs = filterAdminActivityLogs(activityLogs, {
     query: normalizedQuery,
     role: roleFilter,
     category: categoryFilter,
   });
+
+  const hasActiveFilters = query.length > 0 || roleFilter !== "all" || categoryFilter !== "all";
 
   return (
     <AdminLayoutShell
@@ -182,107 +222,53 @@ export function AdminActivityLogPage({
       roleLabel="ผู้ดูแลระบบ"
     >
       <main className={`${appShellClass} py-8 lg:py-10`}>
-        <div className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-            พื้นที่ผู้ดูแลระบบ
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-            Activity Log
-          </h1>
-          <p className="max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-            ดูกิจกรรมทั้งหมดของผู้ดูแลและนักศึกษาจากทุกฟอร์มในที่เดียว พร้อมเวลาที่อัปเดตล่าสุดและผู้ที่ดำเนินการล่าสุด
-          </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
+              พื้นที่ผู้ดูแลระบบ
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Activity Log</h1>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-135">
+            <SummaryChip icon={<ClockIcon />} label="ล่าสุด" value={summary.lastUpdatedLabel ?? "-"} />
+            <SummaryChip
+              icon={<UserIcon />}
+              label="อัปเดตโดย"
+              value={summary.lastUpdatedByLabel ?? "-"}
+              subvalue={summary.lastUpdatedByEmail}
+            />
+            <SummaryChip
+              icon={<ActivityIcon />}
+              label="ทั้งหมด"
+              value={summary.totalLogs.toLocaleString("th-TH")}
+              subvalue={`${filteredLogs.length.toLocaleString("th-TH")} รายการที่แสดง`}
+            />
+          </div>
         </div>
 
-        <section className="mt-8 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,1fr)]">
-          <article className="overflow-hidden rounded-[30px] border border-admin/10 bg-linear-to-br from-admin/12 via-white to-white shadow-xl shadow-slate-900/5">
-            <div className="flex flex-col gap-6 p-6 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-(--color-admin) ring-1 ring-admin/10 backdrop-blur">
-                  <ActivityIcon />
-                  Activity Center
-                </div>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-                  เห็นภาพการเปลี่ยนแปลงทั้งหมดได้ในจุดเดียว
-                </h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
-                  ตรวจสอบว่าใครเป็นคนแก้ไขอะไร เมื่อไร และเปิดไปยังรายละเอียดของนักศึกษาคนนั้นได้ทันทีโดยไม่ต้องไล่หลายหน้า
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3 lg:min-w-90 lg:grid-cols-1 xl:grid-cols-3">
-                <article className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-sm shadow-slate-900/5">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    <ClockIcon />
-                    ล่าสุด
-                  </div>
-                  <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">
-                    {summary.lastUpdatedLabel ?? "ยังไม่มีกิจกรรม"}
-                  </p>
-                </article>
-
-                <article className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-sm shadow-slate-900/5">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    <UserIcon />
-                    ล่าสุดโดย
-                  </div>
-                  <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">
-                    {summary.lastUpdatedByLabel ?? "ยังไม่ระบุ"}
-                  </p>
-                  {summary.lastUpdatedByEmail ? (
-                    <p className="mt-1 truncate text-xs text-slate-500">{summary.lastUpdatedByEmail}</p>
-                  ) : null}
-                </article>
-
-                <article className="rounded-3xl border border-white/80 bg-slate-950 p-4 text-white shadow-sm shadow-slate-900/15">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">กิจกรรมทั้งหมด</p>
-                  <p className="mt-3 text-2xl font-semibold tracking-tight">
-                    {summary.totalLogs.toLocaleString("th-TH")}
-                  </p>
-                </article>
-              </div>
-            </div>
-          </article>
-
-          <aside className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-            <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-6">
-              <p className="text-sm font-medium text-slate-500">กิจกรรมจากผู้ดูแล</p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-                {roleCounts.admin.toLocaleString("th-TH")}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">รวมทั้งผู้ดูแลระบบและผู้ดูแลสูงสุด</p>
-            </article>
-
-            <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-6">
-              <p className="text-sm font-medium text-slate-500">กิจกรรมจากนักศึกษา</p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-                {roleCounts.student.toLocaleString("th-TH")}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">ช่วยแยกดูการเคลื่อนไหวที่เกิดจากการส่งและแก้ไขฟอร์ม</p>
-            </article>
-
-            <article className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 sm:p-6">
-              <p className="text-sm font-medium text-slate-500">รายการที่กำลังแสดง</p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-                {filteredLogs.length.toLocaleString("th-TH")}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">อัปเดตตามคำค้นหาและตัวกรองที่คุณเลือกทันที</p>
-            </article>
-          </aside>
+        <section className="mt-6 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+          <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
+            ผู้ดูแล {roleCounts.admin.toLocaleString("th-TH")}
+          </span>
+          <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
+            นักศึกษา {roleCounts.student.toLocaleString("th-TH")}
+          </span>
+          <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
+            แสดง {filteredLogs.length.toLocaleString("th-TH")}
+          </span>
         </section>
 
         <section className="mt-8 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
-                    <ActivityIcon />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight text-slate-950">กิจกรรมทั้งหมด</h2>
-                    <p className="mt-1 text-sm text-slate-500">ค้นหา แยกตามบทบาท และเปิดไปยังหน้ารายละเอียดนักศึกษาที่เกี่ยวข้องได้ทันที</p>
-                  </div>
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
+                  <ActivityIcon />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight text-slate-950">กิจกรรมทั้งหมด</h2>
+                  <p className="mt-1 text-sm text-slate-500">ค้นหาและกรองรายการ</p>
                 </div>
               </div>
 
@@ -295,63 +281,27 @@ export function AdminActivityLogPage({
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="ค้นหาจากชื่อผู้ทำรายการ อีเมล นักศึกษา หรือข้อความกิจกรรม"
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
+                    placeholder="ค้นหา"
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
                   />
                 </label>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <FilterButton
-                    active={roleFilter === "all"}
-                    count={roleCounts.all}
-                    label="ทั้งหมด"
-                    onClick={() => setRoleFilter("all")}
-                  />
-                  <FilterButton
-                    active={roleFilter === "admin"}
-                    count={roleCounts.admin}
-                    label="ผู้ดูแล"
-                    onClick={() => setRoleFilter("admin")}
-                  />
-                  <FilterButton
-                    active={roleFilter === "student"}
-                    count={roleCounts.student}
-                    label="นักศึกษา"
-                    onClick={() => setRoleFilter("student")}
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <FilterButton
-                    active={categoryFilter === "all"}
-                    count={categoryCounts.all}
-                    label="ทุกประเภท"
-                    onClick={() => setCategoryFilter("all")}
-                  />
-                  <FilterButton
-                    active={categoryFilter === "submission"}
-                    count={categoryCounts.submission}
-                    label="ส่งฟอร์ม"
-                    onClick={() => setCategoryFilter("submission")}
-                  />
-                  <FilterButton
-                    active={categoryFilter === "edit"}
-                    count={categoryCounts.edit}
-                    label="แก้ไขข้อมูล"
-                    onClick={() => setCategoryFilter("edit")}
-                  />
-                  <FilterButton
-                    active={categoryFilter === "file"}
-                    count={categoryCounts.file}
-                    label="ไฟล์"
-                    onClick={() => setCategoryFilter("file")}
-                  />
-                  <FilterButton
-                    active={categoryFilter === "status"}
-                    count={categoryCounts.status}
-                    label="สถานะ"
-                    onClick={() => setCategoryFilter("status")}
-                  />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <FilterSelect value={roleFilter} onChange={setRoleFilter} options={roleOptions} />
+                  <FilterSelect value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
+                  {hasActiveFilters ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        setRoleFilter("all");
+                        setCategoryFilter("all");
+                      }}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                    >
+                      ล้าง
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -394,52 +344,41 @@ export function AdminActivityLogPage({
                 <Link
                   key={entry.id}
                   href={entry.targetPath}
-                  className="group block px-5 py-4 transition hover:bg-slate-50 sm:px-6"
+                  className="group block px-5 py-3.5 transition hover:bg-slate-50 sm:px-6"
                 >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="flex min-w-0 flex-1 gap-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-sm font-semibold text-(--color-admin)">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_130px] lg:items-start">
+                    <div className="flex min-w-0 gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-xs font-semibold text-(--color-admin)">
                         {getActorInitials(entry.actorLabel)}
                       </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-semibold text-slate-950">{entry.actorLabel}</p>
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getRolePillClass(entry.actorRole)}`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${getRolePillClass(entry.actorRole)}`}>
                             {getActorRoleLabel(entry.actorRole)}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
                             {entry.actionLabel}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-slate-950 px-2.5 py-1 text-xs font-medium text-white">
-                            {entry.actionCategoryLabel}
-                          </span>
                         </div>
-                        {entry.actorEmail ? (
-                          <p className="mt-1 text-xs text-slate-400">{entry.actorEmail}</p>
-                        ) : null}
-                        <p className="mt-3 text-sm leading-6 text-slate-600">{entry.message}</p>
-                        <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                            <span className="truncate">นักศึกษา: {entry.studentLabel}</span>
-                            <span className="truncate">{entry.studentEmail}</span>
-                          </div>
+                        {entry.actorEmail ? <p className="mt-1 text-xs text-slate-400">{entry.actorEmail}</p> : null}
+                        <p className="mt-2 line-clamp-2 text-sm text-slate-600">{entry.message}</p>
+                        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                          <span className="truncate font-medium text-slate-600">{entry.studentLabel}</span>
+                          <span className="truncate">{entry.studentEmail}</span>
                           <span className="text-(--color-admin) transition group-hover:translate-x-0.5 group-hover:opacity-90">
-                            เปิดหน้ารายละเอียด
+                            ดูรายละเอียด
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="shrink-0 lg:pt-1">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left lg:min-w-33 lg:text-right">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          {entry.relativeTimeLabel}
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-slate-700">
-                          {entry.createdAtLabel}
-                        </p>
-                      </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left lg:text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {entry.relativeTimeLabel}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-slate-700">{entry.createdAtLabel}</p>
                     </div>
                   </div>
                 </Link>
