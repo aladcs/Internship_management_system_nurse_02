@@ -93,6 +93,7 @@ function toActivityLogItem(log: {
     actionCategory,
     actionCategoryLabel: getActionCategoryLabel(actionCategory),
     message: log.message,
+    createdAtIso: log.createdAt.toISOString(),
     createdAtLabel: formatThaiDateTime(log.createdAt, "-"),
     relativeTimeLabel: getRelativeTimeLabel(log.createdAt),
     actorLabel: log.actor?.name?.trim() || log.actor?.email || "ระบบ",

@@ -13,6 +13,36 @@ import {
 } from "../../lib/admin/activity-log-shared";
 import { appShellClass } from "../../lib/page-shell";
 
+const DISPLAY_TIME_ZONE = "Asia/Bangkok";
+
+const dateHeaderFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+const timeOnlyFormatter = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+const selectedDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
 type AdminActivityLogPageProps = {
   currentUser: {
     email: string;
@@ -44,6 +74,16 @@ type FilterSelectProps<T extends string> = {
   }>;
 };
 
+type GroupedActivityLogs = {
+  label: string;
+  items: AdminActivityLogItem[];
+};
+
+type DatePreset = {
+  value: string;
+  label: string;
+};
+
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
   { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
@@ -61,11 +101,31 @@ function ActivityIcon() {
   );
 }
 
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-5 w-5">
+      <path d="M10 2.75 4.5 4.7v4.55c0 3.5 2.16 6.36 5.5 7.98 3.34-1.62 5.5-4.48 5.5-7.98V4.7L10 2.75Z" />
+      <path d="m7.75 9.9 1.45 1.45 3.05-3.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
       <circle cx="8.5" cy="8.5" r="5.75" />
       <path d="m13 13 4.25 4.25" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <rect x="3.5" y="4.5" width="13" height="11" rx="2.5" />
+      <path d="M6.5 2.75v3.5" strokeLinecap="round" />
+      <path d="M13.5 2.75v3.5" strokeLinecap="round" />
+      <path d="M3.5 8h13" />
     </svg>
   );
 }
@@ -101,6 +161,35 @@ function EmptyIcon() {
   );
 }
 
+function CheckCircleIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-3.5 w-3.5">
+      <circle cx="10" cy="10" r="6.5" />
+      <path d="m7.2 10.1 1.8 1.8 3.8-4.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-3.5 w-3.5">
+      <path d="m13.8 3.7 2.5 2.5" strokeLinecap="round" />
+      <path d="m5.2 15.6 1.6-4.3 6.6-6.6a1.5 1.5 0 0 1 2.1 0l.8.8a1.5 1.5 0 0 1 0 2.1l-6.6 6.6-4.5 1.4Z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FileTextIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-3.5 w-3.5">
+      <path d="M6 3.5h5l3 3V15a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 5 15V5A1.5 1.5 0 0 1 6.5 3.5Z" strokeLinejoin="round" />
+      <path d="M11 3.5V7h3.5" strokeLinejoin="round" />
+      <path d="M7.5 10h5" strokeLinecap="round" />
+      <path d="M7.5 12.75h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function getRolePillClass(role: AdminActivityLogItem["actorRole"]) {
   if (role === "student") {
     return "bg-orange-100 text-orange-700";
@@ -117,22 +206,107 @@ function getRolePillClass(role: AdminActivityLogItem["actorRole"]) {
   return "bg-slate-100 text-slate-600";
 }
 
-function getActorInitials(label: string) {
-  const parts = label.trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) {
-    return "--";
+function getActionBadge(entry: AdminActivityLogItem) {
+  if (entry.action === "admin_approved_form" || entry.actionLabel === "อนุมัติแบบฟอร์ม") {
+    return {
+      className: "bg-green-100 text-green-700",
+      icon: <CheckCircleIcon />,
+    };
   }
 
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
+  if (
+    entry.action === "student_edited_form" ||
+    entry.action === "admin_edited_student_data" ||
+    entry.actionLabel === "แก้ไขข้อมูล"
+  ) {
+    return {
+      className: "bg-blue-100 text-blue-700",
+      icon: <PencilIcon />,
+    };
   }
 
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
+  if (
+    entry.action === "student_submitted_form" ||
+    entry.action === "student_resubmitted_form" ||
+    entry.actionLabel === "ส่งแบบฟอร์ม"
+  ) {
+    return {
+      className: "bg-purple-100 text-purple-700",
+      icon: <FileTextIcon />,
+    };
+  }
+
+  return {
+    className: "bg-gray-100 text-gray-600",
+    icon: <ActivityIcon />,
+  };
+}
+
+function getActorIcon(role: AdminActivityLogItem["actorRole"]) {
+  if (role === "admin" || role === "super_admin") {
+    return <ShieldIcon />;
+  }
+
+  return <UserIcon />;
+}
+
+function getDateKey(value: string) {
+  return dateKeyFormatter.format(new Date(value));
+}
+
+function getDateGroupLabel(value: string, now = new Date()) {
+  const date = new Date(value);
+  const currentKey = getDateKey(now.toISOString());
+  const valueKey = getDateKey(value);
+
+  if (valueKey === currentKey) {
+    return "Today";
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  if (valueKey === getDateKey(yesterday.toISOString())) {
+    return "Yesterday";
+  }
+
+  return dateHeaderFormatter.format(date);
+}
+
+function formatSelectedDateLabel(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  return selectedDateFormatter.format(new Date(`${value}T00:00:00+07:00`));
+}
+
+function getDateOffsetValue(offsetDays: number, now = new Date()) {
+  const date = new Date(now);
+  date.setDate(now.getDate() + offsetDays);
+
+  return getDateKey(date.toISOString());
+}
+
+function groupActivityLogsByDate(activityLogs: AdminActivityLogItem[]) {
+  const groups: GroupedActivityLogs[] = [];
+
+  for (const entry of activityLogs) {
+    const label = getDateGroupLabel(entry.createdAtIso);
+    const lastGroup = groups.at(-1);
+
+    if (lastGroup && lastGroup.label === label) {
+      lastGroup.items.push(entry);
+      continue;
+    }
+
+    groups.push({
+      label,
+      items: [entry],
+    });
+  }
+
+  return groups;
 }
 
 function SummaryChip({ icon, label, value, subvalue }: SummaryChipProps) {
@@ -171,6 +345,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<ActivityRoleFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<ActivityCategoryFilter>("all");
+  const [selectedDate, setSelectedDate] = useState("");
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
 
@@ -208,9 +383,17 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
     query: normalizedQuery,
     role: roleFilter,
     category: categoryFilter,
-  });
+  }).filter((entry) => (selectedDate ? getDateKey(entry.createdAtIso) === selectedDate : true));
+  const groupedLogs = groupActivityLogsByDate(filteredLogs);
+  const datePresets: DatePreset[] = [
+    { value: getDateOffsetValue(0), label: "Today" },
+    { value: getDateOffsetValue(-1), label: "Yesterday" },
+    { value: getDateOffsetValue(-7), label: "7 days ago" },
+  ];
+  const selectedDateLabel = formatSelectedDateLabel(selectedDate);
 
-  const hasActiveFilters = query.length > 0 || roleFilter !== "all" || categoryFilter !== "all";
+  const hasActiveFilters =
+    query.length > 0 || roleFilter !== "all" || categoryFilter !== "all" || selectedDate.length > 0;
 
   return (
     <AdminLayoutShell
@@ -228,14 +411,8 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
             <p className="text-sm text-slate-500">รวมกิจกรรมทั้งหมดของผู้ดูแลและนักศึกษา</p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-135">
+          <div className="grid gap-3 sm:grid-cols-2 lg:min-w-92">
             <SummaryChip icon={<ClockIcon />} label="ล่าสุด" value={summary.lastUpdatedLabel ?? "-"} />
-            <SummaryChip
-              icon={<UserIcon />}
-              label="อัปเดตโดย"
-              value={summary.lastUpdatedByLabel ?? "-"}
-              subvalue={summary.lastUpdatedByEmail}
-            />
             <SummaryChip
               icon={<ActivityIcon />}
               label="ทั้งหมด"
@@ -269,21 +446,52 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 xl:min-w-115">
-                <label className="relative block">
-                  <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-                    <SearchIcon />
-                  </span>
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="ค้นหา"
-                    className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
-                  />
-                </label>
+              <div className="flex flex-col gap-2 xl:min-w-160">
+                <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
+                  <label className="relative block flex-1">
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                      <SearchIcon />
+                    </span>
+                    <input
+                      type="search"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="ค้นหา"
+                      className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
+                    />
+                  </label>
 
-                <div className="flex flex-col gap-2 sm:flex-row">
+                  <label className="relative block min-w-48">
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                      <CalendarIcon />
+                    </span>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(event) => setSelectedDate(event.target.value)}
+                      className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
+                    />
+                  </label>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {datePresets.map((preset) => {
+                      const active = selectedDate === preset.value;
+
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setSelectedDate(preset.value)}
+                          className={active
+                            ? "inline-flex h-10 items-center rounded-full bg-admin px-3 text-xs font-medium text-white shadow-sm shadow-admin/20"
+                            : "inline-flex h-10 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <FilterSelect value={roleFilter} onChange={setRoleFilter} options={roleOptions} />
                   <FilterSelect value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
                   {hasActiveFilters ? (
@@ -293,12 +501,24 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                         setQuery("");
                         setRoleFilter("all");
                         setCategoryFilter("all");
+                        setSelectedDate("");
                       }}
-                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                     >
                       ล้าง
                     </button>
                   ) : null}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  {selectedDateLabel ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
+                      วันที่ {selectedDateLabel}
+                    </span>
+                  ) : null}
+                  <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
+                    แสดง {filteredLogs.length.toLocaleString("th-TH")} รายการ
+                  </span>
                 </div>
               </div>
             </div>
@@ -329,6 +549,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                   setQuery("");
                   setRoleFilter("all");
                   setCategoryFilter("all");
+                  setSelectedDate("");
                 }}
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
@@ -336,46 +557,58 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-200">
-              {filteredLogs.map((entry) => (
-                <Link
-                  key={entry.id}
-                  href={entry.targetPath}
-                  className="group block px-5 py-3.5 transition hover:bg-slate-50 sm:px-6"
-                >
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_148px] lg:items-start">
-                    <div className="flex min-w-0 gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-xs font-semibold text-(--color-admin)">
-                        {getActorInitials(entry.actorLabel)}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-950">{entry.actorLabel}</p>
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${getRolePillClass(entry.actorRole)}`}>
-                            {getActorRoleLabel(entry.actorRole)}
-                          </span>
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                            {entry.actionLabel}
-                          </span>
-                        </div>
-                        {entry.actorEmail ? <p className="mt-1 truncate text-xs text-slate-400">{entry.actorEmail}</p> : null}
-                        <p className="mt-2 line-clamp-2 text-sm text-slate-600">{entry.message}</p>
-                        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                          <span className="truncate font-medium text-slate-600">{entry.studentLabel}</span>
-                          <span className="truncate">{entry.studentEmail}</span>
-                          <span className="text-(--color-admin) transition group-hover:translate-x-0.5 group-hover:opacity-90">
-                            ดูรายละเอียด
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left lg:text-right">
-                      <p className="text-xs font-medium text-slate-700">{entry.createdAtLabel}</p>
-                    </div>
+            <div className="px-5 sm:px-6">
+              {groupedLogs.map((group) => (
+                <section key={group.label} className="py-3 first:pt-4 last:pb-4">
+                  <div className="sticky top-0 z-10 mb-2 bg-white/95 py-2 text-sm font-semibold text-gray-900 backdrop-blur">
+                    {group.label}
                   </div>
-                </Link>
+                  <div>
+                    {group.items.map((entry) => {
+                      const actionBadge = getActionBadge(entry);
+
+                      return (
+                        <Link
+                          key={entry.id}
+                          href={entry.targetPath}
+                          className="group block border-b border-gray-100 py-4 last:border-b-0"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-600">
+                              {getActorIcon(entry.actorRole)}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex min-w-0 items-start gap-4">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="font-semibold text-gray-900">{entry.actorLabel}</p>
+                                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${getRolePillClass(entry.actorRole)}`}>
+                                      {getActorRoleLabel(entry.actorRole)}
+                                    </span>
+                                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${actionBadge.className}`}>
+                                      {actionBadge.icon}
+                                      {entry.actionLabel}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 space-y-1 text-sm text-gray-500">
+                                    {entry.actorEmail ? <p className="truncate">{entry.actorEmail}</p> : null}
+                                    <p className="line-clamp-2">{entry.message}</p>
+                                    <p className="truncate">{entry.studentLabel} · {entry.studentEmail}</p>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 pl-3 text-right text-sm text-gray-400">
+                                  {timeOnlyFormatter.format(new Date(entry.createdAtIso))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
               ))}
             </div>
           )}

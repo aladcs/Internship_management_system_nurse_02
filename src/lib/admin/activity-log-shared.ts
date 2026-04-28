@@ -11,6 +11,7 @@ export type AdminActivityLogItem = {
   actionCategory: AdminActivityCategory;
   actionCategoryLabel: string;
   message: string;
+  createdAtIso: string;
   createdAtLabel: string;
   relativeTimeLabel: string;
   actorLabel: string;
