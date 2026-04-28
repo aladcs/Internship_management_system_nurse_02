@@ -77,6 +77,8 @@ export type AdminStudentDetailPageProps = {
     activityLog: ActivityLogItem[];
     summary: {
       lastUpdatedLabel: string;
+      lastUpdatedByLabel: string | null;
+      lastUpdatedByEmail: string | null;
       submittedAtLabel: string;
     };
   };
@@ -524,6 +526,12 @@ export function AdminStudentDetailPage({
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">อัปเดตล่าสุด</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.lastUpdatedLabel}</p>
+                    {student.summary.lastUpdatedByLabel || student.summary.lastUpdatedByEmail ? (
+                      <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                        <p>ผู้แก้ไขล่าสุด: {student.summary.lastUpdatedByLabel ?? "ระบบ"}</p>
+                        {student.summary.lastUpdatedByEmail ? <p>{student.summary.lastUpdatedByEmail}</p> : null}
+                      </div>
+                    ) : null}
                   </div>
                   {/* <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ส่งข้อมูลแล้ว</p>

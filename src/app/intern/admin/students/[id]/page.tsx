@@ -215,6 +215,11 @@ export default async function InternAdminStudentDetailPage({
     notFound();
   }
 
+  const latestActivity = student.activityLogs[0] ?? null;
+  const latestUpdateMoment = latestActivity?.createdAt ?? student.lastStudentEditAt ?? student.updatedAt;
+  const latestUpdateActor = latestActivity?.actor ?? null;
+  const latestUpdateActorLabel = latestUpdateActor?.name?.trim() || latestUpdateActor?.email || (latestActivity ? "ระบบ" : null);
+
   const viewModel: AdminStudentDetailPageProps = {
     currentUser: {
       email: session.email,
@@ -328,7 +333,9 @@ export default async function InternAdminStudentDetailPage({
         actorLabel: entry.actor?.name?.trim() || entry.actor?.email || "ระบบ",
       })),
       summary: {
-        lastUpdatedLabel: formatThaiDateTime(student.lastStudentEditAt ?? student.updatedAt, EMPTY_VALUE),
+        lastUpdatedLabel: formatThaiDateTime(latestUpdateMoment, EMPTY_VALUE),
+        lastUpdatedByLabel: latestUpdateActorLabel,
+        lastUpdatedByEmail: latestUpdateActor?.email ?? null,
         submittedAtLabel: formatThaiDateTime(student.submittedAt, "ยังไม่ได้ส่ง"),
       },
     },

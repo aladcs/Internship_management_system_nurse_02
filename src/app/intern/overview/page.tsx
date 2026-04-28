@@ -180,6 +180,22 @@ export default async function InternOverviewPage() {
           },
         },
       },
+      activityLogs: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          createdAt: true,
+          actor: {
+            select: {
+              role: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -189,6 +205,17 @@ export default async function InternOverviewPage() {
   }
 
   const canEdit = isStudentEditableStatus(student.internshipStatus);
+  const studentDisplayName = getDisplayName(student);
+  const latestActivity = student.activityLogs[0] ?? null;
+  const latestUpdateMoment = latestActivity?.createdAt ?? student.lastStudentEditAt ?? student.updatedAt;
+  const latestUpdateActor = latestActivity?.actor ?? null;
+  const latestUpdateActorLabel = latestUpdateActor
+    ? latestUpdateActor.role === "student"
+      ? latestUpdateActor.name?.trim() || studentDisplayName || latestUpdateActor.email
+      : latestUpdateActor.name?.trim() || latestUpdateActor.email || "ผู้ดูแลระบบ"
+    : latestActivity
+      ? "ระบบ"
+      : null;
   const hasStartedForm = Boolean(
     student.submittedAt ||
       student.lastStudentEditAt ||
@@ -220,7 +247,7 @@ export default async function InternOverviewPage() {
     },
     student: {
       firstName: getFirstName(student),
-      displayName: getDisplayName(student),
+      displayName: studentDisplayName,
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatInternshipStatusLabel(student.internshipStatus),
@@ -250,7 +277,7 @@ export default async function InternOverviewPage() {
             }
           : null,
       personal: [
-        { label: "ชื่อ - นามสกุล", value: getDisplayName(student) },
+        { label: "ชื่อ - นามสกุล", value: studentDisplayName },
         { label: "อีเมล", value: student.user.email },
         { label: "หมายเลขโทรศัพท์", value: student.phoneNumber || EMPTY_VALUE },
         { label: "เพศ", value: formatGender(student.gender) },
@@ -312,7 +339,9 @@ export default async function InternOverviewPage() {
         };
       }),
       summary: {
-        lastUpdatedLabel: formatThaiDateTime(student.lastStudentEditAt ?? student.updatedAt, EMPTY_VALUE),
+        lastUpdatedLabel: formatThaiDateTime(latestUpdateMoment, EMPTY_VALUE),
+        lastUpdatedByLabel: latestUpdateActorLabel,
+        lastUpdatedByEmail: latestUpdateActor?.email ?? null,
         submittedAtLabel: formatThaiDateTime(student.submittedAt, "ยังไม่ได้ส่ง"),
       },
     },
