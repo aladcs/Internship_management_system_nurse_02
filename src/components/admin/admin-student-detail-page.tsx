@@ -500,24 +500,6 @@ export function AdminStudentDetailPage({
                         tone={getStatusAction(nextStatus)?.tone}
                       />
                     ))}
-                    {student.statusControl.allowedTransitions.includes("needs_fix") ? (
-                      <div>
-                        <label htmlFor="reviewMessage" className="mb-2 block text-sm font-medium text-slate-800">
-                          เหตุผลในการส่งกลับให้แก้ไข
-                        </label>
-                        <textarea
-                          id="reviewMessage"
-                          value={reviewMessage}
-                          onChange={(event) => setReviewMessage(event.target.value)}
-                          rows={4}
-                          placeholder="ระบุสิ่งที่นักศึกษาต้องแก้ไขหรือข้อมูลที่ยังขาด"
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-admin/40 focus:ring-4 focus:ring-admin/10"
-                        />
-                        <p className="mt-2 text-xs leading-5 text-slate-500">
-                          จำเป็นต้องระบุข้อความเมื่อส่งกลับให้แก้ไข และข้อความล่าสุดจะแสดงให้นักศึกษาเห็นในหน้าภาพรวมและแบบฟอร์ม
-                        </p>
-                      </div>
-                    ) : null}
                     {student.statusControl.blockReason ? <p className="text-sm leading-6 text-slate-600">{student.statusControl.blockReason}</p> : null}
                   </div>
                 ) : (
@@ -735,10 +717,28 @@ export function AdminStudentDetailPage({
           >
             <input type="hidden" name="studentId" value={student.id} />
             <input type="hidden" name="nextStatus" value={confirmStatus} />
-            <input type="hidden" name="reviewMessage" value={reviewMessage} />
             {confirmStatus === "needs_fix" ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                ข้อความที่จะส่งให้นักศึกษา: {reviewMessage.trim() || "กรุณาระบุเหตุผลก่อนยืนยันการส่งกลับ"}
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="reviewMessage" className="mb-2 block text-sm font-medium text-slate-800">
+                    เหตุผลในการส่งกลับให้แก้ไข
+                  </label>
+                  <textarea
+                    id="reviewMessage"
+                    name="reviewMessage"
+                    value={reviewMessage}
+                    onChange={(event) => setReviewMessage(event.target.value)}
+                    rows={4}
+                    placeholder="ระบุสิ่งที่นักศึกษาต้องแก้ไขหรือข้อมูลที่ยังขาด"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-admin/40 focus:ring-4 focus:ring-admin/10"
+                  />
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    จำเป็นต้องระบุข้อความเมื่อส่งกลับให้แก้ไข และข้อความล่าสุดจะแสดงให้นักศึกษาเห็นในหน้าภาพรวมและแบบฟอร์ม
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  ข้อความที่จะส่งให้นักศึกษา: {reviewMessage.trim() || "กรุณาระบุเหตุผลก่อนยืนยันการส่งกลับ"}
+                </div>
               </div>
             ) : null}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

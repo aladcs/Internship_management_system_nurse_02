@@ -51,14 +51,13 @@ type ResetPasswordDialogProps = {
   onClose: () => void;
 };
 
-type StudentStatusFilter = "all" | InternshipStatus;
+type StudentStatusFilter = "all" | Exclude<InternshipStatus, "draft">;
 
 const STATUS_FILTERS: Array<{
   value: StudentStatusFilter;
   label: string;
 }> = [
   { value: "all", label: "ทั้งหมด" },
-  { value: "draft", label: formatInternshipStatusLabel("draft") },
   { value: "pending", label: formatInternshipStatusLabel("pending") },
   { value: "needs_fix", label: formatInternshipStatusLabel("needs_fix") },
   { value: "in_progress", label: formatInternshipStatusLabel("in_progress") },
@@ -378,7 +377,7 @@ function StudentDialog({ onClose, onCreated }: StudentDialogProps) {
         ) : null}
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          ระบบจะสร้างบัญชีนักศึกษาและสถานะเริ่มต้นเป็นรอดำเนินการ ชื่อจะถูกบันทึกเมื่อนักศึกษากรอกแบบฟอร์ม
+          ระบบจะสร้างบัญชีนักศึกษาให้ก่อน และข้อมูลจะเริ่มแสดงในหน้ารายชื่อนักศึกษาเมื่อมีการส่งแบบฟอร์มครั้งแรก
         </div>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -560,13 +559,15 @@ export function StudentListPage({
   const statusCounts = studentItems.reduce(
     (counts, student) => {
       counts.all += 1;
-      counts[student.status] += 1;
+
+      if (student.status !== "draft") {
+        counts[student.status] += 1;
+      }
 
       return counts;
     },
     {
       all: 0,
-      draft: 0,
       pending: 0,
       needs_fix: 0,
       in_progress: 0,
@@ -594,6 +595,10 @@ export function StudentListPage({
   const filteredEmptyState = !emptyState && filteredStudents.length === 0;
 
   function handleStudentCreated(student: StudentListItem) {
+    if (student.status === "draft") {
+      return;
+    }
+
     setStudentItems((currentStudents) => {
       if (currentStudents.some((currentStudent) => currentStudent.id === student.id)) {
         return currentStudents;
@@ -694,7 +699,7 @@ export function StudentListPage({
                 ยังไม่มีนักศึกษา
               </h2>
               <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">
-                ข้อมูลนักศึกษาจะแสดงที่นี่หลังจากผู้ดูแลเพิ่มบัญชีเข้าสู่ระบบแล้ว
+                รายชื่อนักศึกษาจะเริ่มแสดงที่นี่หลังจากนักศึกษาส่งแบบฟอร์มครั้งแรกแล้ว
               </p>
               <button
                 type="button"

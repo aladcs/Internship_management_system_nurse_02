@@ -253,7 +253,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
       ? "แก้ไขและส่งใหม่"
       : student.status === "draft"
         ? student.hasStartedForm
-          ? "แก้ไขแบบร่าง"
+          ? "แก้ไขแบบฟอร์ม"
           : "กรอกแบบฟอร์ม"
         : "แก้ไขแบบฟอร์ม";
   const statusDefinitions = getStatusDefinitions();
@@ -286,8 +286,10 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
           : student.status === "draft"
             ? {
                 tone: "border-slate-200 bg-slate-50 text-slate-700",
-                title: "แบบฟอร์มยังเป็นแบบร่าง",
-                description: "คุณสามารถบันทึกแบบร่างต่อได้ และเมื่อพร้อมแล้วจึงค่อยส่งให้ผู้ดูแลตรวจสอบ",
+                title: "คุณยังไม่ได้ส่งแบบฟอร์ม",
+                description: student.hasStartedForm
+                  ? "คุณสามารถกลับไปแก้ไขข้อมูลให้ครบถ้วน แล้วส่งแบบฟอร์มเมื่อพร้อม"
+                  : "เริ่มกรอกข้อมูลการฝึกงานและส่งแบบฟอร์มเมื่อพร้อมเพื่อให้ผู้ดูแลเริ่มตรวจสอบ",
                 meta: null,
               }
             : null;

@@ -44,13 +44,20 @@ export default async function InternDashboardPage() {
     redirect(getRoleRedirectPath(session.role));
   }
 
+  const submittedStudentWhere = {
+    submittedAt: {
+      not: null,
+    },
+  } as const;
+
   const [totalStudents, pendingStudents, inProgressStudents, completedStudents, recentStudents, notificationSummary] =
     await Promise.all([
-      prisma.student.count(),
-      prisma.student.count({ where: { internshipStatus: "pending" } }),
-      prisma.student.count({ where: { internshipStatus: "in_progress" } }),
-      prisma.student.count({ where: { internshipStatus: "completed" } }),
+      prisma.student.count({ where: submittedStudentWhere }),
+      prisma.student.count({ where: { ...submittedStudentWhere, internshipStatus: "pending" } }),
+      prisma.student.count({ where: { ...submittedStudentWhere, internshipStatus: "in_progress" } }),
+      prisma.student.count({ where: { ...submittedStudentWhere, internshipStatus: "completed" } }),
       prisma.student.findMany({
+        where: submittedStudentWhere,
         orderBy: {
           updatedAt: "desc",
         },

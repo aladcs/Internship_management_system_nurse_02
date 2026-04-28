@@ -176,12 +176,12 @@ export async function saveStudentFormAction(
   const studentIntent =
     session.role === "admin"
       ? "admin_save"
-      : requestedIntent === "save_draft" || requestedIntent === "submit" || requestedIntent === "save_changes"
+      : requestedIntent === "submit" || requestedIntent === "save_changes"
         ? requestedIntent
         : student.internshipStatus === "draft"
-          ? "save_draft"
+          ? "submit"
           : "save_changes";
-  const requiresCompleteForm = session.role === "admin" || studentIntent !== "save_draft";
+  const requiresCompleteForm = true;
 
   if (requiresCompleteForm && (!values.prefix || !PREFIX_VALUES.includes(values.prefix as (typeof PREFIX_VALUES)[number]))) {
     fieldErrors.prefix = "กรุณาเลือกคำนำหน้า";
@@ -344,10 +344,7 @@ export async function saveStudentFormAction(
   let nextSubmittedAt = student.submittedAt;
 
   if (session.role === "student") {
-    if (studentIntent === "save_draft") {
-      nextStudentStatus = "draft";
-      nextSubmittedAt = null;
-    } else if (studentIntent === "submit") {
+    if (studentIntent === "submit") {
       nextStudentStatus = previousStatus === "needs_fix" ? "pending" : previousStatus === "draft" ? "pending" : previousStatus;
       nextSubmittedAt = now;
     }
@@ -542,11 +539,8 @@ export async function saveStudentFormAction(
             data: {
               actorId: session.userId,
               studentId: student.id,
-              action: studentIntent === "save_draft" ? "student_saved_draft" : "student_edited_form",
-              message:
-                studentIntent === "save_draft"
-                  ? `${displayName} บันทึกแบบร่างข้อมูลฝึกงาน`
-                  : `${displayName} แก้ไขข้อมูลฝึกงาน`,
+              action: "student_edited_form",
+              message: `${displayName} แก้ไขข้อมูลฝึกงาน`,
               metadata: {
                 status: previousStatus,
                 intent: studentIntent,

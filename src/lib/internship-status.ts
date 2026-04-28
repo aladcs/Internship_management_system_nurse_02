@@ -19,7 +19,7 @@ const STUDENT_EDITABLE_STATUSES: InternshipStatus[] = ["draft", "pending", "need
 
 export function formatInternshipStatusLabel(status: InternshipStatus) {
   if (status === "draft") {
-    return "แบบร่าง";
+    return "ยังไม่ได้ส่ง";
   }
 
   if (status === "pending") {
@@ -62,7 +62,7 @@ export function getAdminStatusTransitionBlockReason(input: {
   }
 
   if (input.status === "draft") {
-    return "นักศึกษายังอยู่ในสถานะแบบร่าง จึงยังไม่สามารถตรวจแบบฟอร์มได้";
+    return "นักศึกษายังไม่ได้ส่งแบบฟอร์มครั้งแรก จึงยังไม่สามารถตรวจแบบฟอร์มได้";
   }
 
   if (getAllowedAdminStatusTransitions(input.status).length === 0) {
@@ -82,7 +82,7 @@ export function getAdminStatusTransitionError(input: {
   }
 
   if (input.currentStatus === "draft") {
-    return "นักศึกษายังอยู่ในสถานะแบบร่าง จึงยังไม่สามารถตรวจแบบฟอร์มได้";
+    return "นักศึกษายังไม่ได้ส่งแบบฟอร์มครั้งแรก จึงยังไม่สามารถตรวจแบบฟอร์มได้";
   }
 
   if (input.currentStatus === "completed") {

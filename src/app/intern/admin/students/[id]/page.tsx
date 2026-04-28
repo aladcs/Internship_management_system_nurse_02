@@ -234,6 +234,10 @@ export default async function InternAdminStudentDetailPage({
     notFound();
   }
 
+  if (!student.submittedAt) {
+    notFound();
+  }
+
   const viewModel: AdminStudentDetailPageProps = {
     currentUser: {
       email: session.email,

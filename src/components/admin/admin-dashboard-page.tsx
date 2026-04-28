@@ -222,7 +222,7 @@ export function AdminDashboardPage({
 
             {recentStudents.length === 0 ? (
               <div className="px-5 py-12 text-center text-sm text-slate-500 sm:px-6">
-                ยังไม่มีการสร้างนักศึกษา
+                ยังไม่มีนักศึกษาที่ส่งแบบฟอร์มเข้ามา
               </div>
             ) : (
               <div className="divide-y divide-slate-200">

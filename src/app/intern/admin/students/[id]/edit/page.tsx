@@ -139,6 +139,10 @@ export default async function InternAdminStudentEditPage({
     notFound();
   }
 
+  if (!student.submittedAt) {
+    notFound();
+  }
+
   const initialValues: StudentFormValues = {
     prefix: student.prefix ?? "",
     firstName: student.firstName ?? "",

@@ -505,7 +505,7 @@ export function StudentFormPage({
     : student.status === "needs_fix"
       ? "แก้ไขข้อมูลตามข้อคิดเห็นของผู้ดูแล แล้วส่งกลับมาเพื่อให้ตรวจสอบอีกครั้ง"
       : student.status === "draft"
-        ? "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และบันทึกแบบร่างหรือส่งให้ผู้ดูแลตรวจสอบเมื่อพร้อม"
+        ? "กรอกข้อมูลการฝึกงานและแนบไฟล์ประกอบให้ครบถ้วนก่อนส่งให้ผู้ดูแลตรวจสอบ"
         : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
   const theme = getFormTheme(isAdminMode);
   const selectedProfileImagePreview = useMemo(
@@ -551,8 +551,8 @@ export function StudentFormPage({
           : !isAdminMode && student.status === "draft"
             ? {
                 tone: "border-slate-200 bg-slate-50 text-slate-700",
-                title: "กำลังแก้ไขแบบร่าง",
-                description: "คุณสามารถบันทึกแบบร่างไว้ก่อนได้โดยยังไม่ส่งให้ผู้ดูแลตรวจสอบ",
+                title: "ยังไม่ได้ส่งแบบฟอร์ม",
+                description: "กรอกข้อมูลให้ครบถ้วนแล้วส่งแบบฟอร์มเพื่อให้ผู้ดูแลเริ่มตรวจสอบ",
                 meta: null,
               }
             : null;
@@ -1203,30 +1203,15 @@ export function StudentFormPage({
             <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
               <CancelLink href={resolvedCancelHref} pending={isPending} />
               {!isAdminMode && student.status === "draft" ? (
-                <>
-                  <button
-                    type="submit"
-                    name="intent"
-                    value="save_draft"
-                    disabled={isPending}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {isPending ? "กำลังบันทึก..." : "บันทึกแบบร่าง"}
-                  </button>
-                  <SubmitActionButton label="ส่งแบบฟอร์ม" className={theme.primaryButton} pending={isPending} value="submit" />
-                </>
+                <SubmitActionButton label="ส่งแบบฟอร์ม" className={theme.primaryButton} pending={isPending} value="submit" />
               ) : !isAdminMode && student.status === "needs_fix" ? (
                 <>
-                  <button
-                    type="submit"
-                    name="intent"
-                    value="save_changes"
-                    disabled={isPending}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {isPending ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
-                  </button>
-                  <SubmitActionButton label="แก้ไขและส่งใหม่" className={theme.primaryButton} pending={isPending} value="submit" />
+                  <SubmitActionButton
+                    label="แก้ไขแล้วส่งใหม่"
+                    className={theme.primaryButton}
+                    pending={isPending}
+                    value="submit"
+                  />
                 </>
               ) : (
                 <SubmitActionButton
