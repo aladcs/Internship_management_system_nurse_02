@@ -7,6 +7,7 @@ import {
 import { StudentFormPage, type StudentFormPageProps } from "@/components/student/student-form-page";
 import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
+import { formatThaiDateTime } from "@/lib/date-format";
 import { prisma } from "@/lib/prisma";
 import {
   getStudentAttachmentDownloadHref,
@@ -25,14 +26,6 @@ function formatDateInput(value: Date | null | undefined) {
   }
 
   return value.toISOString().slice(0, 10);
-}
-
-function formatFileDate(value: Date) {
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
 }
 
 function formatFileSize(sizeBytes: number | null) {
@@ -180,7 +173,7 @@ export default async function InternFormPage() {
         ? {
             id: student.reviewComments[0].id,
             message: student.reviewComments[0].message,
-            createdAtLabel: formatFileDate(student.reviewComments[0].createdAt),
+            createdAtLabel: formatThaiDateTime(student.reviewComments[0].createdAt),
             adminLabel:
               student.reviewComments[0].admin?.name?.trim() ||
               student.reviewComments[0].admin?.email ||
@@ -189,7 +182,7 @@ export default async function InternFormPage() {
         : null,
     },
     existingFiles: student.files.map((file) => {
-      const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatFileDate(file.createdAt)].filter(Boolean);
+      const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatThaiDateTime(file.createdAt)].filter(Boolean);
 
       return {
         id: file.id,

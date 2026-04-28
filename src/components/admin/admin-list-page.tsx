@@ -16,6 +16,7 @@ import {
 } from "@/app/intern/admins/action-state";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { ModalFrame } from "@/components/admin/modal-frame";
+import { formatThaiDateTime } from "@/lib/date-format";
 import { appShellClass } from "@/lib/page-shell";
 
 type AdminListPageProps = {
@@ -126,14 +127,6 @@ function EmptyIcon() {
       <path d="M42.5 41h7" className="stroke-current" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("th-TH", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
 }
 
 function getInitials(name: string | null, email: string) {
@@ -667,7 +660,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                           {admin.email}
                         </td>
                         <td className="border-t border-slate-100 px-6 py-4 text-sm text-slate-500">
-                          {formatDate(admin.createdAt)}
+                          {formatThaiDateTime(admin.createdAt)}
                         </td>
                         <td className="border-t border-slate-100 px-6 py-4">
                           <div className="flex justify-end gap-2">
@@ -750,7 +743,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
                       <p>{admin.email}</p>
-                      <p>สร้างเมื่อ {formatDate(admin.createdAt)}</p>
+                      <p>สร้างเมื่อ {formatThaiDateTime(admin.createdAt)}</p>
                     </div>
                   </article>
                 ))}

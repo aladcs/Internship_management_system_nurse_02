@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components/student/student-overview-page";
 import { readSession } from "@/lib/auth/session";
+import { formatThaiDate, formatThaiDateTime } from "@/lib/date-format";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { formatInternshipStatusLabel, isStudentEditableStatus } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
@@ -18,30 +19,6 @@ export const metadata: Metadata = {
 };
 
 const EMPTY_VALUE = "ยังไม่ได้ระบุ";
-
-function formatDate(value: Date | null | undefined) {
-  if (!value) {
-    return EMPTY_VALUE;
-  }
-
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
-}
-
-function formatDateTime(value: Date | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
-}
 
 function formatGender(value: string | null) {
   if (!value) {
@@ -257,7 +234,7 @@ export default async function InternOverviewPage() {
         ? {
             id: student.reviewComments[0].id,
             message: student.reviewComments[0].message,
-            createdAtLabel: formatDateTime(student.reviewComments[0].createdAt) ?? EMPTY_VALUE,
+            createdAtLabel: formatThaiDateTime(student.reviewComments[0].createdAt, EMPTY_VALUE),
             adminLabel:
               student.reviewComments[0].admin?.name?.trim() ||
               student.reviewComments[0].admin?.email ||
@@ -277,7 +254,7 @@ export default async function InternOverviewPage() {
         { label: "อีเมล", value: student.user.email },
         { label: "หมายเลขโทรศัพท์", value: student.phoneNumber || EMPTY_VALUE },
         { label: "เพศ", value: formatGender(student.gender) },
-        { label: "วันเกิด", value: formatDate(student.dateOfBirth) },
+        { label: "วันเกิด", value: formatThaiDate(student.dateOfBirth, EMPTY_VALUE) },
         { label: "ที่อยู่", value: student.address || EMPTY_VALUE },
         { label: "เบอร์โทรผู้ปกครอง", value: student.parentPhone || EMPTY_VALUE },
       ],
@@ -300,11 +277,11 @@ export default async function InternOverviewPage() {
         },
         {
           label: "วันเริ่มต้น",
-          value: formatDate(student.internshipRecord?.startDate),
+          value: formatThaiDate(student.internshipRecord?.startDate, EMPTY_VALUE),
         },
         {
           label: "วันสิ้นสุด",
-          value: formatDate(student.internshipRecord?.endDate),
+          value: formatThaiDate(student.internshipRecord?.endDate, EMPTY_VALUE),
         },
       ],
       education: [
@@ -325,7 +302,7 @@ export default async function InternOverviewPage() {
         },
       ],
       files: student.files.map((file) => {
-        const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatDateTime(file.createdAt)].filter(Boolean);
+        const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatThaiDateTime(file.createdAt)].filter(Boolean);
 
         return {
           id: file.id,
@@ -335,8 +312,8 @@ export default async function InternOverviewPage() {
         };
       }),
       summary: {
-        lastUpdatedLabel: formatDateTime(student.lastStudentEditAt ?? student.updatedAt) ?? EMPTY_VALUE,
-        submittedAtLabel: formatDateTime(student.submittedAt) ?? "ยังไม่ได้ส่ง",
+        lastUpdatedLabel: formatThaiDateTime(student.lastStudentEditAt ?? student.updatedAt, EMPTY_VALUE),
+        submittedAtLabel: formatThaiDateTime(student.submittedAt, "ยังไม่ได้ส่ง"),
       },
     },
   };

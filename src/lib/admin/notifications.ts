@@ -1,4 +1,5 @@
 import type { NotificationType } from "@prisma/client";
+import { formatThaiDateTime } from "@/lib/date-format";
 import { sendTelegramAdminAlert } from "@/lib/admin/telegram";
 import { prisma } from "@/lib/prisma";
 
@@ -96,11 +97,7 @@ function getRelativeTimeLabel(value: Date, now = new Date()) {
     return `${diffDays} วันที่แล้ว`;
   }
 
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
+  return formatThaiDateTime(value);
 }
 
 export function resolveNotificationTargetPath(notification: {
