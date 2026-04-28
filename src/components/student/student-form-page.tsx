@@ -10,6 +10,7 @@ import {
   saveStudentFormAction as defaultSaveStudentFormAction,
 } from "@/app/intern/form/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
+import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -340,7 +341,7 @@ function SelectInput({
   options,
   placeholder,
   error,
-  inputFocusClass,
+  tone,
 }: {
   id: string;
   name: string;
@@ -349,23 +350,21 @@ function SelectInput({
   options: ReadonlyArray<{ value: string; label: string }>;
   placeholder: string;
   error?: string;
-  inputFocusClass: string;
+  tone: "admin" | "student";
 }) {
   return (
-    <select
+    <AppSelect
       id={id}
       name={name}
       value={value}
       onChange={onChange}
-      className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+      options={options}
+      placeholder={placeholder}
+      error={error}
+      tone={tone}
+      size="lg"
+      surface="muted"
+    />
   );
 }
 
@@ -1035,10 +1034,10 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="คำนำหน้า" htmlFor="prefix" required error={state.fieldErrors.prefix}>
-                <SelectInput id="prefix" name="prefix" value={formValues.prefix} onChange={(event) => updateFormValue("prefix", event.target.value)} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="prefix" name="prefix" value={formValues.prefix} onChange={(event) => updateFormValue("prefix", event.target.value)} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} tone={isAdminMode ? "admin" : "student"} />
               </FieldShell>
               <FieldShell label="เพศ" htmlFor="gender" required error={state.fieldErrors.gender}>
-                <SelectInput id="gender" name="gender" value={formValues.gender} onChange={(event) => updateFormValue("gender", event.target.value)} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="gender" name="gender" value={formValues.gender} onChange={(event) => updateFormValue("gender", event.target.value)} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} tone={isAdminMode ? "admin" : "student"} />
               </FieldShell>
               <FieldShell label="ชื่อ" htmlFor="firstName" required error={state.fieldErrors.firstName}>
                 <TextInput id="firstName" name="firstName" value={formValues.firstName} onChange={(event) => updateFormValue("firstName", event.target.value)} placeholder="ชื่อ" error={state.fieldErrors.firstName} inputFocusClass={theme.inputFocus} />
@@ -1072,7 +1071,7 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ระดับการศึกษา" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
-                <SelectInput id="educationLevel" name="educationLevel" value={formValues.educationLevel} onChange={(event) => updateFormValue("educationLevel", event.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="educationLevel" name="educationLevel" value={formValues.educationLevel} onChange={(event) => updateFormValue("educationLevel", event.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} tone={isAdminMode ? "admin" : "student"} />
               </FieldShell>
               <FieldShell label="สถานศึกษา" htmlFor="institution" required error={state.fieldErrors.institution}>
                 <TextInput id="institution" name="institution" value={formValues.institution} onChange={(event) => updateFormValue("institution", event.target.value)} placeholder="สถานศึกษา" error={state.fieldErrors.institution} inputFocusClass={theme.inputFocus} />

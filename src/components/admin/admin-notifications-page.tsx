@@ -4,6 +4,7 @@ import { useDeferredValue, useState } from "react";
 import { logoutAction, markAllNotificationsReadAction } from "@/app/intern/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { AdminNotificationFeed } from "@/components/admin/admin-notification-menu";
+import { AppSelect } from "@/components/ui/app-select";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
 
 type AdminNotificationsPageProps = {
@@ -137,20 +138,16 @@ function TabButton({
 
 function FilterSelect<T extends string>({ value, onChange, options }: FilterSelectProps<T>) {
   return (
-    <label className="relative block min-w-42">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as T)}
-        className="h-10 w-full appearance-none rounded-2xl border border-slate-200 bg-white px-3 pr-9 text-sm text-slate-700 outline-none transition focus:border-admin/30 focus:ring-4 focus:ring-admin/10"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label} ({option.count})
-          </option>
-        ))}
-      </select>
-      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">▾</span>
-    </label>
+    <AppSelect
+      value={value}
+      onChange={(event) => onChange(event.target.value as T)}
+      options={options}
+      tone="admin"
+      size="md"
+      surface="muted"
+      wrapperClassName="min-w-42"
+      className="font-medium"
+    />
   );
 }
 
