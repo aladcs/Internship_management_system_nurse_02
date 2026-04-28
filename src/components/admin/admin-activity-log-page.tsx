@@ -138,12 +138,12 @@ function getActorInitials(label: string) {
 function SummaryChip({ icon, label, value, subvalue }: SummaryChipProps) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-900/5">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
         {icon}
         <span>{label}</span>
       </div>
-      <p className="mt-2 text-base font-semibold tracking-tight text-slate-950">{value}</p>
-      {subvalue ? <p className="mt-1 truncate text-xs text-slate-500">{subvalue}</p> : null}
+      <p className="mt-1.5 text-base font-semibold tracking-tight text-slate-950">{value}</p>
+      {subvalue ? <p className="mt-0.5 truncate text-xs text-slate-400">{subvalue}</p> : null}
     </article>
   );
 }
@@ -223,11 +223,9 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
     >
       <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
-              พื้นที่ผู้ดูแลระบบ
-            </p>
+          <div className="space-y-1">
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Activity Log</h1>
+            <p className="text-sm text-slate-500">รวมกิจกรรมทั้งหมดของผู้ดูแลและนักศึกษา</p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 lg:min-w-135">
@@ -267,8 +265,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                   <ActivityIcon />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold tracking-tight text-slate-950">กิจกรรมทั้งหมด</h2>
-                  <p className="mt-1 text-sm text-slate-500">ค้นหาและกรองรายการ</p>
+                  <h2 className="text-lg font-semibold tracking-tight text-slate-950">รายการทั้งหมด</h2>
                 </div>
               </div>
 
@@ -346,7 +343,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                   href={entry.targetPath}
                   className="group block px-5 py-3.5 transition hover:bg-slate-50 sm:px-6"
                 >
-                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_130px] lg:items-start">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_148px] lg:items-start">
                     <div className="flex min-w-0 gap-4">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-xs font-semibold text-(--color-admin)">
                         {getActorInitials(entry.actorLabel)}
@@ -362,7 +359,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                             {entry.actionLabel}
                           </span>
                         </div>
-                        {entry.actorEmail ? <p className="mt-1 text-xs text-slate-400">{entry.actorEmail}</p> : null}
+                        {entry.actorEmail ? <p className="mt-1 truncate text-xs text-slate-400">{entry.actorEmail}</p> : null}
                         <p className="mt-2 line-clamp-2 text-sm text-slate-600">{entry.message}</p>
                         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                           <span className="truncate font-medium text-slate-600">{entry.studentLabel}</span>
@@ -375,10 +372,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-left lg:text-right">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {entry.relativeTimeLabel}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-slate-700">{entry.createdAtLabel}</p>
+                      <p className="text-xs font-medium text-slate-700">{entry.createdAtLabel}</p>
                     </div>
                   </div>
                 </Link>
