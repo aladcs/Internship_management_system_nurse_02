@@ -19,7 +19,7 @@ const STUDENT_EDITABLE_STATUSES: InternshipStatus[] = ["draft", "pending", "need
 
 export function formatInternshipStatusLabel(status: InternshipStatus) {
   if (status === "draft") {
-    return "ยังไม่ได้ส่ง";
+    return "ยังไม่ได้ส่งแบบฟอร์ม";
   }
 
   if (status === "pending") {

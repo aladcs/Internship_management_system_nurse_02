@@ -185,7 +185,7 @@ export function AdminDashboardPage({
             tone="bg-admin/12 text-(--color-admin)"
           />
           <StatCard
-            label="รอดำเนินการ"
+            label="รอส่ง / รอตรวจสอบ"
             value={stats.pendingStudents}
             icon={<PendingIcon />}
             tone="bg-amber-100 text-amber-700"
@@ -222,7 +222,7 @@ export function AdminDashboardPage({
 
             {recentStudents.length === 0 ? (
               <div className="px-5 py-12 text-center text-sm text-slate-500 sm:px-6">
-                ยังไม่มีนักศึกษาที่ส่งแบบฟอร์มเข้ามา
+                ยังไม่มีนักศึกษาในระบบ
               </div>
             ) : (
               <div className="divide-y divide-slate-200">

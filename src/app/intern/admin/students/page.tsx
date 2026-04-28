@@ -56,11 +56,6 @@ export default async function InternAdminStudentsPage() {
   }
 
   const students = await prisma.student.findMany({
-    where: {
-      submittedAt: {
-        not: null,
-      },
-    },
     orderBy: {
       createdAt: "desc",
     },

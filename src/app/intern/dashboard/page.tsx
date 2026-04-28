@@ -37,20 +37,19 @@ export default async function InternDashboardPage() {
     redirect(getRoleRedirectPath(session.role));
   }
 
-  const submittedStudentWhere = {
-    submittedAt: {
-      not: null,
-    },
-  } as const;
-
   const [totalStudents, pendingStudents, inProgressStudents, completedStudents, recentStudents, notificationSummary] =
     await Promise.all([
-      prisma.student.count({ where: submittedStudentWhere }),
-      prisma.student.count({ where: { ...submittedStudentWhere, internshipStatus: "pending" } }),
-      prisma.student.count({ where: { ...submittedStudentWhere, internshipStatus: "in_progress" } }),
-      prisma.student.count({ where: { ...submittedStudentWhere, internshipStatus: "completed" } }),
+      prisma.student.count(),
+      prisma.student.count({
+        where: {
+          internshipStatus: {
+            in: ["draft", "pending"],
+          },
+        },
+      }),
+      prisma.student.count({ where: { internshipStatus: "in_progress" } }),
+      prisma.student.count({ where: { internshipStatus: "completed" } }),
       prisma.student.findMany({
-        where: submittedStudentWhere,
         orderBy: {
           updatedAt: "desc",
         },
@@ -90,7 +89,11 @@ export default async function InternDashboardPage() {
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatInternshipStatusLabel(student.internshipStatus),
-      meta: student.major?.trim() || `อัปเดต ${formatThaiDateTime(student.updatedAt)}`,
+      meta:
+        student.major?.trim() ||
+        (student.internshipStatus === "draft"
+          ? "ยังไม่ได้ส่งแบบฟอร์ม"
+          : `อัปเดต ${formatThaiDateTime(student.updatedAt)}`),
     })),
     notifications: notificationSummary.notifications,
   };
