@@ -496,6 +496,7 @@ export function StudentFormPage({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const isAdminMode = mode === "admin";
+  const hasAdminDisplayName = Boolean(currentUser.name?.trim());
   const resolvedBackHref = backHref ?? (isAdminMode ? "/intern/admin/students" : "/intern/overview");
   const resolvedBackLabel = backLabel ?? (isAdminMode ? "กลับไปหน้ารายชื่อนักศึกษา" : "กลับไปหน้าภาพรวม");
   const resolvedCancelHref = cancelHref ?? (isAdminMode ? resolvedBackHref : "/intern/overview");
@@ -744,7 +745,7 @@ export function StudentFormPage({
 
   return (
     <div className={`min-h-screen text-slate-950 ${theme.pageBackground}`}>
-      <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${theme.headerBorder}`}>
+      <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${isAdminMode ? "border-slate-200/80" : theme.headerBorder}`}>
         <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
             <Link href={isAdminMode ? "/intern/admin/students" : "/intern/overview"} className="flex items-center gap-3">
@@ -752,18 +753,30 @@ export function StudentFormPage({
                 <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-slate-700">ระบบจัดการนักศึกษาฝึกงานทั้งหมด</p>
+                {isAdminMode ? (
+                  <>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
+                      ระบบ
+                    </p>
+                    <p className="text-sm font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-medium text-slate-700">ระบบจัดการนักศึกษาฝึกงานทั้งหมด</p>
+                )}
               </div>
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">
               {isAdminMode ? (
                 <>
-                  <Link href="/intern/dashboard" className={`rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition ${theme.navHover}`}>
+                  <Link href="/intern/dashboard" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                     แดชบอร์ด
                   </Link>
-                  <Link href="/intern/admin/students" className={`rounded-full px-4 py-2 text-sm font-semibold ${theme.navActive}`} aria-current="page">
-                    แก้ไขข้อมูลนักศึกษา
+                  <Link href="/intern/admin/students" className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)" aria-current="page">
+                    รายชื่อนักศึกษา
+                  </Link>
+                  <Link href="/intern/notifications" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                    การแจ้งเตือน
                   </Link>
                 </>
               ) : (
@@ -798,6 +811,24 @@ export function StudentFormPage({
             <MenuIcon />
           </button>
         </div>
+
+        {isAdminMode && !hasAdminDisplayName ? (
+          <div className="border-t border-admin/10 bg-linear-to-r from-admin/8 via-white to-admin/5">
+            <div className={`${appShellClass} flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between`}>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  กรุณาตั้งชื่อที่แสดงสำหรับบัญชีของคุณ
+                </p>
+              </div>
+              <Link
+                href="/intern/account/name"
+                className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+              >
+                ตั้งชื่อที่แสดง
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       {mobileMenuOpen ? (
@@ -821,11 +852,14 @@ export function StudentFormPage({
             <nav className="mt-8 space-y-2">
               {isAdminMode ? (
                 <>
-                  <Link href="/intern/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/intern/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
                     แดชบอร์ด
                   </Link>
-                  <Link href="/intern/admin/students" className={`block rounded-2xl px-4 py-3 text-sm font-semibold ${theme.navActive}`} aria-current="page" onClick={() => setMobileMenuOpen(false)}>
-                    แก้ไขข้อมูลนักศึกษา
+                  <Link href="/intern/admin/students" className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)" aria-current="page" onClick={() => setMobileMenuOpen(false)}>
+                    รายชื่อนักศึกษา
+                  </Link>
+                  <Link href="/intern/notifications" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
+                    การแจ้งเตือน
                   </Link>
                 </>
               ) : (
