@@ -58,7 +58,9 @@ const STATUS_FILTERS: Array<{
   label: string;
 }> = [
   { value: "all", label: "ทั้งหมด" },
+  { value: "draft", label: formatInternshipStatusLabel("draft") },
   { value: "pending", label: formatInternshipStatusLabel("pending") },
+  { value: "needs_fix", label: formatInternshipStatusLabel("needs_fix") },
   { value: "in_progress", label: formatInternshipStatusLabel("in_progress") },
   { value: "completed", label: formatInternshipStatusLabel("completed") },
 ];
@@ -172,8 +174,16 @@ function getInitials(name: string, email: string) {
 }
 
 function getStatusClasses(status: InternshipStatus) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {
@@ -556,7 +566,9 @@ export function StudentListPage({
     },
     {
       all: 0,
+      draft: 0,
       pending: 0,
+      needs_fix: 0,
       in_progress: 0,
       completed: 0,
     } as Record<StudentStatusFilter, number>,

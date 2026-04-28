@@ -33,10 +33,11 @@ export async function updateStudentStatusAction(
   _previousState: UpdateStudentStatusActionState,
   formData: FormData,
 ): Promise<UpdateStudentStatusActionState> {
-  await requireAdminSession();
+  const session = await requireAdminSession();
 
   const studentId = String(formData.get("studentId") ?? "").trim();
   const requestedStatus = String(formData.get("nextStatus") ?? "").trim();
+  const reviewMessage = String(formData.get("reviewMessage") ?? "").trim();
 
   if (!studentId) {
     return {
@@ -46,11 +47,24 @@ export async function updateStudentStatusAction(
     };
   }
 
-  if (requestedStatus !== "pending" && requestedStatus !== "in_progress" && requestedStatus !== "completed") {
+  if (
+    requestedStatus !== "pending" &&
+    requestedStatus !== "needs_fix" &&
+    requestedStatus !== "in_progress" &&
+    requestedStatus !== "completed"
+  ) {
     return {
       ...initialUpdateStudentStatusActionState,
       status: "error",
       message: "สถานะที่ส่งมาไม่ถูกต้อง",
+    };
+  }
+
+  if (requestedStatus === "needs_fix" && !reviewMessage) {
+    return {
+      ...initialUpdateStudentStatusActionState,
+      status: "error",
+      message: "กรุณาระบุเหตุผลในการส่งกลับให้แก้ไข",
     };
   }
 
@@ -62,6 +76,14 @@ export async function updateStudentStatusAction(
       id: true,
       internshipStatus: true,
       submittedAt: true,
+      user: {
+        select: {
+          email: true,
+          name: true,
+        },
+      },
+      firstName: true,
+      lastName: true,
     },
   });
 
@@ -88,16 +110,58 @@ export async function updateStudentStatusAction(
     };
   }
 
-  const updatedStudent = await prisma.student.update({
-    where: {
-      id: student.id,
-    },
-    data: {
-      internshipStatus: requestedStatus,
-    },
-    select: {
-      internshipStatus: true,
-    },
+  const actorLabel = session.name?.trim() || session.email;
+  const studentLabel =
+    [student.firstName, student.lastName].filter(Boolean).join(" ").trim() || student.user.name?.trim() || student.user.email;
+
+  const updatedStudent = await prisma.$transaction(async (tx) => {
+    const updatedRecord = await tx.student.update({
+      where: {
+        id: student.id,
+      },
+      data: {
+        internshipStatus: requestedStatus,
+      },
+      select: {
+        internshipStatus: true,
+      },
+    });
+
+    if (requestedStatus === "needs_fix") {
+      await tx.reviewComment.create({
+        data: {
+          studentId: student.id,
+          adminId: session.userId,
+          message: reviewMessage,
+        },
+      });
+    }
+
+    await tx.activityLog.create({
+      data: {
+        actorId: session.userId,
+        studentId: student.id,
+        action:
+          requestedStatus === "in_progress"
+            ? "admin_approved_form"
+            : requestedStatus === "needs_fix"
+              ? "admin_sent_back_form"
+              : "admin_marked_completed",
+        message:
+          requestedStatus === "in_progress"
+            ? `${actorLabel} อนุมัติแบบฟอร์มของ ${studentLabel}`
+            : requestedStatus === "needs_fix"
+              ? `${actorLabel} ส่งแบบฟอร์มของ ${studentLabel} กลับให้แก้ไข`
+              : `${actorLabel} ทำเครื่องหมายว่า ${studentLabel} ฝึกงานเสร็จสิ้นแล้ว`,
+        metadata: {
+          fromStatus: student.internshipStatus,
+          toStatus: requestedStatus,
+          reviewMessage: requestedStatus === "needs_fix" ? reviewMessage : null,
+        },
+      },
+    });
+
+    return updatedRecord;
   });
 
   revalidatePath("/intern/admin/students");

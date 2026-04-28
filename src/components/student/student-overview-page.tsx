@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { InternshipStatus } from "@prisma/client";
 import { type ReactNode, useState } from "react";
 import { logoutAction } from "@/app/intern/overview/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
@@ -35,11 +36,17 @@ export type StudentOverviewPageProps = {
     firstName: string;
     displayName: string;
     email: string;
-    status: "pending" | "in_progress" | "completed";
+    status: InternshipStatus;
     statusLabel: string;
     canEdit: boolean;
     hasStartedForm: boolean;
     completionNote: string | null;
+    latestReviewComment: {
+      id: string;
+      message: string;
+      createdAtLabel: string;
+      adminLabel: string;
+    } | null;
     profileImage: ProfileImageItem | null;
     personal: SummaryItem[];
     internship: SummaryItem[];
@@ -152,8 +159,16 @@ function AcademicIcon() {
 }
 
 function getStatusClasses(status: StudentOverviewPageProps["student"]["status"]) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {
@@ -166,8 +181,16 @@ function getStatusClasses(status: StudentOverviewPageProps["student"]["status"])
 function getStatusDefinitions(): StatusDefinition[] {
   return [
     {
+      id: "draft",
+      label: formatInternshipStatusLabel("draft"),
+    },
+    {
       id: "pending",
       label: formatInternshipStatusLabel("pending"),
+    },
+    {
+      id: "needs_fix",
+      label: formatInternshipStatusLabel("needs_fix"),
     },
     {
       id: "in_progress",
@@ -225,8 +248,49 @@ function SummaryCard({
 
 export function StudentOverviewPage({ currentUser, student }: StudentOverviewPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const ctaLabel = student.hasStartedForm ? "แก้ไขแบบฟอร์ม" : "กรอกแบบฟอร์ม";
+  const ctaLabel =
+    student.status === "needs_fix"
+      ? "แก้ไขและส่งใหม่"
+      : student.status === "draft"
+        ? student.hasStartedForm
+          ? "แก้ไขแบบร่าง"
+          : "กรอกแบบฟอร์ม"
+        : "แก้ไขแบบฟอร์ม";
   const statusDefinitions = getStatusDefinitions();
+  const statusNotice =
+    student.status === "needs_fix"
+      ? {
+          tone: "border-rose-200 bg-rose-50 text-rose-800",
+          title: "ผู้ดูแลส่งกลับให้แก้ไข",
+          description: student.latestReviewComment
+            ? student.latestReviewComment.message
+            : "กรุณาตรวจสอบรายละเอียดที่ต้องแก้ไข แล้วกลับไปอัปเดตข้อมูลและส่งใหม่อีกครั้ง",
+          meta: student.latestReviewComment
+            ? `${student.latestReviewComment.adminLabel} • ${student.latestReviewComment.createdAtLabel}`
+            : null,
+        }
+      : student.status === "pending"
+        ? {
+            tone: "border-amber-200 bg-amber-50 text-amber-800",
+            title: "กำลังรอผู้ดูแลตรวจสอบ",
+            description: "แบบฟอร์มของคุณถูกส่งแล้ว และยังอยู่ระหว่างการตรวจสอบจากผู้ดูแลระบบ",
+            meta: null,
+          }
+        : student.status === "in_progress"
+          ? {
+              tone: "border-sky-200 bg-sky-50 text-sky-800",
+              title: "แบบฟอร์มได้รับการอนุมัติแล้ว",
+              description: "คุณยังแก้ไขข้อมูลได้ แต่ทุกการเปลี่ยนแปลงและไฟล์ที่อัปเดตจะถูกแจ้งให้ผู้ดูแลทราบ",
+              meta: null,
+            }
+          : student.status === "draft"
+            ? {
+                tone: "border-slate-200 bg-slate-50 text-slate-700",
+                title: "แบบฟอร์มยังเป็นแบบร่าง",
+                description: "คุณสามารถบันทึกแบบร่างต่อได้ และเมื่อพร้อมแล้วจึงค่อยส่งให้ผู้ดูแลตรวจสอบ",
+                meta: null,
+              }
+            : null;
 
   return (
     <div className="min-h-screen bg-[#fff7f1] text-slate-950">
@@ -368,6 +432,14 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   </span>
                 ) : null}
               </div>
+
+              {statusNotice ? (
+                <div className={`rounded-[28px] border px-5 py-4 ${statusNotice.tone}`}>
+                  <p className="text-sm font-semibold">{statusNotice.title}</p>
+                  <p className="mt-2 text-sm leading-6">{statusNotice.description}</p>
+                  {statusNotice.meta ? <p className="mt-2 text-xs font-medium">{statusNotice.meta}</p> : null}
+                </div>
+              ) : null}
 
             </div>
 

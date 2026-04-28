@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import {
   type EducationLevel,
   type Gender,
-  type NotificationType,
+  type InternshipStatus,
   type UserRole,
 } from "@prisma/client";
 import {
@@ -17,8 +17,9 @@ import {
   type StudentFormValues,
 } from "@/app/intern/form/action-state";
 import { clearSession, readSession } from "@/lib/auth/session";
+import { createAdminNotificationEvent } from "@/lib/admin/notifications";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
-import { sendTelegramAdminAlert } from "@/lib/admin/telegram";
+import { isStudentEditableStatus } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import {
   getPrivateStorageRoot,
@@ -67,9 +68,17 @@ function isPhoneNumber(value: string) {
   return /^[0-9+()\-\s]{8,20}$/.test(value);
 }
 
-function parseDate(value: string, fieldName: keyof StudentFormValues, fieldErrors: StudentFormFieldErrors) {
+function parseDate(
+  value: string,
+  fieldName: keyof StudentFormValues,
+  fieldErrors: StudentFormFieldErrors,
+  options?: { required?: boolean },
+) {
   if (!value) {
-    fieldErrors[fieldName] = "กรุณากรอกข้อมูลนี้";
+    if (options?.required !== false) {
+      fieldErrors[fieldName] = "กรุณากรอกข้อมูลนี้";
+    }
+
     return null;
   }
 
@@ -81,6 +90,21 @@ function parseDate(value: string, fieldName: keyof StudentFormValues, fieldError
   }
 
   return parsed;
+}
+
+function summarizeActorName(values: StudentFormValues, fallbackEmail: string) {
+  const fullName = [values.firstName, values.lastName].filter(Boolean).join(" ").trim();
+
+  return fullName || fallbackEmail;
+}
+
+function countFileChanges(input: {
+  removedFileIds: string[];
+  newFiles: File[];
+  removeProfileImage: boolean;
+  newProfileImage: File | null;
+}) {
+  return input.removedFileIds.length + input.newFiles.length + (input.removeProfileImage || input.newProfileImage ? 1 : 0);
 }
 
 function sanitizeFileName(fileName: string) {
@@ -105,52 +129,6 @@ async function requireStudentOrAdminSession() {
   return session;
 }
 
-async function createNotificationEvent(input: {
-  studentId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  targetPath: string;
-}) {
-  const admins = await prisma.user.findMany({
-    where: {
-      role: "admin",
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (admins.length === 0) {
-    return;
-  }
-
-  await prisma.notificationEvent.create({
-    data: {
-      studentId: input.studentId,
-      type: input.type,
-      title: input.title,
-      message: input.message,
-      targetPath: input.targetPath,
-      entityId: input.studentId,
-      entityType: "student",
-      receipts: {
-        createMany: {
-          data: admins.map((admin) => ({
-            adminUserId: admin.id,
-          })),
-        },
-      },
-    },
-  });
-
-  await sendTelegramAdminAlert({
-    title: input.title,
-    message: input.message,
-    targetPath: input.targetPath,
-  });
-}
-
 export async function logoutAction() {
   await clearSession();
   redirect("/login");
@@ -162,6 +140,7 @@ export async function saveStudentFormAction(
 ): Promise<StudentFormActionState> {
   const session = await requireStudentOrAdminSession();
   const targetStudentId = String(formData.get("studentId") ?? "").trim();
+  const requestedIntent = String(formData.get("intent") ?? "").trim();
   const values = getFormValues(formData);
   const fieldErrors: StudentFormFieldErrors = {};
 
@@ -190,84 +169,106 @@ export async function saveStudentFormAction(
     redirect(session.role === "admin" ? "/intern/admin/students" : "/intern/overview");
   }
 
-  if (session.role === "student" && student.internshipStatus === "completed") {
+  if (session.role === "student" && !isStudentEditableStatus(student.internshipStatus)) {
     redirect("/intern/overview");
   }
 
-  if (!values.prefix || !PREFIX_VALUES.includes(values.prefix as (typeof PREFIX_VALUES)[number])) {
+  const studentIntent =
+    session.role === "admin"
+      ? "admin_save"
+      : requestedIntent === "save_draft" || requestedIntent === "submit" || requestedIntent === "save_changes"
+        ? requestedIntent
+        : student.internshipStatus === "draft"
+          ? "save_draft"
+          : "save_changes";
+  const requiresCompleteForm = session.role === "admin" || studentIntent !== "save_draft";
+
+  if (requiresCompleteForm && (!values.prefix || !PREFIX_VALUES.includes(values.prefix as (typeof PREFIX_VALUES)[number]))) {
+    fieldErrors.prefix = "กรุณาเลือกคำนำหน้า";
+  } else if (values.prefix && !PREFIX_VALUES.includes(values.prefix as (typeof PREFIX_VALUES)[number])) {
     fieldErrors.prefix = "กรุณาเลือกคำนำหน้า";
   }
 
-  if (!values.firstName) {
+  if (requiresCompleteForm && !values.firstName) {
     fieldErrors.firstName = "กรุณากรอกชื่อ";
   }
 
-  if (!values.lastName) {
+  if (requiresCompleteForm && !values.lastName) {
     fieldErrors.lastName = "กรุณากรอกนามสกุล";
   }
 
-  if (!values.gender || !GENDER_VALUES.includes(values.gender as Gender)) {
+  if (requiresCompleteForm && (!values.gender || !GENDER_VALUES.includes(values.gender as Gender))) {
+    fieldErrors.gender = "กรุณาเลือกเพศ";
+  } else if (values.gender && !GENDER_VALUES.includes(values.gender as Gender)) {
     fieldErrors.gender = "กรุณาเลือกเพศ";
   }
 
-  const dateOfBirth = parseDate(values.dateOfBirth, "dateOfBirth", fieldErrors);
+  const dateOfBirth = parseDate(values.dateOfBirth, "dateOfBirth", fieldErrors, {
+    required: requiresCompleteForm,
+  });
 
-  if (!values.phoneNumber) {
+  if (requiresCompleteForm && !values.phoneNumber) {
     fieldErrors.phoneNumber = "กรุณากรอกหมายเลขโทรศัพท์";
-  } else if (!isPhoneNumber(values.phoneNumber)) {
+  } else if (values.phoneNumber && !isPhoneNumber(values.phoneNumber)) {
     fieldErrors.phoneNumber = "กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง";
   }
 
-  if (!values.address) {
+  if (requiresCompleteForm && !values.address) {
     fieldErrors.address = "กรุณากรอกที่อยู่";
   }
 
-  if (!values.parentPhone) {
+  if (requiresCompleteForm && !values.parentPhone) {
     fieldErrors.parentPhone = "กรุณากรอกเบอร์โทรผู้ปกครอง";
-  } else if (!isPhoneNumber(values.parentPhone)) {
+  } else if (values.parentPhone && !isPhoneNumber(values.parentPhone)) {
     fieldErrors.parentPhone = "กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง";
   }
 
-  if (!values.educationLevel || !EDUCATION_LEVEL_VALUES.includes(values.educationLevel as EducationLevel)) {
+  if (requiresCompleteForm && (!values.educationLevel || !EDUCATION_LEVEL_VALUES.includes(values.educationLevel as EducationLevel))) {
+    fieldErrors.educationLevel = "กรุณาเลือกระดับการศึกษา";
+  } else if (values.educationLevel && !EDUCATION_LEVEL_VALUES.includes(values.educationLevel as EducationLevel)) {
     fieldErrors.educationLevel = "กรุณาเลือกระดับการศึกษา";
   }
 
-  if (!values.institution) {
+  if (requiresCompleteForm && !values.institution) {
     fieldErrors.institution = "กรุณากรอกสถาบันการศึกษา";
   }
 
-  if (!values.faculty) {
+  if (requiresCompleteForm && !values.faculty) {
     fieldErrors.faculty = "กรุณากรอกคณะ";
   }
 
-  if (!values.major) {
+  if (requiresCompleteForm && !values.major) {
     fieldErrors.major = "กรุณากรอกสาขาวิชา";
   }
 
-  if (!values.coOpAdvisorName) {
+  if (requiresCompleteForm && !values.coOpAdvisorName) {
     fieldErrors.coOpAdvisorName = "กรุณากรอกชื่ออาจารย์ที่ปรึกษาสหกิจ";
   }
 
-  if (!values.coOpAdvisorPhone) {
+  if (requiresCompleteForm && !values.coOpAdvisorPhone) {
     fieldErrors.coOpAdvisorPhone = "กรุณากรอกเบอร์โทรอาจารย์ที่ปรึกษาสหกิจ";
-  } else if (!isPhoneNumber(values.coOpAdvisorPhone)) {
+  } else if (values.coOpAdvisorPhone && !isPhoneNumber(values.coOpAdvisorPhone)) {
     fieldErrors.coOpAdvisorPhone = "กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง";
   }
 
-  if (!values.position) {
+  if (requiresCompleteForm && !values.position) {
     fieldErrors.position = "กรุณากรอกตำแหน่งฝึกงาน";
   }
 
-  if (!values.departmentUnit) {
+  if (requiresCompleteForm && !values.departmentUnit) {
     fieldErrors.departmentUnit = "กรุณากรอกแผนกหรือหน่วยงาน";
   }
 
-  if (!values.supervisorName) {
+  if (requiresCompleteForm && !values.supervisorName) {
     fieldErrors.supervisorName = "กรุณากรอกชื่อผู้ดูแล";
   }
 
-  const startDate = parseDate(values.startDate, "startDate", fieldErrors);
-  const endDate = parseDate(values.endDate, "endDate", fieldErrors);
+  const startDate = parseDate(values.startDate, "startDate", fieldErrors, {
+    required: requiresCompleteForm,
+  });
+  const endDate = parseDate(values.endDate, "endDate", fieldErrors, {
+    required: requiresCompleteForm,
+  });
 
   if (dateOfBirth && dateOfBirth > new Date()) {
     fieldErrors.dateOfBirth = "วันเกิดต้องเป็นวันที่ในอดีต";
@@ -329,7 +330,29 @@ export async function saveStudentFormAction(
   }
 
   const now = new Date();
+  const displayName = summarizeActorName(values, session.email);
   const fullName = [values.firstName, values.lastName].join(" ").trim();
+  const fileChangeCount = countFileChanges({
+    removedFileIds: removeFileIds,
+    newFiles,
+    removeProfileImage,
+    newProfileImage,
+  });
+  const hasFileChanges = fileChangeCount > 0;
+  const previousStatus = student.internshipStatus;
+  let nextStudentStatus: InternshipStatus = student.internshipStatus;
+  let nextSubmittedAt = student.submittedAt;
+
+  if (session.role === "student") {
+    if (studentIntent === "save_draft") {
+      nextStudentStatus = "draft";
+      nextSubmittedAt = null;
+    } else if (studentIntent === "submit") {
+      nextStudentStatus = previousStatus === "needs_fix" ? "pending" : previousStatus === "draft" ? "pending" : previousStatus;
+      nextSubmittedAt = now;
+    }
+  }
+
   const privateStorageRoot = getPrivateStorageRoot();
   const uploadedFileDirectory = path.join(
     privateStorageRoot,
@@ -406,7 +429,7 @@ export async function saveStudentFormAction(
           id: student.userId,
         },
         data: {
-          name: fullName,
+          name: fullName || null,
         },
       });
 
@@ -445,9 +468,8 @@ export async function saveStudentFormAction(
           coOpAdvisorName: values.coOpAdvisorName,
           coOpAdvisorPhone: values.coOpAdvisorPhone,
           lastStudentEditAt: session.role === "student" ? now : undefined,
-          submittedAt: session.role === "student" ? (student.submittedAt ?? now) : undefined,
-          internshipStatus:
-            session.role === "student" && !student.submittedAt ? "pending" : undefined,
+          submittedAt: session.role === "student" ? nextSubmittedAt : undefined,
+          internshipStatus: session.role === "student" ? nextStudentStatus : undefined,
         },
       });
 
@@ -496,24 +518,124 @@ export async function saveStudentFormAction(
           })),
         });
       }
+
+      if (session.role === "student") {
+        if (studentIntent === "submit") {
+          await tx.activityLog.create({
+            data: {
+              actorId: session.userId,
+              studentId: student.id,
+              action: previousStatus === "needs_fix" ? "student_resubmitted_form" : "student_submitted_form",
+              message:
+                previousStatus === "needs_fix"
+                  ? `${displayName} แก้ไขข้อมูลและส่งแบบฟอร์มกลับมาให้ตรวจสอบอีกครั้ง`
+                  : `${displayName} ส่งแบบฟอร์มฝึกงานเพื่อรอการตรวจสอบ`,
+              metadata: {
+                fromStatus: previousStatus,
+                toStatus: nextStudentStatus,
+                intent: studentIntent,
+              },
+            },
+          });
+        } else {
+          await tx.activityLog.create({
+            data: {
+              actorId: session.userId,
+              studentId: student.id,
+              action: studentIntent === "save_draft" ? "student_saved_draft" : "student_edited_form",
+              message:
+                studentIntent === "save_draft"
+                  ? `${displayName} บันทึกแบบร่างข้อมูลฝึกงาน`
+                  : `${displayName} แก้ไขข้อมูลฝึกงาน`,
+              metadata: {
+                status: previousStatus,
+                intent: studentIntent,
+              },
+            },
+          });
+        }
+
+        if (writtenFiles.length > 0) {
+          await tx.activityLog.create({
+            data: {
+              actorId: session.userId,
+              studentId: student.id,
+              action: "student_uploaded_files",
+              message: `${displayName} อัปโหลดไฟล์ ${writtenFiles.length} ไฟล์`,
+              metadata: {
+                fileCount: writtenFiles.length,
+                status: previousStatus,
+              },
+            },
+          });
+        }
+
+        if (removeFileIds.length > 0) {
+          await tx.activityLog.create({
+            data: {
+              actorId: session.userId,
+              studentId: student.id,
+              action: "student_removed_files",
+              message: `${displayName} ลบหรือแทนที่ไฟล์ ${removeFileIds.length} ไฟล์`,
+              metadata: {
+                fileCount: removeFileIds.length,
+                status: previousStatus,
+              },
+            },
+          });
+        }
+      } else {
+        await tx.activityLog.create({
+          data: {
+            actorId: session.userId,
+            studentId: student.id,
+            action: "admin_edited_student_data",
+            message: `${session.name?.trim() || session.email} แก้ไขข้อมูลนักศึกษา`,
+            metadata: {
+              status: previousStatus,
+              fileChangeCount,
+            },
+          },
+        });
+      }
     });
 
-    if (session.role === "student" && !student.submittedAt) {
-      await createNotificationEvent({
+    if (session.role === "student" && studentIntent === "submit" && previousStatus === "draft") {
+      await createAdminNotificationEvent({
         studentId: student.id,
         type: "form_submitted",
         title: "นักศึกษาส่งแบบฟอร์มฝึกงานแล้ว",
-        message: `${fullName} ส่งแบบฟอร์มฝึกงานเพื่อรอการตรวจสอบแล้ว`,
+        message: `${displayName} ส่งแบบฟอร์มฝึกงานเพื่อรอการตรวจสอบแล้ว`,
         targetPath: `/intern/admin/students/${student.id}`,
       });
-    } else if (session.role === "student" && student.internshipStatus === "in_progress") {
-      await createNotificationEvent({
+    } else if (session.role === "student" && studentIntent === "submit" && previousStatus === "needs_fix") {
+      await createAdminNotificationEvent({
+        studentId: student.id,
+        type: "form_resubmitted",
+        title: "นักศึกษาส่งแบบฟอร์มกลับมาอีกครั้ง",
+        message: `${displayName} แก้ไขข้อมูลตามคำแนะนำและส่งกลับมาให้ตรวจสอบอีกครั้ง`,
+        targetPath: `/intern/admin/students/${student.id}`,
+      });
+    }
+
+    if (session.role === "student" && previousStatus === "in_progress") {
+      await createAdminNotificationEvent({
         studentId: student.id,
         type: "form_updated_in_progress",
         title: "นักศึกษาอัปเดตแบบฟอร์มฝึกงาน",
-        message: `${fullName} อัปเดตข้อมูลฝึกงานขณะที่สถานะเป็นกำลังฝึกงาน`,
+        message: `${displayName} อัปเดตข้อมูลฝึกงานขณะที่สถานะเป็นอนุมัติแล้ว / กำลังฝึกงาน`,
         targetPath: `/intern/admin/students/${student.id}`,
       });
+
+      if (hasFileChanges) {
+        await createAdminNotificationEvent({
+          studentId: student.id,
+          type: "file_changed_in_progress",
+          title: "นักศึกษาเปลี่ยนไฟล์ระหว่างฝึกงาน",
+          message: `${displayName} เปลี่ยนแปลงไฟล์แนบขณะที่สถานะเป็นอนุมัติแล้ว / กำลังฝึกงาน`,
+          targetPath: `/intern/admin/students/${student.id}`,
+        });
+      }
     }
 
     await Promise.all(

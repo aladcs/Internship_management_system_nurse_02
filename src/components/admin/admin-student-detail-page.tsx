@@ -35,6 +35,21 @@ type ProfileImageItem = {
   downloadHref: string;
 };
 
+type ReviewHistoryItem = {
+  id: string;
+  message: string;
+  createdAtLabel: string;
+  adminLabel: string;
+};
+
+type ActivityLogItem = {
+  id: string;
+  action: string;
+  message: string;
+  createdAtLabel: string;
+  actorLabel: string;
+};
+
 export type AdminStudentDetailPageProps = {
   currentUser: {
     email: string;
@@ -58,6 +73,8 @@ export type AdminStudentDetailPageProps = {
     internship: SummaryItem[];
     education: SummaryItem[];
     files: FileItem[];
+    reviewHistory: ReviewHistoryItem[];
+    activityLog: ActivityLogItem[];
     summary: {
       lastUpdatedLabel: string;
       submittedAtLabel: string;
@@ -170,8 +187,16 @@ function AcademicIcon() {
 }
 
 function getStatusClasses(status: InternshipStatus) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {
@@ -184,8 +209,16 @@ function getStatusClasses(status: InternshipStatus) {
 function getStatusDefinitions(): StatusDefinition[] {
   return [
     {
+      id: "draft",
+      label: formatInternshipStatusLabel("draft"),
+    },
+    {
       id: "pending",
       label: formatInternshipStatusLabel("pending"),
+    },
+    {
+      id: "needs_fix",
+      label: formatInternshipStatusLabel("needs_fix"),
     },
     {
       id: "in_progress",
@@ -207,23 +240,23 @@ function getStatusCardClasses(definitionId: InternshipStatus, currentStatus: Int
 }
 
 function getStatusAction(status: InternshipStatus) {
-  if (status === "pending") {
+  if (status === "needs_fix") {
     return {
-      label: "ย้อนกลับเป็นรอดำเนินการ",
+      label: "ส่งกลับให้แก้ไข",
       tone: "secondary" as const,
     };
   }
 
   if (status === "in_progress") {
     return {
-      label: "เปลี่ยนเป็นกำลังฝึกงาน",
+      label: "อนุมัติแบบฟอร์ม",
       tone: "primary" as const,
     };
   }
 
   if (status === "completed") {
     return {
-      label: "เปลี่ยนเป็นเสร็จสิ้น",
+      label: "ทำเครื่องหมายว่าเสร็จสิ้น",
       tone: "primary" as const,
     };
   }
@@ -320,11 +353,59 @@ function SummaryCard({
   );
 }
 
+function ListCard({
+  title,
+  description,
+  emptyTitle,
+  emptyDescription,
+  items,
+}: {
+  title: string;
+  description: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  items: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    meta: string;
+  }>;
+}) {
+  return (
+    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-950">{title}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+      </div>
+
+      {items.length > 0 ? (
+        <div className="mt-6 space-y-3">
+          {items.map((item) => (
+            <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                <span className="text-xs font-medium text-slate-500">{item.meta}</span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-700">{item.subtitle}</p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6 rounded-[28px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+          <h3 className="text-lg font-semibold text-slate-950">{emptyTitle}</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{emptyDescription}</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function AdminStudentDetailPage({
   currentUser,
   student,
 }: AdminStudentDetailPageProps) {
   const [confirmStatus, setConfirmStatus] = useState<InternshipStatus | null>(null);
+  const [reviewMessage, setReviewMessage] = useState("");
   const [statusState, formAction] = useActionState<UpdateStudentStatusActionState, FormData>(
     updateStudentStatusAction,
     initialUpdateStudentStatusActionState,
@@ -333,6 +414,7 @@ export function AdminStudentDetailPage({
   const statusDefinitions = getStatusDefinitions();
   const hasStatusActions = student.statusControl.allowedTransitions.length > 0;
   const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && hasStatusActions);
+  const isCompletedStatus = student.status === "completed";
 
   useEffect(() => {
     if (statusState.status === "success") {
@@ -342,6 +424,11 @@ export function AdminStudentDetailPage({
 
   const confirmAction = confirmStatus ? getStatusAction(confirmStatus) : null;
   const confirmStatusLabel = confirmStatus ? formatInternshipStatusLabel(confirmStatus) : null;
+
+  function closeStatusModal() {
+    setConfirmStatus(null);
+    setReviewMessage("");
+  }
 
   return (
     <AdminLayoutShell
@@ -400,7 +487,7 @@ export function AdminStudentDetailPage({
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">การควบคุมสถานะ</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Review Actions</p>
               <div className="mt-3 space-y-3">
                 {hasStatusActions ? (
                   <div className="space-y-3">
@@ -413,6 +500,24 @@ export function AdminStudentDetailPage({
                         tone={getStatusAction(nextStatus)?.tone}
                       />
                     ))}
+                    {student.statusControl.allowedTransitions.includes("needs_fix") ? (
+                      <div>
+                        <label htmlFor="reviewMessage" className="mb-2 block text-sm font-medium text-slate-800">
+                          เหตุผลในการส่งกลับให้แก้ไข
+                        </label>
+                        <textarea
+                          id="reviewMessage"
+                          value={reviewMessage}
+                          onChange={(event) => setReviewMessage(event.target.value)}
+                          rows={4}
+                          placeholder="ระบุสิ่งที่นักศึกษาต้องแก้ไขหรือข้อมูลที่ยังขาด"
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-admin/40 focus:ring-4 focus:ring-admin/10"
+                        />
+                        <p className="mt-2 text-xs leading-5 text-slate-500">
+                          จำเป็นต้องระบุข้อความเมื่อส่งกลับให้แก้ไข และข้อความล่าสุดจะแสดงให้นักศึกษาเห็นในหน้าภาพรวมและแบบฟอร์ม
+                        </p>
+                      </div>
+                    ) : null}
                     {student.statusControl.blockReason ? <p className="text-sm leading-6 text-slate-600">{student.statusControl.blockReason}</p> : null}
                   </div>
                 ) : (
@@ -420,7 +525,7 @@ export function AdminStudentDetailPage({
                     <span className="mt-0.5 text-slate-500">
                       <LockIcon />
                     </span>
-                    <span>ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว</span>
+                    <span>{isCompletedStatus ? "ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว" : student.statusControl.blockReason ?? "ยังไม่มีการดำเนินการเพิ่มเติมในสถานะนี้"}</span>
                   </div>
                 )}
 
@@ -589,9 +694,31 @@ export function AdminStudentDetailPage({
               )}
             </section>
 
-            {/* <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
-            </section> */}
+            <ListCard
+              title="ประวัติการรีวิว"
+              description="รายการเหตุผลหรือข้อคิดเห็นที่ผู้ดูแลใช้ประกอบการส่งกลับให้แก้ไข"
+              emptyTitle="ยังไม่มีประวัติการรีวิว"
+              emptyDescription="เมื่อผู้ดูแลส่งกลับให้แก้ไขพร้อมเหตุผล รายการจะปรากฏที่นี่"
+              items={student.reviewHistory.map((comment) => ({
+                id: comment.id,
+                title: comment.adminLabel,
+                subtitle: comment.message,
+                meta: comment.createdAtLabel,
+              }))}
+            />
+
+            <ListCard
+              title="Activity Log"
+              description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
+              emptyTitle="ยังไม่มีกิจกรรม"
+              emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"
+              items={student.activityLog.map((entry) => ({
+                id: entry.id,
+                title: entry.actorLabel,
+                subtitle: entry.message,
+                meta: entry.createdAtLabel,
+              }))}
+            />
           </div>
         </section>
       </main>
@@ -604,19 +731,25 @@ export function AdminStudentDetailPage({
           <form
             action={formAction}
             className="space-y-4"
-            onSubmit={() => setConfirmStatus(null)}
+            onSubmit={closeStatusModal}
           >
             <input type="hidden" name="studentId" value={student.id} />
             <input type="hidden" name="nextStatus" value={confirmStatus} />
+            <input type="hidden" name="reviewMessage" value={reviewMessage} />
+            {confirmStatus === "needs_fix" ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                ข้อความที่จะส่งให้นักศึกษา: {reviewMessage.trim() || "กรุณาระบุเหตุผลก่อนยืนยันการส่งกลับ"}
+              </div>
+            ) : null}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={() => setConfirmStatus(null)}
+                onClick={closeStatusModal}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 ยกเลิก
               </button>
-              <StatusSubmitButton label="ยืนยัน" tone="primary" />
+              <StatusSubmitButton label="ยืนยัน" tone="primary" disabled={confirmStatus === "needs_fix" && !reviewMessage.trim()} />
             </div>
           </form>
         </ModalFrame>

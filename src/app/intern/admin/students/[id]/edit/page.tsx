@@ -173,6 +173,7 @@ export default async function InternAdminStudentEditPage({
       status: student.internshipStatus,
       isReadOnly: false,
       hasSubmitted: Boolean(student.submittedAt),
+      latestReviewComment: null,
     },
     existingFiles: student.files.map((file) => {
       const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatFileDate(file.createdAt)].filter(Boolean);

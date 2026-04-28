@@ -192,6 +192,41 @@ export default async function InternAdminStudentDetailPage({
           createdAt: true,
         },
       },
+      reviewComments: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+        select: {
+          id: true,
+          message: true,
+          createdAt: true,
+          admin: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
+      activityLogs: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 20,
+        select: {
+          id: true,
+          action: true,
+          message: true,
+          createdAt: true,
+          actor: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -298,6 +333,19 @@ export default async function InternAdminStudentDetailPage({
           meta: metaParts.join(" • "),
         };
       }),
+      reviewHistory: student.reviewComments.map((comment) => ({
+        id: comment.id,
+        message: comment.message,
+        createdAtLabel: formatDateTime(comment.createdAt) ?? EMPTY_VALUE,
+        adminLabel: comment.admin?.name?.trim() || comment.admin?.email || "ผู้ดูแลที่ถูกลบ",
+      })),
+      activityLog: student.activityLogs.map((entry) => ({
+        id: entry.id,
+        action: entry.action,
+        message: entry.message,
+        createdAtLabel: formatDateTime(entry.createdAt) ?? EMPTY_VALUE,
+        actorLabel: entry.actor?.name?.trim() || entry.actor?.email || "ระบบ",
+      })),
       summary: {
         lastUpdatedLabel: formatDateTime(student.lastStudentEditAt ?? student.updatedAt) ?? EMPTY_VALUE,
         submittedAtLabel: formatDateTime(student.submittedAt) ?? "ยังไม่ได้ส่ง",

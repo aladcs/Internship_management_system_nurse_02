@@ -1,3 +1,5 @@
+import type { NotificationType } from "@prisma/client";
+import { sendTelegramAdminAlert } from "@/lib/admin/telegram";
 import { prisma } from "@/lib/prisma";
 
 export type AdminNotificationItem = {
@@ -18,6 +20,52 @@ export type AdminNotificationSummary = {
 };
 
 export type AdminNotificationsFilter = "all" | "unread";
+
+export async function createAdminNotificationEvent(input: {
+  studentId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  targetPath: string;
+}) {
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "admin",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (admins.length === 0) {
+    return;
+  }
+
+  await prisma.notificationEvent.create({
+    data: {
+      studentId: input.studentId,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      targetPath: input.targetPath,
+      entityId: input.studentId,
+      entityType: "student",
+      receipts: {
+        createMany: {
+          data: admins.map((admin) => ({
+            adminUserId: admin.id,
+          })),
+        },
+      },
+    },
+  });
+
+  await sendTelegramAdminAlert({
+    title: input.title,
+    message: input.message,
+    targetPath: input.targetPath,
+  });
+}
 
 function getRelativeTimeLabel(value: Date, now = new Date()) {
   const diffMs = now.getTime() - value.getTime();

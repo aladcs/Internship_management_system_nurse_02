@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components/student/student-overview-page";
 import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
-import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import { formatInternshipStatusLabel, isStudentEditableStatus } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
 import { clearSession } from "@/lib/auth/session";
@@ -186,6 +186,23 @@ export default async function InternOverviewPage() {
           createdAt: true,
         },
       },
+      reviewComments: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          id: true,
+          message: true,
+          createdAt: true,
+          admin: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -194,7 +211,7 @@ export default async function InternOverviewPage() {
     redirect("/login?cmu=student_profile_missing");
   }
 
-  const canEdit = student.internshipStatus !== "completed";
+  const canEdit = isStudentEditableStatus(student.internshipStatus);
   const hasStartedForm = Boolean(
     student.submittedAt ||
       student.lastStudentEditAt ||
@@ -236,6 +253,17 @@ export default async function InternOverviewPage() {
         student.internshipStatus === "completed"
           ? "ข้อมูลฝึกงานของคุณเสร็จสมบูรณ์และเป็นแบบอ่านอย่างเดียวแล้ว"
           : null,
+      latestReviewComment: student.reviewComments[0]
+        ? {
+            id: student.reviewComments[0].id,
+            message: student.reviewComments[0].message,
+            createdAtLabel: formatDateTime(student.reviewComments[0].createdAt) ?? EMPTY_VALUE,
+            adminLabel:
+              student.reviewComments[0].admin?.name?.trim() ||
+              student.reviewComments[0].admin?.email ||
+              "ผู้ดูแลระบบ",
+          }
+        : null,
       profileImage:
         student.profileImagePath
           ? {

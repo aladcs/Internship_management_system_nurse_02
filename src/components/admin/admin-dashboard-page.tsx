@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { InternshipStatus } from "@prisma/client";
 import { logoutAction, markAllNotificationsReadAction } from "@/app/intern/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { AdminNotificationFeed } from "@/components/admin/admin-notification-menu";
@@ -11,7 +12,7 @@ type RecentStudent = {
   id: string;
   name: string;
   email: string;
-  status: "pending" | "in_progress" | "completed";
+  status: InternshipStatus;
   statusLabel: string;
   meta: string;
 };
@@ -85,8 +86,16 @@ function ArrowRightIcon() {
 }
 
 function getStatusClasses(status: RecentStudent["status"]) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { InternshipStatus } from "@prisma/client";
 import { startTransition, useActionState, useMemo, useRef, useState } from "react";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
 import {
@@ -61,9 +62,15 @@ export type StudentFormPageProps = {
   student: {
     displayName: string;
     email: string;
-    status: "pending" | "in_progress" | "completed";
+    status: InternshipStatus;
     isReadOnly: boolean;
     hasSubmitted: boolean;
+    latestReviewComment: {
+      id: string;
+      message: string;
+      createdAtLabel: string;
+      adminLabel: string;
+    } | null;
   };
   existingFiles: ExistingFileItem[];
   profileImage: ProfileImageItem | null;
@@ -203,8 +210,16 @@ function CameraIcon() {
 }
 
 function getStatusClasses(status: StudentFormPageProps["student"]["status"]) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {
@@ -417,18 +432,24 @@ function SectionCard({
   );
 }
 
-function PrimaryActionButton({
+function SubmitActionButton({
   label,
   className,
   pending,
+  name = "intent",
+  value = "save_changes",
 }: {
   label: string;
   className: string;
   pending: boolean;
+  name?: string;
+  value?: string;
 }) {
   return (
     <button
       type="submit"
+      name={name}
+      value={value}
       className={`inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70 ${className}`}
       disabled={pending}
     >
@@ -481,8 +502,11 @@ export function StudentFormPage({
   const pageTitle = isAdminMode ? "แก้ไขข้อมูลนักศึกษา" : "แบบฟอร์มฝึกงาน";
   const pageDescription = isAdminMode
     ? "อัปเดตข้อมูลส่วนตัว การศึกษา รายละเอียดการฝึกงาน และไฟล์แนบของนักศึกษาได้จากหน้าฟอร์มเดียวกัน"
-    : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
-  const primaryButtonLabel = isAdminMode || student.hasSubmitted ? "บันทึกการเปลี่ยนแปลง" : "ส่งแบบฟอร์ม";
+    : student.status === "needs_fix"
+      ? "แก้ไขข้อมูลตามข้อคิดเห็นของผู้ดูแล แล้วส่งกลับมาเพื่อให้ตรวจสอบอีกครั้ง"
+      : student.status === "draft"
+        ? "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และบันทึกแบบร่างหรือส่งให้ผู้ดูแลตรวจสอบเมื่อพร้อม"
+        : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
   const theme = getFormTheme(isAdminMode);
   const selectedProfileImagePreview = useMemo(
     () => (selectedProfileImage ? URL.createObjectURL(selectedProfileImage) : null),
@@ -500,6 +524,38 @@ export function StudentFormPage({
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
   );
+  const formNotice =
+    !isAdminMode && student.status === "needs_fix"
+      ? {
+          tone: "border-rose-200 bg-rose-50 text-rose-800",
+          title: "ผู้ดูแลส่งแบบฟอร์มกลับให้แก้ไข",
+          description: student.latestReviewComment?.message || "กรุณาแก้ไขข้อมูลตามข้อคิดเห็นล่าสุด แล้วส่งใหม่อีกครั้ง",
+          meta: student.latestReviewComment
+            ? `${student.latestReviewComment.adminLabel} • ${student.latestReviewComment.createdAtLabel}`
+            : null,
+        }
+      : !isAdminMode && student.status === "pending"
+        ? {
+            tone: "border-amber-200 bg-amber-50 text-amber-800",
+            title: "แบบฟอร์มกำลังรอการตรวจสอบ",
+            description: "คุณยังแก้ไขข้อมูลได้ หากต้องการอัปเดตข้อมูลเพิ่มเติมก่อนผู้ดูแลอนุมัติ",
+            meta: null,
+          }
+        : !isAdminMode && student.status === "in_progress"
+          ? {
+              tone: "border-sky-200 bg-sky-50 text-sky-800",
+              title: "แบบฟอร์มได้รับการอนุมัติแล้ว",
+              description: "ทุกการแก้ไขข้อมูลหรือไฟล์ในสถานะนี้จะสร้างการแจ้งเตือนไปยังผู้ดูแลระบบ",
+              meta: null,
+            }
+          : !isAdminMode && student.status === "draft"
+            ? {
+                tone: "border-slate-200 bg-slate-50 text-slate-700",
+                title: "กำลังแก้ไขแบบร่าง",
+                description: "คุณสามารถบันทึกแบบร่างไว้ก่อนได้โดยยังไม่ส่งให้ผู้ดูแลตรวจสอบ",
+                meta: null,
+              }
+            : null;
 
   function updateFormValue<Key extends keyof typeof formValues>(key: Key, value: (typeof formValues)[Key]) {
     setFormValues((currentValues) => ({
@@ -511,7 +567,9 @@ export function StudentFormPage({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
+    const submitEvent = event.nativeEvent as SubmitEvent;
+    const submitter = submitEvent.submitter instanceof HTMLElement ? submitEvent.submitter : undefined;
+    const formData = submitter ? new FormData(event.currentTarget, submitter) : new FormData(event.currentTarget);
 
     startTransition(() => {
       formAction(formData);
@@ -830,6 +888,14 @@ export function StudentFormPage({
           </p>
         </div>
 
+        {formNotice ? (
+          <section className={`mt-6 rounded-[28px] border px-5 py-4 ${formNotice.tone}`}>
+            <p className="text-sm font-semibold">{formNotice.title}</p>
+            <p className="mt-2 text-sm leading-6">{formNotice.description}</p>
+            {formNotice.meta ? <p className="mt-2 text-xs font-medium">{formNotice.meta}</p> : null}
+          </section>
+        ) : null}
+
         <form onSubmit={handleSubmit} className="mt-8 grid gap-6 pb-24 xl:grid-cols-12">
           <SectionCard
             icon={<CameraIcon />}
@@ -1136,7 +1202,40 @@ export function StudentFormPage({
           <div className={`sticky bottom-0 z-20 xl:col-span-12 -mx-4 border-t px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ${theme.stickyBar}`}>
             <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
               <CancelLink href={resolvedCancelHref} pending={isPending} />
-              <PrimaryActionButton label={primaryButtonLabel} className={theme.primaryButton} pending={isPending} />
+              {!isAdminMode && student.status === "draft" ? (
+                <>
+                  <button
+                    type="submit"
+                    name="intent"
+                    value="save_draft"
+                    disabled={isPending}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isPending ? "กำลังบันทึก..." : "บันทึกแบบร่าง"}
+                  </button>
+                  <SubmitActionButton label="ส่งแบบฟอร์ม" className={theme.primaryButton} pending={isPending} value="submit" />
+                </>
+              ) : !isAdminMode && student.status === "needs_fix" ? (
+                <>
+                  <button
+                    type="submit"
+                    name="intent"
+                    value="save_changes"
+                    disabled={isPending}
+                    className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isPending ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                  </button>
+                  <SubmitActionButton label="แก้ไขและส่งใหม่" className={theme.primaryButton} pending={isPending} value="submit" />
+                </>
+              ) : (
+                <SubmitActionButton
+                  label="บันทึกการเปลี่ยนแปลง"
+                  className={theme.primaryButton}
+                  pending={isPending}
+                  value="save_changes"
+                />
+              )}
             </div>
           </div>
         </form>

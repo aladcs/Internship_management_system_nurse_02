@@ -108,6 +108,23 @@ export default async function InternFormPage() {
           createdAt: true,
         },
       },
+      reviewComments: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          id: true,
+          message: true,
+          createdAt: true,
+          admin: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
       user: {
         select: {
           email: true,
@@ -159,6 +176,17 @@ export default async function InternFormPage() {
       status: student.internshipStatus,
       isReadOnly: student.internshipStatus === "completed",
       hasSubmitted: Boolean(student.submittedAt),
+      latestReviewComment: student.reviewComments[0]
+        ? {
+            id: student.reviewComments[0].id,
+            message: student.reviewComments[0].message,
+            createdAtLabel: formatFileDate(student.reviewComments[0].createdAt),
+            adminLabel:
+              student.reviewComments[0].admin?.name?.trim() ||
+              student.reviewComments[0].admin?.email ||
+              "ผู้ดูแลระบบ",
+          }
+        : null,
     },
     existingFiles: student.files.map((file) => {
       const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatFileDate(file.createdAt)].filter(Boolean);
