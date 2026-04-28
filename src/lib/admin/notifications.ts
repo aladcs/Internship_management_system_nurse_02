@@ -7,6 +7,7 @@ export type AdminNotificationItem = {
   id: string;
   title: string;
   message: string;
+  createdAtIso: string;
   createdAtLabel: string;
   isRead: boolean;
   targetPath: string;
@@ -163,6 +164,7 @@ function toAdminNotificationItem(
     type: notification.type,
     title: notification.title,
     message: notification.message,
+    createdAtIso: notification.createdAt.toISOString(),
     createdAtLabel: getRelativeTimeLabel(notification.createdAt, now),
     isRead: notification.receipts[0]?.isRead ?? true,
     targetPath: resolveNotificationTargetPath(notification),
