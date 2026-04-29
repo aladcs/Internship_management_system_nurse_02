@@ -18,6 +18,7 @@ import {
   saveStudentAction,
 } from "@/app/intern/admin/students/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
+import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -652,6 +653,7 @@ export function StudentListPage({
   totalPages,
 }: StudentListPageProps) {
   const [studentItems, setStudentItems] = useState(students);
+  const [facultyDraft, setFacultyDraft] = useState(facultyFilter);
   const [searchDraft, setSearchDraft] = useState(searchQuery);
   const [createOpen, setCreateOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
@@ -737,21 +739,23 @@ export function StudentListPage({
                 </label>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
-                    <FilterIcon />
-                    <select
-                      name="faculty"
-                      defaultValue={facultyFilter}
-                      className="h-12 min-w-40 bg-transparent pr-2 text-sm text-slate-900 outline-none"
-                    >
-                      <option value="">ทุกคณะ</option>
-                      {facultyOptions.map((facultyOption) => (
-                        <option key={facultyOption} value={facultyOption}>
-                          {facultyOption}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <AppSelect
+                    name="faculty"
+                    value={facultyDraft}
+                    onChange={(event) => setFacultyDraft(event.target.value)}
+                    options={[
+                      { value: "", label: "ทุกคณะ" },
+                      ...facultyOptions.map((facultyOption) => ({
+                        value: facultyOption,
+                        label: facultyOption,
+                      })),
+                    ]}
+                    tone="admin"
+                    size="lg"
+                    surface="muted"
+                    wrapperClassName="min-w-40"
+                    className="font-medium"
+                  />
 
                   <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
                     <FilterIcon />
