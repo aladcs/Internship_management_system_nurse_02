@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { acceptStudentTosAction, logoutAction } from "@/app/intern/tos/actions";
+import { StudentTosAcceptancePanel } from "@/components/student/student-tos-acceptance-panel";
 import { clearSession, createSession, readSession } from "@/lib/auth/session";
 import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
@@ -115,65 +116,11 @@ export default async function InternStudentTosPage({ searchParams }: TosPageProp
             </div>
           </div>
 
-          <div className="grid gap-6 px-6 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
-            <section className="space-y-4">
-              <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5 sm:p-6">
-                <h2 className="text-lg font-semibold text-slate-950">ข้อตกลงการใช้งานสำหรับนักศึกษา</h2>
-                <div className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
-                  <p>คุณจะกรอก แก้ไข และอัปโหลดเฉพาะข้อมูลหรือเอกสารที่เกี่ยวข้องกับการฝึกงานของตนเองเท่านั้น</p>
-                  <p>ข้อมูลที่บันทึกในระบบต้องถูกต้อง เป็นปัจจุบัน และพร้อมให้แอดมินตรวจสอบตามกระบวนการของคณะ</p>
-                  <p>เมื่อสถานะการฝึกงานเป็นรอดำเนินการหรือกำลังฝึกงาน คุณยังแก้ไขข้อมูลได้ แต่เมื่อเป็นเสร็จสิ้น แบบฟอร์มจะเป็นแบบอ่านอย่างเดียว</p>
-                  <p>การใช้งานระบบนี้ไม่ได้ให้สิทธิ์เข้าถึงข้อมูลของนักศึกษาคนอื่นหรือข้อมูลฝั่งผู้ดูแลระบบ</p>
-                </div>
-              </div>
-
-             
-            </section>
-
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">ยืนยันการใช้งาน</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                โปรดอ่านข้อตกลงด้านซ้ายให้ครบถ้วนก่อนยืนยันการเข้าใช้งานในฐานะนักศึกษา
-              </p>
-
-              {errorMessage ? (
-                <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {errorMessage}
-                </div>
-              ) : null}
-
-              <form action={acceptStudentTosAction} className="mt-6 space-y-5">
-                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    name="accepted"
-                    value="yes"
-                    required
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-(--color-student) focus:ring-(--color-student)"
-                  />
-                  <span>
-                    ฉันได้อ่านและยอมรับข้อตกลงการใช้งานสำหรับนักศึกษา และจะใช้งานระบบตามบทบาทและสถานะที่ระบบกำหนด
-                  </span>
-                </label>
-
-                <button
-                  type="submit"
-                  className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-(--color-student) px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
-                >
-                  ยอมรับและดำเนินการต่อ
-                </button>
-              </form>
-
-              <form action={logoutAction} className="mt-3">
-                <button
-                  type="submit"
-                  className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  ออกจากระบบ
-                </button>
-              </form>
-            </section>
-          </div>
+          <StudentTosAcceptancePanel
+            errorMessage={errorMessage}
+            acceptAction={acceptStudentTosAction}
+            logoutAction={logoutAction}
+          />
         </div>
       </div>
     </main>
