@@ -407,7 +407,10 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
       <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Activity Log</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-admin)">
+            พื้นที่ผู้ดูแลระบบ
+          </p>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">บันทึกกิจกรรม</h1>
             <p className="text-sm text-slate-500">รวมกิจกรรมทั้งหมดของผู้ดูแลและนักศึกษา</p>
           </div>
 
