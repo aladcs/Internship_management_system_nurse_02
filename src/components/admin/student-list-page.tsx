@@ -49,7 +49,7 @@ const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
   { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
   { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "Activity Log" },
+  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 type StudentDialogProps = {

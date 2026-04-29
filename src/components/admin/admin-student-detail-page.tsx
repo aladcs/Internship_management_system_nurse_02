@@ -89,7 +89,7 @@ const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
   { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
   { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "Activity Log" },
+  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 function ArrowLeftIcon() {
@@ -645,7 +645,7 @@ export function AdminStudentDetailPage({
             />
 
             <ListCard
-              title="Activity Log"
+              title="บันทึกกิจกรรม"
               description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
               emptyTitle="ยังไม่มีกิจกรรม"
               emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"

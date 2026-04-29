@@ -92,7 +92,7 @@ const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
   { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
   { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "Activity Log" },
+  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 function ActivityIcon() {
@@ -271,7 +271,7 @@ function getDateGroupLabel(value: string, now = new Date()) {
   yesterday.setDate(now.getDate() - 1);
 
   if (valueKey === getDateKey(yesterday.toISOString())) {
-    return "Yesterday";
+    return "เมื่อวาน";
   }
 
   return dateHeaderFormatter.format(date);
@@ -386,9 +386,9 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
   }).filter((entry) => (selectedDate ? getDateKey(entry.createdAtIso) === selectedDate : true));
   const groupedLogs = groupActivityLogsByDate(filteredLogs);
   const datePresets: DatePreset[] = [
-    { value: getDateOffsetValue(0), label: "Today" },
-    { value: getDateOffsetValue(-1), label: "Yesterday" },
-    { value: getDateOffsetValue(-7), label: "7 days ago" },
+    { value: getDateOffsetValue(0), label: "วันนี้" },
+    { value: getDateOffsetValue(-1), label: "เมื่อวาน" },
+    { value: getDateOffsetValue(-7), label: "7 วันที่แล้ว" },
   ];
   const selectedDateLabel = formatSelectedDateLabel(selectedDate);
 
