@@ -173,9 +173,7 @@ export function AdminDashboardPage({
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             แดชบอร์ด
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            ติดตามความคืบหน้าของนักศึกษา ดูสถานะการฝึกงานปัจจุบัน และตรวจสอบการแจ้งเตือนล่าสุดได้จากที่เดียว
-          </p>
+          
         </div>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

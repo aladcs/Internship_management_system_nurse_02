@@ -334,9 +334,7 @@ export function AdminNotificationsPage({
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             การแจ้งเตือน
           </h1>
-          <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            ตรวจสอบกิจกรรมล่าสุด เปิดอ่านรายการที่ยังไม่อ่าน และไปยังหน้ารายละเอียดที่เกี่ยวข้องได้ทันที
-          </p>
+          
         </div>
 
         <section className="mt-8 rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">

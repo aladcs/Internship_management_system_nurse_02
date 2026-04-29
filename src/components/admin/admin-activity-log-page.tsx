@@ -17,7 +17,7 @@ import { appShellClass } from "../../lib/page-shell";
 
 const DISPLAY_TIME_ZONE = "Asia/Bangkok";
 
-const dateHeaderFormatter = new Intl.DateTimeFormat("en-GB", {
+const dateHeaderFormatter = new Intl.DateTimeFormat("th-TH", {
   day: "numeric",
   month: "short",
   year: "numeric",
@@ -40,7 +40,7 @@ const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
 
 const CURRENT_YEAR = new Date().getUTCFullYear();
 
-const selectedDateFormatter = new Intl.DateTimeFormat("en-GB", {
+const selectedDateFormatter = new Intl.DateTimeFormat("th-TH", {
   day: "numeric",
   month: "short",
   year: "numeric",
@@ -258,22 +258,8 @@ function getDateKey(value: string) {
   return dateKeyFormatter.format(new Date(value));
 }
 
-function getDateGroupLabel(value: string, now = new Date()) {
+function getDateGroupLabel(value: string) {
   const date = new Date(value);
-  const currentKey = getDateKey(now.toISOString());
-  const valueKey = getDateKey(value);
-
-  if (valueKey === currentKey) {
-    return "Today";
-  }
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-
-  if (valueKey === getDateKey(yesterday.toISOString())) {
-    return "เมื่อวาน";
-  }
-
   return dateHeaderFormatter.format(date);
 }
 
@@ -411,7 +397,6 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
             พื้นที่ผู้ดูแลระบบ
           </p>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">บันทึกกิจกรรม</h1>
-            <p className="text-sm text-slate-500">รวมกิจกรรมทั้งหมดของผู้ดูแลและนักศึกษา</p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:min-w-92">

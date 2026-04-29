@@ -755,9 +755,7 @@ export function StudentListPage({
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 รายชื่อนักศึกษา
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                ดูข้อมูลนักศึกษา กรองตามสถานะการฝึกงาน และเปิดการจัดการนักศึกษาได้จากที่เดียว
-              </p>
+              
             </div>
           </div>
 
