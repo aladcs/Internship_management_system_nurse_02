@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ModalFrame } from "@/components/admin/modal-frame";
@@ -22,6 +23,8 @@ import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
+
+const CURRENT_YEAR = new Date().getUTCFullYear();
 
 type StudentListPageProps = {
   students: StudentListItem[];
@@ -77,8 +80,6 @@ const STATUS_FILTERS: Array<{
   { value: "in_progress", label: formatInternshipStatusLabel("in_progress") },
   { value: "completed", label: formatInternshipStatusLabel("completed") },
 ];
-
-const CURRENT_YEAR = new Date().getUTCFullYear();
 
 function SearchIcon() {
   return (
@@ -655,9 +656,12 @@ export function StudentListPage({
   totalCount,
   totalPages,
 }: StudentListPageProps) {
+  const router = useRouter();
   const [studentItems, setStudentItems] = useState(students);
+  const [endDateDraft, setEndDateDraft] = useState(endDateFilter);
   const [facultyDraft, setFacultyDraft] = useState(facultyFilter);
   const [searchDraft, setSearchDraft] = useState(searchQuery);
+  const [startDateDraft, setStartDateDraft] = useState(startDateFilter);
   const [createOpen, setCreateOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
   const [resettingStudent, setResettingStudent] = useState<StudentListItem | null>(null);
@@ -668,6 +672,35 @@ export function StudentListPage({
     () => getPaginationPages(currentPage, totalPages),
     [currentPage, totalPages],
   );
+
+  function applyFilters(nextValues?: {
+    endDateFilter?: string;
+    facultyFilter?: string;
+    searchQuery?: string;
+    startDateFilter?: string;
+  }) {
+    const href = buildStudentListHref({
+      endDateFilter: nextValues?.endDateFilter ?? endDateDraft,
+      facultyFilter: nextValues?.facultyFilter ?? facultyDraft,
+      searchQuery: nextValues?.searchQuery ?? searchDraft,
+      startDateFilter: nextValues?.startDateFilter ?? startDateDraft,
+      statusFilter,
+    });
+
+    router.replace(href);
+  }
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (searchDraft === searchQuery) {
+        return;
+      }
+
+      applyFilters({ searchQuery: searchDraft });
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [applyFilters, searchDraft, searchQuery]);
 
   function handleStudentCreated(student: StudentListItem) {
     if (student.status === "draft") {
@@ -725,8 +758,7 @@ export function StudentListPage({
 
         <section className="mt-8 overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
-            <form action="/intern/admin/students" className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              {statusFilter !== "all" ? <input type="hidden" name="status" value={statusFilter} /> : null}
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
                 <label className="relative block w-full max-w-md text-slate-500">
                   <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -745,7 +777,12 @@ export function StudentListPage({
                   <AppSelect
                     name="faculty"
                     value={facultyDraft}
-                    onChange={(event) => setFacultyDraft(event.target.value)}
+                    onChange={(event) => {
+                      const nextFacultyFilter = event.target.value;
+
+                      setFacultyDraft(nextFacultyFilter);
+                      applyFilters({ facultyFilter: nextFacultyFilter });
+                    }}
                     options={[
                       { value: "", label: "ทุกคณะ" },
                       ...facultyOptions.map((facultyOption) => ({
@@ -762,38 +799,38 @@ export function StudentListPage({
 
                   <AppDatePicker
                     name="startDate"
-                    defaultValue={startDateFilter}
-                    placeholder="เลือกวันเริ่มต้น"
+                    value={startDateDraft}
+                    onChange={(nextStartDateFilter) => {
+                      setStartDateDraft(nextStartDateFilter);
+                      applyFilters({ startDateFilter: nextStartDateFilter });
+                    }}
+                    placeholder="ัวันเริ่มต้นฝึกงาน"
                     tone="admin"
-                    size="lg"
+                    size="md"
                     startYear={CURRENT_YEAR - 3}
-                    endYear={CURRENT_YEAR + 5}
-                    wrapperClassName="min-w-0"
-                    className="min-w-40"
+                    endYear={CURRENT_YEAR + 1}
+                    wrapperClassName="min-w-48"
                   />
 
                   <AppDatePicker
                     name="endDate"
-                    defaultValue={endDateFilter}
-                    placeholder="เลือกวันสิ้นสุด"
+                    value={endDateDraft}
+                    onChange={(nextEndDateFilter) => {
+                      setEndDateDraft(nextEndDateFilter);
+                      applyFilters({ endDateFilter: nextEndDateFilter });
+                    }}
+                    placeholder="วันสิ้นสุดฝึกงาน"
                     tone="admin"
-                    size="lg"
+                    size="md"
                     startYear={CURRENT_YEAR - 3}
-                    endYear={CURRENT_YEAR + 5}
-                    wrapperClassName="min-w-0"
-                    className="min-w-40"
+                    endYear={CURRENT_YEAR + 1}
+                    wrapperClassName="min-w-48"
                   />
                 </div>
               </div>
 
               <div className="flex items-center gap-3 self-end xl:self-auto">
                 <ResultCount count={totalCount} />
-                <button
-                  type="submit"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
-                >
-                  ใช้ตัวกรอง
-                </button>
                 <Link
                   href="/intern/admin/students"
                   className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
@@ -801,7 +838,7 @@ export function StudentListPage({
                   ล้าง
                 </Link>
               </div>
-            </form>
+            </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {STATUS_FILTERS.map((filter) => {

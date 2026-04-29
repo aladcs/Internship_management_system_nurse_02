@@ -205,7 +205,7 @@ export function AdminDashboardPage({
           />
         </section>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+        <section className="mt-8">
           <article className="h-full overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
@@ -254,31 +254,6 @@ export function AdminDashboardPage({
                 ))}
               </div>
             )}
-          </article>
-
-          <article id="notifications" className="h-full overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-slate-950">การแจ้งเตือน</h2>
-                <p className="mt-1 text-sm text-slate-500">รายการส่งข้อมูลและอัปเดตล่าสุดของนักศึกษา</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <Link href="/intern/notifications" className="text-sm font-medium text-(--color-admin) transition hover:opacity-80">
-                  ดูทั้งหมด
-                </Link>
-                {notifications.some((notification) => !notification.isRead) ? (
-                  <form action={markAllNotificationsReadAction}>
-                    <button
-                      type="submit"
-                      className="text-sm font-medium text-(--color-admin) transition hover:opacity-80"
-                    >
-                      อ่านทั้งหมดแล้ว
-                    </button>
-                  </form>
-                ) : null}
-              </div>
-            </div>
-            <AdminNotificationFeed items={recentNotifications} maxHeightClass="max-h-[380px]" />
           </article>
         </section>
       </main>
