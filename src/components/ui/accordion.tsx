@@ -25,20 +25,30 @@ const AccordionItem = React.forwardRef<
 
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
->(function AccordionTrigger({ className, children, ...props }, ref) {
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> & {
+    accentClassName?: string;
+    chevronClassName?: string;
+  }
+>(function AccordionTrigger(
+  { className, children, accentClassName, chevronClassName, ...props },
+  ref,
+) {
   return (
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger
         ref={ref}
         className={joinClasses(
-          "group flex flex-1 items-center justify-between gap-4 py-5 text-left transition hover:text-student focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-student/30",
+          "group flex flex-1 items-center justify-between gap-4 py-5 text-left transition focus-visible:outline-none focus-visible:ring-2",
+          accentClassName ?? "hover:text-student focus-visible:ring-student/30",
           className,
         )}
         {...props}
       >
         {children}
-        <ChevronDown className="h-5 w-5 shrink-0 text-student transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        <ChevronDown className={joinClasses(
+          "h-5 w-5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180",
+          chevronClassName ?? "text-student",
+        )} />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );
