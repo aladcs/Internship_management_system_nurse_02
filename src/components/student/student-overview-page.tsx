@@ -426,8 +426,9 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 <Image
                   src="/nurse_logo.svg"
                   alt="ระบบจัดการฝึกงาน"
-                  width={30}
+                  width={27}
                   height={30}
+                  style={{ width: "auto" }}
                   priority
                 />
               </div>

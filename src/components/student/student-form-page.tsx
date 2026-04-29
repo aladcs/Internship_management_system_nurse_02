@@ -704,7 +704,7 @@ export function StudentFormPage({
           <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
             <Link href="/intern/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
+                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
@@ -751,7 +751,7 @@ export function StudentFormPage({
           <div className="flex items-center gap-4">
             <Link href={isAdminMode ? "/intern/admin/students" : "/intern/overview"} className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
+                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
               </div>
               <div className="hidden sm:block">
                 {isAdminMode ? (
