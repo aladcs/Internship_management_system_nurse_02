@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useDeferredValue, useState, type ReactNode } from "react";
 import { logoutAction } from "../../app/intern/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "./admin-layout-shell";
+import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
 import {
   filterAdminActivityLogs,
@@ -36,6 +37,8 @@ const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
   timeZone: DISPLAY_TIME_ZONE,
 });
+
+const CURRENT_YEAR = new Date().getUTCFullYear();
 
 const selectedDateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -458,17 +461,16 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                     />
                   </label>
 
-                  <label className="relative block min-w-48">
-                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-                      <CalendarIcon />
-                    </span>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(event) => setSelectedDate(event.target.value)}
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
-                    />
-                  </label>
+                  <AppDatePicker
+                    value={selectedDate}
+                    onChange={setSelectedDate}
+                    placeholder="เลือกวันที่"
+                    tone="admin"
+                    size="md"
+                    startYear={CURRENT_YEAR - 3}
+                    endYear={CURRENT_YEAR + 1}
+                    wrapperClassName="min-w-48"
+                  />
 
                   <div className="flex flex-wrap items-center gap-2">
                     {datePresets.map((preset) => {

@@ -18,6 +18,7 @@ import {
   saveStudentAction,
 } from "@/app/intern/admin/students/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
+import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
@@ -76,6 +77,8 @@ const STATUS_FILTERS: Array<{
   { value: "in_progress", label: formatInternshipStatusLabel("in_progress") },
   { value: "completed", label: formatInternshipStatusLabel("completed") },
 ];
+
+const CURRENT_YEAR = new Date().getUTCFullYear();
 
 function SearchIcon() {
   return (
@@ -757,25 +760,29 @@ export function StudentListPage({
                     className="font-medium"
                   />
 
-                  <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
-                    <FilterIcon />
-                    <input
-                      name="startDate"
-                      type="date"
-                      defaultValue={startDateFilter}
-                      className="h-12 min-w-40 bg-transparent text-sm text-slate-900 outline-none"
-                    />
-                  </label>
+                  <AppDatePicker
+                    name="startDate"
+                    defaultValue={startDateFilter}
+                    placeholder="เลือกวันเริ่มต้น"
+                    tone="admin"
+                    size="lg"
+                    startYear={CURRENT_YEAR - 3}
+                    endYear={CURRENT_YEAR + 5}
+                    wrapperClassName="min-w-0"
+                    className="min-w-40"
+                  />
 
-                  <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
-                    <FilterIcon />
-                    <input
-                      name="endDate"
-                      type="date"
-                      defaultValue={endDateFilter}
-                      className="h-12 min-w-40 bg-transparent text-sm text-slate-900 outline-none"
-                    />
-                  </label>
+                  <AppDatePicker
+                    name="endDate"
+                    defaultValue={endDateFilter}
+                    placeholder="เลือกวันสิ้นสุด"
+                    tone="admin"
+                    size="lg"
+                    startYear={CURRENT_YEAR - 3}
+                    endYear={CURRENT_YEAR + 5}
+                    wrapperClassName="min-w-0"
+                    className="min-w-40"
+                  />
                 </div>
               </div>
 

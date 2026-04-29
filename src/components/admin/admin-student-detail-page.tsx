@@ -565,29 +565,6 @@ export function AdminStudentDetailPage({
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
           <div className="space-y-6">
-            <SummaryCard
-              title="ข้อมูลส่วนตัว"
-              description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
-              icon={<SummaryIcon />}
-              items={student.personal}
-            />
-
-            <SummaryCard
-              title="ข้อมูลการฝึกงาน"
-              description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
-              icon={<CalendarIcon />}
-              items={student.internship}
-            />
-
-            <SummaryCard
-              title="ข้อมูลการศึกษา"
-              description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
-              icon={<AcademicIcon />}
-              items={student.education}
-            />
-          </div>
-
-          <div className="space-y-6">
             <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -639,6 +616,30 @@ export function AdminStudentDetailPage({
                 </div>
               </div>
             </section>
+
+            <SummaryCard
+              title="ข้อมูลส่วนตัว"
+              description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
+              icon={<SummaryIcon />}
+              items={student.personal}
+            />
+
+            <SummaryCard
+              title="ข้อมูลการฝึกงาน"
+              description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
+              icon={<CalendarIcon />}
+              items={student.internship}
+            />
+
+            <SummaryCard
+              title="ข้อมูลการศึกษา"
+              description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
+              icon={<AcademicIcon />}
+              items={student.education}
+            />
+          </div>
+
+          <div className="space-y-6">
 
             <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
               <div className="flex items-start justify-between gap-4">

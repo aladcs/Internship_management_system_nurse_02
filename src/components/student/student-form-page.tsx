@@ -10,6 +10,7 @@ import {
   saveStudentFormAction as defaultSaveStudentFormAction,
 } from "@/app/intern/form/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
+import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
@@ -17,6 +18,7 @@ import { appShellClass } from "@/lib/page-shell";
 const MAX_FILE_COUNT = 5;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const CURRENT_YEAR = new Date().getUTCFullYear();
 
 type ExistingFileItem = {
   id: string;
@@ -1046,7 +1048,7 @@ export function StudentFormPage({
                 <TextInput id="lastName" name="lastName" value={formValues.lastName} onChange={(event) => updateFormValue("lastName", event.target.value)} placeholder="นามสกุล" error={state.fieldErrors.lastName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเกิด" htmlFor="dateOfBirth" required error={state.fieldErrors.dateOfBirth}>
-                <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={formValues.dateOfBirth} onChange={(event) => updateFormValue("dateOfBirth", event.target.value)} error={state.fieldErrors.dateOfBirth} inputFocusClass={theme.inputFocus} />
+                <AppDatePicker id="dateOfBirth" name="dateOfBirth" value={formValues.dateOfBirth} onChange={(nextValue) => updateFormValue("dateOfBirth", nextValue)} placeholder="เลือกวันเกิด" error={state.fieldErrors.dateOfBirth} tone={isAdminMode ? "admin" : "student"} size="lg" startYear={1950} endYear={CURRENT_YEAR} required />
               </FieldShell>
               <FieldShell label="หมายเลขโทรศัพท์" htmlFor="phoneNumber" required error={state.fieldErrors.phoneNumber}>
                 <TextInput id="phoneNumber" name="phoneNumber" value={formValues.phoneNumber} onChange={(event) => updateFormValue("phoneNumber", event.target.value)} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} inputFocusClass={theme.inputFocus} />
@@ -1109,10 +1111,10 @@ export function StudentFormPage({
                 <TextInput id="supervisorName" name="supervisorName" value={formValues.supervisorName} onChange={(event) => updateFormValue("supervisorName", event.target.value)} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเริ่มฝึกงาน" htmlFor="startDate" required error={state.fieldErrors.startDate}>
-                <TextInput id="startDate" name="startDate" type="date" value={formValues.startDate} onChange={(event) => updateFormValue("startDate", event.target.value)} error={state.fieldErrors.startDate} inputFocusClass={theme.inputFocus} />
+                <AppDatePicker id="startDate" name="startDate" value={formValues.startDate} onChange={(nextValue) => updateFormValue("startDate", nextValue)} placeholder="เลือกวันเริ่มฝึกงาน" error={state.fieldErrors.startDate} tone={isAdminMode ? "admin" : "student"} size="lg" startYear={CURRENT_YEAR - 1} endYear={CURRENT_YEAR + 5} required />
               </FieldShell>
               <FieldShell label="วันสิ้นสุดฝึกงาน" htmlFor="endDate" required error={state.fieldErrors.endDate}>
-                <TextInput id="endDate" name="endDate" type="date" value={formValues.endDate} onChange={(event) => updateFormValue("endDate", event.target.value)} error={state.fieldErrors.endDate} inputFocusClass={theme.inputFocus} />
+                <AppDatePicker id="endDate" name="endDate" value={formValues.endDate} onChange={(nextValue) => updateFormValue("endDate", nextValue)} placeholder="เลือกวันสิ้นสุดฝึกงาน" error={state.fieldErrors.endDate} tone={isAdminMode ? "admin" : "student"} size="lg" startYear={CURRENT_YEAR - 1} endYear={CURRENT_YEAR + 5} required />
               </FieldShell>
               <div className="md:col-span-2">
                 <FieldShell label="รายละเอียดเพิ่มเติม" htmlFor="additionalDetails" error={state.fieldErrors.additionalDetails}>
