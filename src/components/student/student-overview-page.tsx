@@ -6,7 +6,7 @@ import type { InternshipStatus } from "@prisma/client";
 import { type ReactNode, useState } from "react";
 import { logoutAction } from "@/app/intern/overview/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
-import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import { InternshipStatusStepper } from "@/components/ui/internship-status-stepper";
 import { appShellClass } from "@/lib/page-shell";
 
 type SummaryItem = {
@@ -59,11 +59,6 @@ export type StudentOverviewPageProps = {
       submittedAtLabel: string;
     };
   };
-};
-
-type StatusDefinition = {
-  id: StudentOverviewPageProps["student"]["status"];
-  label: string;
 };
 
 type SummaryCardProps = {
@@ -180,42 +175,6 @@ function getStatusClasses(status: StudentOverviewPageProps["student"]["status"])
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
 }
 
-function getStatusDefinitions(): StatusDefinition[] {
-  return [
-    {
-      id: "draft",
-      label: formatInternshipStatusLabel("draft"),
-    },
-    {
-      id: "pending",
-      label: formatInternshipStatusLabel("pending"),
-    },
-    {
-      id: "needs_fix",
-      label: formatInternshipStatusLabel("needs_fix"),
-    },
-    {
-      id: "in_progress",
-      label: formatInternshipStatusLabel("in_progress"),
-    },
-    {
-      id: "completed",
-      label: formatInternshipStatusLabel("completed"),
-    },
-  ];
-}
-
-function getStatusCardClasses(
-  definitionId: StatusDefinition["id"],
-  currentStatus: StudentOverviewPageProps["student"]["status"],
-) {
-  if (definitionId === currentStatus) {
-    return "border-orange-200 bg-white text-slate-900 shadow-lg shadow-orange-950/8 ring-1 ring-orange-100";
-  }
-
-  return "border-white/70 bg-white/65 text-slate-600";
-}
-
 function SummaryCard({
   title,
   description,
@@ -258,7 +217,6 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
           ? "แก้ไขแบบฟอร์ม"
           : "กรอกแบบฟอร์ม"
         : "แก้ไขแบบฟอร์ม";
-  const statusDefinitions = getStatusDefinitions();
   const statusNotice =
     student.status === "needs_fix"
       ? {
@@ -485,28 +443,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
             </div>
           </div>
 
-          <div className="mt-8 grid gap-3 md:grid-cols-3 sm:gap-4">
-            {statusDefinitions.map((definition) => (
-              <div
-                key={definition.id}
-                className={`rounded-3xl border p-4 sm:p-5 ${getStatusCardClasses(definition.id, student.status)}`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    สถานะการฝึกงาน
-                  </span>
-                  {definition.id === student.status ? (
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusClasses(student.status)}`}>
-                      สถานะปัจจุบัน
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-4 text-sm font-semibold text-current sm:text-base">
-                  {definition.label}
-                </p>
-              </div>
-            ))}
-          </div>
+          <InternshipStatusStepper currentStatus={student.status} tone="student" className="mt-8" />
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">

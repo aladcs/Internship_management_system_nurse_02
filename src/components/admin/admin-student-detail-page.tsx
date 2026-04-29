@@ -14,6 +14,7 @@ import { updateStudentStatusAction } from "@/app/intern/admin/students/[id]/acti
 import { logoutAction } from "@/app/intern/admin/students/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { ModalFrame } from "@/components/admin/modal-frame";
+import { InternshipStatusStepper } from "@/components/ui/internship-status-stepper";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -90,11 +91,6 @@ const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/notifications", label: "การแจ้งเตือน" },
   { href: "/intern/activity-logs", label: "Activity Log" },
 ];
-
-type StatusDefinition = {
-  id: InternshipStatus;
-  label: string;
-};
 
 function ArrowLeftIcon() {
   return (
@@ -207,39 +203,6 @@ function getStatusClasses(status: InternshipStatus) {
   }
 
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
-}
-
-function getStatusDefinitions(): StatusDefinition[] {
-  return [
-    {
-      id: "draft",
-      label: formatInternshipStatusLabel("draft"),
-    },
-    {
-      id: "pending",
-      label: formatInternshipStatusLabel("pending"),
-    },
-    {
-      id: "needs_fix",
-      label: formatInternshipStatusLabel("needs_fix"),
-    },
-    {
-      id: "in_progress",
-      label: formatInternshipStatusLabel("in_progress"),
-    },
-    {
-      id: "completed",
-      label: formatInternshipStatusLabel("completed"),
-    },
-  ];
-}
-
-function getStatusCardClasses(definitionId: InternshipStatus, currentStatus: InternshipStatus) {
-  if (definitionId === currentStatus) {
-    return "border-admin/20 bg-white text-slate-900 shadow-lg shadow-admin/10 ring-1 ring-admin/10";
-  }
-
-  return "border-white/70 bg-white/65 text-slate-600";
 }
 
 function getStatusAction(status: InternshipStatus) {
@@ -414,7 +377,6 @@ export function AdminStudentDetailPage({
     initialUpdateStudentStatusActionState,
   );
   const router = useRouter();
-  const statusDefinitions = getStatusDefinitions();
   const hasStatusActions = student.statusControl.allowedTransitions.length > 0;
   const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && hasStatusActions);
   const isCompletedStatus = student.status === "completed";
@@ -543,24 +505,7 @@ export function AdminStudentDetailPage({
             </div>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
-            {statusDefinitions.map((definition, index) => (
-              <div
-                key={definition.id}
-                className={`rounded-3xl border p-4 ${getStatusCardClasses(definition.id, student.status)}`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    ขั้นตอนที่ {index + 1}
-                  </span>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-xs font-semibold text-slate-700 ring-1 ring-black/5">
-                    {index + 1}
-                  </span>
-                </div>
-                <p className="mt-4 text-sm font-semibold text-current sm:text-base">{definition.label}</p>
-              </div>
-            ))}
-          </div>
+          <InternshipStatusStepper currentStatus={student.status} tone="admin" className="mt-8" />
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
