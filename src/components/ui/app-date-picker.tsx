@@ -7,10 +7,12 @@ import { useState } from "react";
 import { DayPicker } from "react-day-picker";
 
 const YEAR_START = 1950;
-const YEAR_END = new Date().getUTCFullYear() + 5;
+const YEAR_END = new Date().getFullYear() + 5;
+const thaiBuddhistYearFormatter = new Intl.DateTimeFormat("th-TH-u-ca-buddhist", {
+  year: "numeric",
+});
 const monthLabelFormatter = new Intl.DateTimeFormat("th-TH", {
   month: "long",
-  timeZone: "UTC",
 });
 
 type AppDatePickerProps = {
@@ -31,11 +33,10 @@ type AppDatePickerProps = {
   className?: string;
 };
 
-const displayDateFormatter = new Intl.DateTimeFormat("th-TH", {
+const displayDateFormatter = new Intl.DateTimeFormat("th-TH-u-ca-buddhist", {
   day: "2-digit",
   month: "short",
   year: "numeric",
-  timeZone: "UTC",
 });
 
 function parseDateValue(value: string | null | undefined) {
@@ -45,7 +46,7 @@ function parseDateValue(value: string | null | undefined) {
 
   const [year, month, day] = value.split("-").map(Number);
 
-  return new Date(Date.UTC(year, month - 1, day));
+  return new Date(year, month - 1, day);
 }
 
 function toDateValue(date: Date | undefined) {
@@ -53,9 +54,9 @@ function toDateValue(date: Date | undefined) {
     return "";
   }
 
-  const year = date.getUTCFullYear();
-  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getUTCDate()}`.padStart(2, "0");
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -68,6 +69,10 @@ function formatDisplayDate(value: string) {
   }
 
   return displayDateFormatter.format(parsedDate);
+}
+
+function formatThaiBuddhistYear(date: Date) {
+  return thaiBuddhistYearFormatter.format(date);
 }
 
 function getToneClasses(tone: NonNullable<AppDatePickerProps["tone"]>) {
@@ -166,8 +171,8 @@ export function AppDatePicker({
               mode="single"
               selected={selectedDate}
               captionLayout="dropdown"
-              startMonth={new Date(Date.UTC(startYear, 0, 1))}
-              endMonth={new Date(Date.UTC(endYear, 11, 1))}
+              startMonth={new Date(startYear, 0, 1)}
+              endMonth={new Date(endYear, 11, 1)}
               locale={th}
               onSelect={(selected) => {
                 handleValueChange(toDateValue(selected));
@@ -176,12 +181,14 @@ export function AppDatePicker({
               showOutsideDays
               formatters={{
                 formatMonthDropdown: (date) => monthLabelFormatter.format(date),
+                formatYearDropdown: (date) => formatThaiBuddhistYear(date),
+                formatCaption: (date) => `${monthLabelFormatter.format(date)} ${formatThaiBuddhistYear(date)}`,
               }}
               classNames={{
                 months: "flex flex-col",
                 month: "space-y-4",
                 caption: `relative flex items-center justify-center pt-1 ${toneClasses.caption}`,
-                caption_label: "text-sm font-semibold",
+                caption_label: "sr-only",
                 dropdowns: "flex items-center justify-center gap-2 px-10",
                 dropdown_root: "relative",
                 dropdown: `h-9 rounded-xl border px-3 pr-8 text-sm font-medium outline-none transition focus:ring-4 ${toneClasses.dropdown}`,
