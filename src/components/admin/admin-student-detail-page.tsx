@@ -358,6 +358,117 @@ function SectionShell({ title, description, icon, children }: SectionShellProps)
   );
 }
 
+function AdminDataAccordionTrigger({ title, icon }: { title: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-base font-semibold text-slate-950">{title}</p>
+      </div>
+    </div>
+  );
+}
+
+function DesktopSectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[28px] border border-admin/15 bg-white p-5 shadow-sm shadow-admin/10 md:p-6">
+      {children}
+    </div>
+  );
+}
+
+function AttachmentsSection({ student }: { student: AdminStudentDetailPageProps["student"] }) {
+  return (
+    <SectionShell
+      title="ไฟล์และเอกสารแนบ"
+      description="รูปโปรไฟล์และไฟล์อัปโหลดที่เกี่ยวข้องกับข้อมูลฝึกงานของนักศึกษา"
+      icon={<FileIcon />}
+    >
+      <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-950">รูปโปรไฟล์นักศึกษา</h3>
+          </div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-admin ring-1 ring-admin/15">
+            <CameraIcon />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-admin/15 bg-admin/10 text-(--color-admin)">
+              {student.profileImage ? (
+                <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
+              ) : (
+                <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                {student.profileImage ? "ใช้สำหรับแสดงตัวตนของนักศึกษาในระบบ" : "สามารถเพิ่มหรือเปลี่ยนรูปได้จากหน้าจัดการข้อมูลนักศึกษา"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {student.profileImage ? (
+              <a
+                href={student.profileImage.downloadHref}
+                download={student.profileImage.name}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-admin/20 hover:text-admin"
+              >
+                ดาวน์โหลดรูป
+              </a>
+            ) : null}
+            <Link
+              href={`/intern/admin/students/${student.id}/edit`}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
+            >
+              จัดการโปรไฟล์
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {student.files.length > 0 ? (
+        <div className="space-y-3">
+          {student.files.map((file) => (
+            <a
+              key={file.id}
+              href={file.href}
+              download={file.name}
+              className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-admin/5"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+                <FileIcon />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[28px] border border-dashed border-admin/20 bg-[#faf6fa] px-5 py-8 text-center">
+          <div className="mx-auto flex justify-center text-(--color-admin)">
+            <EmptyFilesIcon />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีการอัปโหลดไฟล์</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            นักศึกษาคนนี้ยังไม่ได้อัปโหลดเอกสารประกอบ
+          </p>
+        </div>
+      )}
+    </SectionShell>
+  );
+}
+
 function ListCard({
   title,
   description,
@@ -552,7 +663,7 @@ export function AdminStudentDetailPage({
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
           <div className="lg:col-span-2">
-            <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+            <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 md:hidden">
               <Accordion
                 type="multiple"
                 value={openSections}
@@ -561,14 +672,7 @@ export function AdminStudentDetailPage({
               >
                 <AccordionItem value="personal">
                   <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
-                        <SummaryIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">ข้อมูลส่วนตัว</p>
-                      </div>
-                    </div>
+                    <AdminDataAccordionTrigger title="ข้อมูลส่วนตัว" icon={<SummaryIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
                     <SummaryCard
@@ -582,14 +686,7 @@ export function AdminStudentDetailPage({
 
                 <AccordionItem value="education">
                   <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
-                        <AcademicIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">ประวัติการศึกษา</p>
-                      </div>
-                    </div>
+                    <AdminDataAccordionTrigger title="ประวัติการศึกษา" icon={<AcademicIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
                     <SummaryCard
@@ -603,14 +700,7 @@ export function AdminStudentDetailPage({
 
                 <AccordionItem value="internship">
                   <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
-                        <CalendarIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">รายละเอียดการฝึกงาน</p>
-                      </div>
-                    </div>
+                    <AdminDataAccordionTrigger title="รายละเอียดการฝึกงาน" icon={<CalendarIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
                     <SummaryCard
@@ -624,103 +714,10 @@ export function AdminStudentDetailPage({
 
                 <AccordionItem value="attachments">
                   <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
-                        <FileIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">ไฟล์และเอกสารแนบ</p>
-                      </div>
-                    </div>
+                    <AdminDataAccordionTrigger title="ไฟล์และเอกสารแนบ" icon={<FileIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
-                    <SectionShell
-                      title="ไฟล์และเอกสารแนบ"
-                      description="รูปโปรไฟล์และไฟล์อัปโหลดที่เกี่ยวข้องกับข้อมูลฝึกงานของนักศึกษา"
-                      icon={<FileIcon />}
-                    >
-                      <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="text-base font-semibold text-slate-950">รูปโปรไฟล์นักศึกษา</h3>
-                           
-                          </div>
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-admin ring-1 ring-admin/15">
-                            <CameraIcon />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-admin/15 bg-admin/10 text-(--color-admin)">
-                              {student.profileImage ? (
-                                <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
-                              ) : (
-                                <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
-                              </p>
-                              <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                                {student.profileImage ? "ใช้สำหรับแสดงตัวตนของนักศึกษาในระบบ" : "สามารถเพิ่มหรือเปลี่ยนรูปได้จากหน้าจัดการข้อมูลนักศึกษา"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-3">
-                            {student.profileImage ? (
-                              <a
-                                href={student.profileImage.downloadHref}
-                                download={student.profileImage.name}
-                                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-admin/20 hover:text-admin"
-                              >
-                                ดาวน์โหลดรูป
-                              </a>
-                            ) : null}
-                            <Link
-                              href={`/intern/admin/students/${student.id}/edit`}
-                              className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
-                            >
-                              จัดการโปรไฟล์
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-
-                      {student.files.length > 0 ? (
-                        <div className="space-y-3">
-                          {student.files.map((file) => (
-                            <a
-                              key={file.id}
-                              href={file.href}
-                              download={file.name}
-                              className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-admin/5"
-                            >
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
-                                <FileIcon />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-[28px] border border-dashed border-admin/20 bg-[#faf6fa] px-5 py-8 text-center">
-                          <div className="mx-auto flex justify-center text-(--color-admin)">
-                            <EmptyFilesIcon />
-                          </div>
-                          <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีการอัปโหลดไฟล์</h3>
-                          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                            นักศึกษาคนนี้ยังไม่ได้อัปโหลดเอกสารประกอบ
-                          </p>
-                        </div>
-                      )}
-
-                    </SectionShell>
+                    <AttachmentsSection student={student} />
                   </AccordionContent>
                 </AccordionItem>
 
@@ -779,6 +776,69 @@ export function AdminStudentDetailPage({
                 </AccordionItem>
               </Accordion>
             </section>
+
+            <div className="hidden md:block md:space-y-6">
+              <section className="grid gap-6 md:grid-cols-2">
+                <DesktopSectionCard>
+                  <SummaryCard
+                    title="ข้อมูลส่วนตัว"
+                    description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
+                    icon={<SummaryIcon />}
+                    items={student.personal}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <SummaryCard
+                    title="ประวัติการศึกษา"
+                    description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
+                    icon={<AcademicIcon />}
+                    items={student.education}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <SummaryCard
+                    title="รายละเอียดการฝึกงาน"
+                    description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
+                    icon={<CalendarIcon />}
+                    items={student.internship}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <AttachmentsSection student={student} />
+                </DesktopSectionCard>
+              </section>
+
+              <section className="grid gap-6 md:grid-cols-2">
+                <DesktopSectionCard>
+                  <ListCard
+                    title="ประวัติการรีวิว"
+                    description="รายการเหตุผลหรือข้อคิดเห็นที่ผู้ดูแลใช้ประกอบการส่งกลับให้แก้ไข"
+                    emptyTitle="ยังไม่มีประวัติการรีวิว"
+                    emptyDescription="เมื่อผู้ดูแลส่งกลับให้แก้ไขพร้อมเหตุผล รายการจะปรากฏที่นี่"
+                    items={student.reviewHistory.map((comment) => ({
+                      id: comment.id,
+                      title: comment.adminLabel,
+                      subtitle: comment.message,
+                      meta: comment.createdAtLabel,
+                    }))}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <ListCard
+                    title="บันทึกกิจกรรม"
+                    description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
+                    emptyTitle="ยังไม่มีกิจกรรม"
+                    emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"
+                    items={student.activityLog.map((entry) => ({
+                      id: entry.id,
+                      title: entry.actorLabel,
+                      subtitle: entry.message,
+                      meta: entry.createdAtLabel,
+                    }))}
+                  />
+                </DesktopSectionCard>
+              </section>
+            </div>
           </div>
         </section>
       </main>
