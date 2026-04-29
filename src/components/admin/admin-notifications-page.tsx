@@ -173,21 +173,7 @@ function formatSelectedDateLabel(value: string) {
   return selectedDateFormatter.format(new Date(`${value}T00:00:00+07:00`));
 }
 
-function getDateGroupLabel(value: string, now = new Date()) {
-  const currentKey = getDateKey(now.toISOString());
-  const valueKey = getDateKey(value);
-
-  if (valueKey === currentKey) {
-    return "Today";
-  }
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-
-  if (valueKey === getDateKey(yesterday.toISOString())) {
-    return "เมื่อวาน";
-  }
-
+function getDateGroupLabel(value: string) {
   return dateHeaderFormatter.format(new Date(value));
 }
 
@@ -308,11 +294,6 @@ export function AdminNotificationsPage({
     { value: "form_update", label: "แก้ไขข้อมูลฝึกงาน", count: typeCounts.form_update },
     { value: "file_update", label: "เปลี่ยนไฟล์แนบ", count: typeCounts.file_update },
   ];
-  const datePresets: DatePreset[] = [
-    { value: getDateOffsetValue(0), label: "วันนี้" },
-    { value: getDateOffsetValue(-1), label: "เมื่อวาน" },
-    { value: getDateOffsetValue(-7), label: "7 วันที่แล้ว" },
-  ];
   const groupedNotifications = groupNotificationsByDate(visibleNotifications);
   const selectedDateLabel = formatSelectedDateLabel(selectedDate);
   const hasActiveFilters = query.length > 0 || typeFilter !== "all" || selectedDate.length > 0;
@@ -402,25 +383,6 @@ export function AdminNotificationsPage({
                     endYear={CURRENT_YEAR + 1}
                     wrapperClassName="min-w-48"
                   />
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    {datePresets.map((preset) => {
-                      const active = selectedDate === preset.value;
-
-                      return (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => setSelectedDate(preset.value)}
-                          className={active
-                            ? "inline-flex h-10 items-center rounded-full bg-admin px-3 text-xs font-medium text-white shadow-sm shadow-admin/20"
-                            : "inline-flex h-10 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
 
                   <FilterSelect value={typeFilter} onChange={setTypeFilter} options={typeOptions} />
                   {hasActiveFilters ? (

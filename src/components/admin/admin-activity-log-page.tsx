@@ -83,11 +83,6 @@ type GroupedActivityLogs = {
   items: AdminActivityLogItem[];
 };
 
-type DatePreset = {
-  value: string;
-  label: string;
-};
-
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
   { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
@@ -371,11 +366,6 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
     category: categoryFilter,
   }).filter((entry) => (selectedDate ? getDateKey(entry.createdAtIso) === selectedDate : true));
   const groupedLogs = groupActivityLogsByDate(filteredLogs);
-  const datePresets: DatePreset[] = [
-    { value: getDateOffsetValue(0), label: "วันนี้" },
-    { value: getDateOffsetValue(-1), label: "เมื่อวาน" },
-    { value: getDateOffsetValue(-7), label: "7 วันที่แล้ว" },
-  ];
   const selectedDateLabel = formatSelectedDateLabel(selectedDate);
 
   const hasActiveFilters =
@@ -444,7 +434,7 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                       type="search"
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="ค้นหา"
+                      placeholder="ค้นหาชื่อ อีเมล หรือข้อความกิจกรรม"
                       className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-admin/30 focus:bg-white focus:ring-4 focus:ring-admin/10"
                     />
                   </label>
@@ -459,25 +449,6 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                     endYear={CURRENT_YEAR + 1}
                     wrapperClassName="min-w-48"
                   />
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    {datePresets.map((preset) => {
-                      const active = selectedDate === preset.value;
-
-                      return (
-                        <button
-                          key={preset.label}
-                          type="button"
-                          onClick={() => setSelectedDate(preset.value)}
-                          className={active
-                            ? "inline-flex h-10 items-center rounded-full bg-admin px-3 text-xs font-medium text-white shadow-sm shadow-admin/20"
-                            : "inline-flex h-10 items-center rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
 
                   <FilterSelect value={roleFilter} onChange={setRoleFilter} options={roleOptions} />
                   <FilterSelect value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />

@@ -682,6 +682,12 @@ export function StudentListPage({
 
   const emptyState = !hasAnyStudents;
   const filteredEmptyState = hasAnyStudents && totalCount === 0;
+  const hasActiveFilters =
+    searchQuery.length > 0 ||
+    statusFilter !== "all" ||
+    facultyFilter.length > 0 ||
+    startDateFilter.length > 0 ||
+    endDateFilter.length > 0;
   const paginationPages = useMemo(
     () => getPaginationPages(currentPage, totalPages),
     [currentPage, totalPages],
@@ -842,15 +848,19 @@ export function StudentListPage({
               </div>
 
               <div className="flex items-center gap-3 self-end xl:self-auto">
-                <ResultCount count={totalCount} />
+              </div>
+            </div>
+
+            {hasActiveFilters ? (
+              <div className="mt-3">
                 <Link
                   href="/intern/admin/students"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   ล้าง
                 </Link>
               </div>
-            </div>
+            ) : null}
 
             <div className="mt-4 flex flex-wrap gap-2">
               {STATUS_FILTERS.map((filter) => {
