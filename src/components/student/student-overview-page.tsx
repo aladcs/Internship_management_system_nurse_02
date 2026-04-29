@@ -72,7 +72,10 @@ type SummaryCardProps = {
   description: string;
   icon: ReactNode;
   items: SummaryItem[];
+  tone?: "student" | "admin";
 };
+
+type SectionTone = "student" | "admin";
 
 function MenuIcon() {
   return (
@@ -166,6 +169,7 @@ type SectionShellProps = {
   description: string;
   icon: ReactNode;
   children: ReactNode;
+  tone?: SectionTone;
 };
 
 function getStatusClasses(status: StudentOverviewPageProps["student"]["status"]) {
@@ -193,9 +197,10 @@ function SummaryCard({
   description,
   icon,
   items,
+  tone = "student",
 }: SummaryCardProps) {
   return (
-    <SectionShell title={title} description={description} icon={icon}>
+    <SectionShell title={title} description={description} icon={icon} tone={tone}>
       <dl className="grid gap-4 md:grid-cols-2">
         {items.map((item) => (
           <div key={item.label} className="rounded-2xl bg-slate-50 px-4 py-3.5">
@@ -210,7 +215,12 @@ function SummaryCard({
   );
 }
 
-function SectionShell({ title, description, icon, children }: SectionShellProps) {
+function SectionShell({ title, description, icon, children, tone = "student" }: SectionShellProps) {
+  const iconClasses =
+    tone === "admin"
+      ? "bg-[#aa74ab]/10 text-[#aa74ab] ring-1 ring-[#aa74ab]/15"
+      : "bg-student/10 text-student";
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
@@ -218,12 +228,136 @@ function SectionShell({ title, description, icon, children }: SectionShellProps)
           <h2 className="text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">{title}</h2>
           <p className="text-sm leading-relaxed text-slate-600">{description}</p>
         </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${iconClasses}`}>
           {icon}
         </div>
       </div>
       <div className="space-y-4">{children}</div>
     </div>
+  );
+}
+
+function StudentDataAccordionTrigger({ title, icon }: { title: string; icon: ReactNode }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-base font-semibold text-slate-950">{title}</p>
+      </div>
+    </div>
+  );
+}
+
+function DesktopDataCard({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-[28px] border border-admin/15 bg-white p-5 shadow-sm shadow-admin/10 md:p-6">
+      {children}
+    </div>
+  );
+}
+
+function AttachmentsSection({ student }: { student: StudentOverviewPageProps["student"] }) {
+  return (
+    <SectionShell
+      title="ไฟล์และเอกสารแนบ"
+      description="รูปโปรไฟล์และไฟล์ที่อัปโหลดสำหรับข้อมูลการฝึกงานของคุณ"
+      icon={<FileIcon />}
+    >
+      <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-950">รูปโปรไฟล์</h3>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              ดาวน์โหลดรูปโปรไฟล์ล่าสุดของคุณหรือกลับไปแก้ไขได้จากหน้าฟอร์ม
+            </p>
+          </div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-student ring-1 ring-orange-100">
+            <CameraIcon />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-orange-100 bg-student/10 text-(--color-student)">
+              {student.profileImage ? (
+                <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
+              ) : (
+                <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                {student.profileImage ? "ใช้รูปนี้สำหรับโปรไฟล์นักศึกษาในระบบ" : "เพิ่มรูปโปรไฟล์ได้จากหน้าแบบฟอร์ม"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {student.profileImage ? (
+              <a
+                href={student.profileImage.downloadHref}
+                download={student.profileImage.name}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:text-student"
+              >
+                ดาวน์โหลดรูป
+              </a>
+            ) : null}
+            {student.canEdit ? (
+              <Link
+                href="/intern/form"
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-student) px-4 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
+              >
+                จัดการรูปโปรไฟล์
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {student.files.length > 0 ? (
+        <div className="space-y-3">
+          {student.files.map((file) => (
+            <a
+              key={file.id}
+              href={file.href}
+              download={file.name}
+              className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-orange-50/60"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
+                <FileIcon />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[28px] border border-dashed border-orange-200 bg-[#fff8f2] px-5 py-8 text-center">
+          <div className="mx-auto flex justify-center text-(--color-student)">
+            <EmptyFilesIcon />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีไฟล์ที่อัปโหลด</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            เพิ่มเอกสารประกอบจากแบบฟอร์มได้เมื่อข้อมูลการฝึกงานยังสามารถแก้ไขได้
+          </p>
+          {student.canEdit ? (
+            <Link
+              href="/intern/form"
+              className="mt-4 inline-flex text-sm font-semibold text-(--color-student) underline decoration-orange-200 underline-offset-4 transition hover:decoration-orange-500"
+            >
+              อัปโหลดตอนนี้
+            </Link>
+          ) : null}
+        </div>
+      )}
+    </SectionShell>
   );
 }
 
@@ -476,7 +610,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
           <div className="lg:col-span-2">
-            <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+            <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 md:hidden">
               <Accordion
                 type="multiple"
                 value={openSections}
@@ -485,14 +619,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               >
                 <AccordionItem value="personal">
                   <AccordionTrigger>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
-                        <SummaryIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">ข้อมูลส่วนตัว</p>
-                      </div>
-                    </div>
+                    <StudentDataAccordionTrigger title="ข้อมูลส่วนตัว" icon={<SummaryIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
                     <SummaryCard
@@ -506,14 +633,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
                 <AccordionItem value="education">
                   <AccordionTrigger>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
-                        <AcademicIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">ประวัติการศึกษา</p>
-                      </div>
-                    </div>
+                    <StudentDataAccordionTrigger title="ประวัติการศึกษา" icon={<AcademicIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
                     <SummaryCard
@@ -527,14 +647,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
                 <AccordionItem value="internship">
                   <AccordionTrigger>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
-                        <CalendarIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">รายละเอียดการฝึกงาน</p>
-                      </div>
-                    </div>
+                    <StudentDataAccordionTrigger title="รายละเอียดการฝึกงาน" icon={<CalendarIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
                     <SummaryCard
@@ -548,117 +661,46 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
                 <AccordionItem value="attachments">
                   <AccordionTrigger>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
-                        <FileIcon />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-base font-semibold text-slate-950">ไฟล์และเอกสารแนบ</p>
-                      </div>
-                    </div>
+                    <StudentDataAccordionTrigger title="ไฟล์และเอกสารแนบ" icon={<FileIcon />} />
                   </AccordionTrigger>
                   <AccordionContent>
-                    <SectionShell
-                      title="ไฟล์และเอกสารแนบ"
-                      description="รูปโปรไฟล์และไฟล์ที่อัปโหลดสำหรับข้อมูลการฝึกงานของคุณ"
-                      icon={<FileIcon />}
-                    >
-                      <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="text-base font-semibold text-slate-950">รูปโปรไฟล์</h3>
-                            <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                              ดาวน์โหลดรูปโปรไฟล์ล่าสุดของคุณหรือกลับไปแก้ไขได้จากหน้าฟอร์ม
-                            </p>
-                          </div>
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-student ring-1 ring-orange-100">
-                            <CameraIcon />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-orange-100 bg-student/10 text-(--color-student)">
-                              {student.profileImage ? (
-                                <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
-                              ) : (
-                                <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
-                              </p>
-                              <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                                {student.profileImage ? "ใช้รูปนี้สำหรับโปรไฟล์นักศึกษาในระบบ" : "เพิ่มรูปโปรไฟล์ได้จากหน้าแบบฟอร์ม"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-3">
-                            {student.profileImage ? (
-                              <a
-                                href={student.profileImage.downloadHref}
-                                download={student.profileImage.name}
-                                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:text-student"
-                              >
-                                ดาวน์โหลดรูป
-                              </a>
-                            ) : null}
-                            {student.canEdit ? (
-                              <Link
-                                href="/intern/form"
-                                className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-student) px-4 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
-                              >
-                                จัดการรูปโปรไฟล์
-                              </Link>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
-
-                      {student.files.length > 0 ? (
-                        <div className="space-y-3">
-                          {student.files.map((file) => (
-                            <a
-                              key={file.id}
-                              href={file.href}
-                              download={file.name}
-                              className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-orange-50/60"
-                            >
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/10 text-student">
-                                <FileIcon />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-[28px] border border-dashed border-orange-200 bg-[#fff8f2] px-5 py-8 text-center">
-                          <div className="mx-auto flex justify-center text-(--color-student)">
-                            <EmptyFilesIcon />
-                          </div>
-                          <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีไฟล์ที่อัปโหลด</h3>
-                          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                            เพิ่มเอกสารประกอบจากแบบฟอร์มได้เมื่อข้อมูลการฝึกงานยังสามารถแก้ไขได้
-                          </p>
-                          {student.canEdit ? (
-                            <Link
-                              href="/intern/form"
-                              className="mt-4 inline-flex text-sm font-semibold text-(--color-student) underline decoration-orange-200 underline-offset-4 transition hover:decoration-orange-500"
-                            >
-                              อัปโหลดตอนนี้
-                            </Link>
-                          ) : null}
-                        </div>
-                      )}
-                    </SectionShell>
+                    <AttachmentsSection student={student} />
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+            </section>
+
+            <section className="hidden md:grid md:grid-cols-2 md:gap-6">
+              <DesktopDataCard>
+                <SummaryCard
+                  title="ข้อมูลส่วนตัว"
+                  description="รายละเอียดโปรไฟล์หลักของคุณตามที่ปรากฏอยู่ในระบบฝึกงาน"
+                  icon={<SummaryIcon />}
+                  items={student.personal}
+                  tone="admin"
+                />
+              </DesktopDataCard>
+              <DesktopDataCard>
+                <SummaryCard
+                  title="ประวัติการศึกษา"
+                  description="ข้อมูลการศึกษาที่ใช้ประกอบบันทึกการฝึกงานของคุณ"
+                  icon={<AcademicIcon />}
+                  items={student.education}
+                  tone="admin"
+                />
+              </DesktopDataCard>
+              <DesktopDataCard>
+                <SummaryCard
+                  title="รายละเอียดการฝึกงาน"
+                  description="สรุปข้อมูลสถานที่ฝึกงานและสถานะการตรวจสอบปัจจุบันของคุณ"
+                  icon={<CalendarIcon />}
+                  items={student.internship}
+                  tone="admin"
+                />
+              </DesktopDataCard>
+              <DesktopDataCard>
+                <AttachmentsSection student={student} />
+              </DesktopDataCard>
             </section>
           </div>
         </section>
