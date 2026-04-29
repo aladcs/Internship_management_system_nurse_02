@@ -52,14 +52,14 @@ export function StudentTosAcceptancePanel({
   }, []);
 
   return (
-    <div className="grid gap-6 px-6 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
-      <section className="space-y-4">
-        <div className="rounded-[28px] border border-orange-100 bg-white p-5 shadow-lg shadow-orange-950/5 sm:p-6">
-          <div className="relative mt-5 overflow-hidden rounded-3xl border border-orange-100 bg-[#fffaf6]">
-            <div
-              ref={scrollContainerRef}
-              className="max-h-100 space-y-4 overflow-y-auto px-5 py-5 text-sm leading-7 text-slate-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+    <div className="space-y-4 rounded-[30px] border border-slate-200 bg-linear-to-b from-white via-white to-orange-50/30 p-6 shadow-xl shadow-slate-900/5 sm:p-7">
+      <form action={acceptAction} className="space-y-4">
+        <div className="relative overflow-hidden rounded-3xl bg-[#fffaf6] shadow-inner shadow-orange-100/40 ring-1 ring-orange-100/70">
+          <div
+            ref={scrollContainerRef}
+            className="max-h-100 overflow-y-auto px-5 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div className="space-y-4 text-sm leading-7 text-slate-700">
               <div>
                 <h3 className="font-semibold text-slate-900">ข้อตกลงการใช้งานและนโยบายความเป็นส่วนตัว</h3>
                 <p className="mt-2 text-xs text-slate-500">(Terms of Service & PDPA)</p>
@@ -104,82 +104,77 @@ export function StudentTosAcceptancePanel({
                     เมื่อคุณเลื่อนอ่านข้อความจนจบและดำเนินการต่อ จะถือว่าคุณได้อ่าน ทำความเข้าใจ และยอมรับเงื่อนไขการใช้งานสำหรับนักศึกษาเรียบร้อยแล้ว
                   </p>
                 </div>
-              </div>
-            </div>
 
-            {!hasScrolled && !hasReachedEnd ? (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center bg-linear-to-t from-[#fffaf6] via-[#fffaf6]/95 to-transparent px-4 pb-4 pt-10">
-                <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-student shadow-sm">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-student" />
-                  เลื่อนลงเพื่ออ่านเพิ่มเติม
+                {errorMessage ? (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {errorMessage}
+                  </div>
+                ) : null}
+
+                <div className="space-y-5 rounded-[28px] bg-white/85 p-4 shadow-sm shadow-orange-100/40 ring-1 ring-orange-100/70 sm:p-5">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight text-slate-950">ยืนยันการใช้งาน</h2>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      เลื่อนอ่านมาถึงส่วนนี้แล้ว ระบบจะทำเครื่องหมายยอมรับและเปิดปุ่มดำเนินการต่อให้อัตโนมัติเมื่อคุณถึงตอนท้ายของข้อความ
+                    </p>
+                  </div>
+
+                  {hasReachedEnd ? <input type="hidden" name="accepted" value="yes" /> : null}
+
+                  <div
+                    className={`flex items-start gap-3 rounded-2xl border px-4 py-4 text-sm transition duration-300 ${
+                      hasReachedEnd
+                        ? "border-orange-200 bg-orange-50 text-slate-800 shadow-sm shadow-orange-600/10"
+                        : "border-slate-200 bg-slate-50 text-slate-700"
+                    }`}
+                    aria-live="polite"
+                  >
+                    <span
+                      className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-300 ${
+                        hasReachedEnd
+                          ? "scale-105 border-student bg-student text-white shadow-md shadow-orange-600/25"
+                          : "border-slate-300 bg-white text-transparent"
+                      }`}
+                    >
+                      <CheckIcon />
+                    </span>
+                    <span>
+                      ฉันได้อ่านและยอมรับข้อตกลงการใช้งานสำหรับนักศึกษา และจะใช้งานระบบตามบทบาทและสถานะที่ระบบกำหนด
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!hasReachedEnd}
+                    className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-student px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition duration-300 hover:brightness-95 disabled:cursor-not-allowed disabled:bg-orange-200 disabled:text-white/80 disabled:shadow-none"
+                  >
+                    ยอมรับและดำเนินการต่อ
+                  </button>
                 </div>
               </div>
-            ) : null}
+            </div>
           </div>
+
+          {!hasScrolled && !hasReachedEnd ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center bg-linear-to-t from-[#fffaf6] via-[#fffaf6]/95 to-transparent px-4 pb-4 pt-10">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-student shadow-sm">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-student" />
+                เลื่อนลงเพื่ออ่านเพิ่มเติม
+              </div>
+            </div>
+          ) : null}
         </div>
-      </section>
 
-      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
-        <h2 className="text-xl font-semibold tracking-tight text-slate-950">ยืนยันการใช้งาน</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          โปรดเลื่อนอ่านข้อตกลงด้านซ้ายจนสุดก่อน ระบบจะทำเครื่องหมายยอมรับและเปิดปุ่มดำเนินการต่อให้อัตโนมัติ
-        </p>
+      </form>
 
-        {errorMessage ? (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMessage}
-          </div>
-        ) : null}
-
-        <form action={acceptAction} className="mt-6 space-y-5">
-          <label
-            className={`flex items-start gap-3 rounded-2xl border px-4 py-4 text-sm transition duration-300 ${
-              hasReachedEnd
-                ? "border-orange-200 bg-orange-50 text-slate-800 shadow-sm shadow-orange-600/10"
-                : "border-slate-200 bg-slate-50 text-slate-700"
-            }`}
-          >
-            <input
-              type="checkbox"
-              name="accepted"
-              value="yes"
-              checked={hasReachedEnd}
-              readOnly
-              required
-              className="sr-only"
-            />
-            <span
-              className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-300 ${
-                hasReachedEnd
-                  ? "scale-105 border-student bg-student text-white shadow-md shadow-orange-600/25"
-                  : "border-slate-300 bg-white text-transparent"
-              }`}
-            >
-              <CheckIcon />
-            </span>
-            <span>
-              ฉันได้อ่านและยอมรับข้อตกลงการใช้งานสำหรับนักศึกษา และจะใช้งานระบบตามบทบาทและสถานะที่ระบบกำหนด
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={!hasReachedEnd}
-            className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-student px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition duration-300 hover:brightness-95 disabled:cursor-not-allowed disabled:bg-orange-200 disabled:text-white/80 disabled:shadow-none"
-          >
-            ยอมรับและดำเนินการต่อ
-          </button>
-        </form>
-
-        <form action={logoutAction} className="mt-3">
-          <button
-            type="submit"
-            className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            ออกจากระบบ
-          </button>
-        </form>
-      </section>
+      <form action={logoutAction}>
+        <button
+          type="submit"
+          className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          ออกจากระบบ
+        </button>
+      </form>
     </div>
   );
 }
