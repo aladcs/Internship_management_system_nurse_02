@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ModalFrame } from "@/components/admin/modal-frame";
 import type { InternshipStatus } from "@prisma/client";
@@ -23,6 +23,16 @@ import { appShellClass } from "@/lib/page-shell";
 
 type StudentListPageProps = {
   students: StudentListItem[];
+  statusCounts: Record<StudentStatusFilter, number>;
+  statusFilter: StudentStatusFilter;
+  searchQuery: string;
+  facultyFilter: string;
+  facultyOptions: string[];
+  startDateFilter: string;
+  totalCount: number;
+  hasAnyStudents: boolean;
+  currentPage: number;
+  totalPages: number;
   currentUser: {
     email: string;
     name: string | null;
@@ -199,6 +209,80 @@ function ResultCount({ count }: { count: number }) {
       {count} {count === 1 ? "นักศึกษา" : "นักศึกษา"}
     </p>
   );
+}
+
+function FilterIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
+      <path d="M3.5 5h13" />
+      <path d="M6.5 10h7" />
+      <path d="M8.75 15h2.5" />
+    </svg>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m11.75 4.5-5.5 5.5 5.5 5.5" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m8.25 4.5 5.5 5.5-5.5 5.5" />
+    </svg>
+  );
+}
+
+function buildStudentListHref(
+  params: {
+    facultyFilter: string;
+    page?: number;
+    searchQuery: string;
+    startDateFilter: string;
+    statusFilter: StudentStatusFilter;
+  },
+) {
+  const searchParams = new URLSearchParams();
+
+  if (params.searchQuery.trim()) {
+    searchParams.set("q", params.searchQuery.trim());
+  }
+
+  if (params.statusFilter !== "all") {
+    searchParams.set("status", params.statusFilter);
+  }
+
+  if (params.facultyFilter.trim()) {
+    searchParams.set("faculty", params.facultyFilter.trim());
+  }
+
+  if (params.startDateFilter.trim()) {
+    searchParams.set("startDate", params.startDateFilter.trim());
+  }
+
+  if (params.page && params.page > 1) {
+    searchParams.set("page", String(params.page));
+  }
+
+  const queryString = searchParams.toString();
+
+  return queryString ? `/intern/admin/students?${queryString}` : "/intern/admin/students";
+}
+
+function getPaginationPages(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set<number>([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+
+  return Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((left, right) => left - right);
 }
 
 function ActionButton({
@@ -547,53 +631,31 @@ function ResetStudentPasswordDialog({ student, onClose }: ResetPasswordDialogPro
 }
 
 export function StudentListPage({
+  currentPage,
   students,
+  facultyFilter,
+  facultyOptions,
+  hasAnyStudents,
   currentUser,
+  searchQuery,
+  startDateFilter,
+  statusCounts,
+  statusFilter,
+  totalCount,
+  totalPages,
 }: StudentListPageProps) {
   const [studentItems, setStudentItems] = useState(students);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<StudentStatusFilter>("all");
+  const [searchDraft, setSearchDraft] = useState(searchQuery);
   const [createOpen, setCreateOpen] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentListItem | null>(null);
   const [resettingStudent, setResettingStudent] = useState<StudentListItem | null>(null);
 
-  const statusCounts = studentItems.reduce(
-    (counts, student) => {
-      counts.all += 1;
-
-      if (student.status !== "draft") {
-        counts[student.status] += 1;
-      }
-
-      return counts;
-    },
-    {
-      all: 0,
-      pending: 0,
-      needs_fix: 0,
-      in_progress: 0,
-      completed: 0,
-    } as Record<StudentStatusFilter, number>,
+  const emptyState = !hasAnyStudents;
+  const filteredEmptyState = hasAnyStudents && totalCount === 0;
+  const paginationPages = useMemo(
+    () => getPaginationPages(currentPage, totalPages),
+    [currentPage, totalPages],
   );
-
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredStudents = studentItems.filter((student) => {
-    if (activeFilter !== "all" && student.status !== activeFilter) {
-      return false;
-    }
-
-    if (!normalizedQuery) {
-      return true;
-    }
-
-    return [student.name, student.email, student.major ?? ""]
-      .join(" ")
-      .toLowerCase()
-      .includes(normalizedQuery);
-  });
-
-  const emptyState = studentItems.length === 0;
-  const filteredEmptyState = !emptyState && filteredStudents.length === 0;
 
   function handleStudentCreated(student: StudentListItem) {
     if (student.status === "draft") {
@@ -651,41 +713,92 @@ export function StudentListPage({
 
         <section className="mt-8 overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <label className="relative block w-full max-w-md text-slate-500">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                  <SearchIcon />
-                </span>
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
-                  placeholder="ค้นหาจากชื่อ อีเมล หรือสาขา"
-                />
-              </label>
-              <ResultCount count={filteredStudents.length} />
-            </div>
+            <form action="/intern/admin/students" className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              {statusFilter !== "all" ? <input type="hidden" name="status" value={statusFilter} /> : null}
+              <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
+                <label className="relative block w-full max-w-md text-slate-500">
+                  <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <SearchIcon />
+                  </span>
+                  <input
+                    name="q"
+                    value={searchDraft}
+                    onChange={(event) => setSearchDraft(event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
+                    placeholder="ค้นหาจากชื่อ อีเมล หรือสาขา"
+                  />
+                </label>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+                    <FilterIcon />
+                    <select
+                      name="faculty"
+                      defaultValue={facultyFilter}
+                      className="h-12 min-w-40 bg-transparent pr-2 text-sm text-slate-900 outline-none"
+                    >
+                      <option value="">ทุกคณะ</option>
+                      {facultyOptions.map((facultyOption) => (
+                        <option key={facultyOption} value={facultyOption}>
+                          {facultyOption}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+                    <FilterIcon />
+                    <input
+                      name="startDate"
+                      type="date"
+                      defaultValue={startDateFilter}
+                      className="h-12 min-w-40 bg-transparent text-sm text-slate-900 outline-none"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 self-end xl:self-auto">
+                <ResultCount count={totalCount} />
+                <button
+                  type="submit"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+                >
+                  ใช้ตัวกรอง
+                </button>
+                <Link
+                  href="/intern/admin/students"
+                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  ล้าง
+                </Link>
+              </div>
+            </form>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {STATUS_FILTERS.map((filter) => {
-                const isActive = activeFilter === filter.value;
+                const isActive = statusFilter === filter.value;
 
                 return (
-                  <button
+                  <Link
                     key={filter.value}
-                    type="button"
-                    onClick={() => setActiveFilter(filter.value)}
+                    href={buildStudentListHref({
+                      facultyFilter,
+                      searchQuery,
+                      startDateFilter,
+                      statusFilter: filter.value,
+                    })}
                     className={isActive
                       ? "inline-flex items-center gap-2 rounded-full bg-(--color-admin) px-4 py-2 text-sm font-semibold text-white"
                       : "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                     }
-                    aria-pressed={isActive}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     <span>{filter.label}</span>
                     <span className={isActive ? "text-white/80" : "text-slate-400"}>
                       {statusCounts[filter.value]}
                     </span>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -735,15 +848,17 @@ export function StudentListPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredStudents.map((student) => (
+                    {studentItems.map((student) => (
                       <tr key={student.id} className="transition hover:bg-slate-50/80">
                         <td className="border-t border-slate-100 px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-(--color-student) text-sm font-semibold text-white">
-                              {getInitials(student.name, student.email)}
+                              {getInitials(student.hasDisplayName ? student.name : "", student.email)}
                             </div>
                             <div>
-                              <p className="font-medium text-slate-900">{student.name}</p>
+                              <p className={student.hasDisplayName ? "font-medium text-slate-900" : "font-medium text-slate-400"}>
+                                {student.name}
+                              </p>
                               <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                                 <UserIcon />
                                 {student.major ?? "ข้อมูลนักศึกษา"}
@@ -787,15 +902,17 @@ export function StudentListPage({
               </div>
 
               <div className="divide-y divide-slate-100 md:hidden">
-                {filteredStudents.map((student) => (
+                {studentItems.map((student) => (
                   <article key={student.id} className="space-y-4 px-5 py-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-(--color-student) text-sm font-semibold text-white">
-                          {getInitials(student.name, student.email)}
+                          {getInitials(student.hasDisplayName ? student.name : "", student.email)}
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900">{student.name}</p>
+                          <p className={student.hasDisplayName ? "font-medium text-slate-900" : "font-medium text-slate-400"}>
+                            {student.name}
+                          </p>
                           <p className="mt-1 text-xs text-slate-500">{student.major ?? "ข้อมูลนักศึกษา"}</p>
                         </div>
                       </div>
@@ -827,6 +944,70 @@ export function StudentListPage({
                     </div>
                   </article>
                 ))}
+              </div>
+
+              <div className="flex flex-col gap-4 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-sm text-slate-500">
+                  หน้า {currentPage} จาก {totalPages}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={buildStudentListHref({
+                      facultyFilter,
+                      page: Math.max(1, currentPage - 1),
+                      searchQuery,
+                      startDateFilter,
+                      statusFilter,
+                    })}
+                    aria-disabled={currentPage === 1}
+                    className={`inline-flex h-10 items-center justify-center gap-1 rounded-2xl border px-3 text-sm font-medium transition ${currentPage === 1 ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    <ChevronLeftIcon />
+                    ก่อนหน้า
+                  </Link>
+
+                  {paginationPages.map((pageNumber, index) => {
+                    const previousPage = paginationPages[index - 1];
+                    const showGap = previousPage && pageNumber - previousPage > 1;
+
+                    return (
+                      <div key={pageNumber} className="flex items-center gap-2">
+                        {showGap ? <span className="px-1 text-sm text-slate-400">...</span> : null}
+                        <Link
+                          href={buildStudentListHref({
+                            facultyFilter,
+                            page: pageNumber,
+                            searchQuery,
+                            startDateFilter,
+                            statusFilter,
+                          })}
+                          aria-current={pageNumber === currentPage ? "page" : undefined}
+                          className={pageNumber === currentPage
+                            ? "inline-flex h-10 min-w-10 items-center justify-center rounded-2xl bg-(--color-admin) px-3 text-sm font-semibold text-white"
+                            : "inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                          }
+                        >
+                          {pageNumber}
+                        </Link>
+                      </div>
+                    );
+                  })}
+
+                  <Link
+                    href={buildStudentListHref({
+                      facultyFilter,
+                      page: Math.min(totalPages, currentPage + 1),
+                      searchQuery,
+                      startDateFilter,
+                      statusFilter,
+                    })}
+                    aria-disabled={currentPage === totalPages}
+                    className={`inline-flex h-10 items-center justify-center gap-1 rounded-2xl border px-3 text-sm font-medium transition ${currentPage === totalPages ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    ถัดไป
+                    <ChevronRightIcon />
+                  </Link>
+                </div>
               </div>
             </>
           )}
