@@ -121,6 +121,20 @@ function ViewStudentLink({ email, href }: { email: string; href: string }) {
   );
 }
 
+function DisabledViewStudentButton({ email }: { email: string }) {
+  return (
+    <button
+      type="button"
+      disabled
+      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-300"
+      aria-label={`ดู ${email}`}
+      title="นักศึกษายังไม่เคยส่งฟอร์ม"
+    >
+      <EyeIcon />
+    </button>
+  );
+}
+
 function TrashIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
@@ -942,10 +956,13 @@ export function StudentListPage({
                         </td>
                         <td className="border-t border-slate-100 px-6 py-4">
                           <div className="flex justify-end gap-2">
-                            <ViewStudentLink
-                              email={student.email}
-                              href={`/intern/admin/students/${student.id}`}
-                            />
+                            {!student.hasSubmittedForm ? <DisabledViewStudentButton email={student.email} /> : null}
+                            {student.hasSubmittedForm ? (
+                              <ViewStudentLink
+                                email={student.email}
+                                href={`/intern/admin/students/${student.id}`}
+                              />
+                            ) : null}
                             <ActionIconButton
                               label={`รีเซ็ตรหัสผ่าน ${student.email}`}
                               onClick={() => setResettingStudent(student)}
@@ -990,10 +1007,13 @@ export function StudentListPage({
                       <p>{student.email}</p>
                     </div>
                     <div className="flex gap-2">
-                      <ViewStudentLink
-                        email={student.email}
-                        href={`/intern/admin/students/${student.id}`}
-                      />
+                      {!student.hasSubmittedForm ? <DisabledViewStudentButton email={student.email} /> : null}
+                      {student.hasSubmittedForm ? (
+                        <ViewStudentLink
+                          email={student.email}
+                          href={`/intern/admin/students/${student.id}`}
+                        />
+                      ) : null}
                       <ActionIconButton
                         label={`รีเซ็ตรหัสผ่าน ${student.email}`}
                         onClick={() => setResettingStudent(student)}

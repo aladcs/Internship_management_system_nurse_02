@@ -210,6 +210,7 @@ function toStudentListItem(student: {
   firstName: string | null;
   lastName: string | null;
   major: string | null;
+  submittedAt: Date | null;
   user: {
     email: string;
     name: string | null;
@@ -221,6 +222,7 @@ function toStudentListItem(student: {
     id: student.id,
     email: student.user.email,
     hasDisplayName: displayName.hasDisplayName,
+    hasSubmittedForm: Boolean(student.submittedAt),
     major: student.major,
     name: displayName.name,
     status: student.internshipStatus,
@@ -331,6 +333,7 @@ export default async function InternAdminStudentsPage({
       firstName: true,
       lastName: true,
       major: true,
+      submittedAt: true,
       user: {
         select: {
           email: true,

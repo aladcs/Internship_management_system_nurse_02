@@ -4,6 +4,7 @@ export type StudentListItem = {
   id: string;
   name: string;
   hasDisplayName: boolean;
+  hasSubmittedForm: boolean;
   email: string;
   status: InternshipStatus;
   major: string | null;
