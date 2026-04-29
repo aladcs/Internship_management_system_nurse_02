@@ -15,7 +15,7 @@ import { generatePassword, hashPassword } from "@/lib/auth/password";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
-const EMPTY_STUDENT_NAME = "Name and surname not yet entered";
+const EMPTY_STUDENT_NAME = "ยังไม่ได้กรอกชื่อ";
 
 function normalizeEmail(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().toLowerCase();

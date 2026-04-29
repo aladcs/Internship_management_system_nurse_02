@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "พื้นที่ของผู้ดูแลสำหรับดูและกรองข้อมูลการฝึกงานของนักศึกษา",
 };
 
-const EMPTY_STUDENT_NAME = "Name and surname not yet entered";
+const EMPTY_STUDENT_NAME = "ยังไม่ได้กรอกชื่อ";
 const PAGE_SIZE = 10;
 
 type StudentStatusFilter = "all" | Exclude<StudentListItem["status"], "draft">;
