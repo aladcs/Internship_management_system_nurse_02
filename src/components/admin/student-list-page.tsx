@@ -26,6 +26,7 @@ type StudentListPageProps = {
   statusCounts: Record<StudentStatusFilter, number>;
   statusFilter: StudentStatusFilter;
   searchQuery: string;
+  endDateFilter: string;
   facultyFilter: string;
   facultyOptions: string[];
   startDateFilter: string;
@@ -239,6 +240,7 @@ function ChevronRightIcon() {
 
 function buildStudentListHref(
   params: {
+    endDateFilter: string;
     facultyFilter: string;
     page?: number;
     searchQuery: string;
@@ -262,6 +264,10 @@ function buildStudentListHref(
 
   if (params.startDateFilter.trim()) {
     searchParams.set("startDate", params.startDateFilter.trim());
+  }
+
+  if (params.endDateFilter.trim()) {
+    searchParams.set("endDate", params.endDateFilter.trim());
   }
 
   if (params.page && params.page > 1) {
@@ -633,6 +639,7 @@ function ResetStudentPasswordDialog({ student, onClose }: ResetPasswordDialogPro
 export function StudentListPage({
   currentPage,
   students,
+  endDateFilter,
   facultyFilter,
   facultyOptions,
   hasAnyStudents,
@@ -755,6 +762,16 @@ export function StudentListPage({
                       className="h-12 min-w-40 bg-transparent text-sm text-slate-900 outline-none"
                     />
                   </label>
+
+                  <label className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+                    <FilterIcon />
+                    <input
+                      name="endDate"
+                      type="date"
+                      defaultValue={endDateFilter}
+                      className="h-12 min-w-40 bg-transparent text-sm text-slate-900 outline-none"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -783,6 +800,7 @@ export function StudentListPage({
                   <Link
                     key={filter.value}
                     href={buildStudentListHref({
+                      endDateFilter,
                       facultyFilter,
                       searchQuery,
                       startDateFilter,
@@ -953,6 +971,7 @@ export function StudentListPage({
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
                     href={buildStudentListHref({
+                      endDateFilter,
                       facultyFilter,
                       page: Math.max(1, currentPage - 1),
                       searchQuery,
@@ -975,6 +994,7 @@ export function StudentListPage({
                         {showGap ? <span className="px-1 text-sm text-slate-400">...</span> : null}
                         <Link
                           href={buildStudentListHref({
+                            endDateFilter,
                             facultyFilter,
                             page: pageNumber,
                             searchQuery,
@@ -995,6 +1015,7 @@ export function StudentListPage({
 
                   <Link
                     href={buildStudentListHref({
+                      endDateFilter,
                       facultyFilter,
                       page: Math.min(totalPages, currentPage + 1),
                       searchQuery,

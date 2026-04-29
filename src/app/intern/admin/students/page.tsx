@@ -59,7 +59,7 @@ function normalizeOptionalFilter(value: string | null) {
   return normalizedValue ? normalizedValue : null;
 }
 
-function parseStartDateFilter(value: string | null) {
+function parseDateFilter(value: string | null) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
   }
@@ -74,11 +74,13 @@ function parseStartDateFilter(value: string | null) {
 }
 
 function buildStudentListWhere({
+  endDate,
   faculty,
   search,
   startDate,
   status,
 }: {
+  endDate: string | null;
   faculty: string | null;
   search: string | null;
   startDate: string | null;
@@ -140,18 +142,23 @@ function buildStudentListWhere({
     });
   }
 
-  if (startDate) {
-    const rangeStart = new Date(`${startDate}T00:00:00.000Z`);
-    const rangeEnd = new Date(rangeStart);
-    rangeEnd.setUTCDate(rangeEnd.getUTCDate() + 1);
+  if (startDate || endDate) {
+    const startDateRange: Prisma.DateTimeFilter = {};
+
+    if (startDate) {
+      startDateRange.gte = new Date(`${startDate}T00:00:00.000Z`);
+    }
+
+    if (endDate) {
+      const exclusiveEndDate = new Date(`${endDate}T00:00:00.000Z`);
+      exclusiveEndDate.setUTCDate(exclusiveEndDate.getUTCDate() + 1);
+      startDateRange.lt = exclusiveEndDate;
+    }
 
     andConditions.push({
       internshipRecord: {
         is: {
-          startDate: {
-            gte: rangeStart,
-            lt: rangeEnd,
-          },
+          startDate: startDateRange,
         },
       },
     });
@@ -237,15 +244,18 @@ export default async function InternAdminStudentsPage({
   const searchQuery = normalizeOptionalFilter(readSearchParam(resolvedSearchParams, "q"));
   const statusFilter = parseStatusFilter(readSearchParam(resolvedSearchParams, "status"));
   const facultyFilter = normalizeOptionalFilter(readSearchParam(resolvedSearchParams, "faculty"));
-  const startDateFilter = parseStartDateFilter(readSearchParam(resolvedSearchParams, "startDate"));
+  const startDateFilter = parseDateFilter(readSearchParam(resolvedSearchParams, "startDate"));
+  const endDateFilter = parseDateFilter(readSearchParam(resolvedSearchParams, "endDate"));
   const requestedPage = parsePageNumber(readSearchParam(resolvedSearchParams, "page"));
 
   const baseWhere = buildStudentListWhere({
+    endDate: endDateFilter,
     faculty: facultyFilter,
     search: searchQuery,
     startDate: startDateFilter,
   });
   const filteredWhere = buildStudentListWhere({
+    endDate: endDateFilter,
     faculty: facultyFilter,
     search: searchQuery,
     startDate: startDateFilter,
@@ -336,12 +346,13 @@ export default async function InternAdminStudentsPage({
 
   return (
     <StudentListPage
-      key={`${currentPage}:${statusFilter}:${facultyFilter ?? ""}:${startDateFilter ?? ""}:${searchQuery ?? ""}`}
+      key={`${currentPage}:${statusFilter}:${facultyFilter ?? ""}:${startDateFilter ?? ""}:${endDateFilter ?? ""}:${searchQuery ?? ""}`}
       currentUser={{
         email: session.email,
         name: session.name,
       }}
       currentPage={currentPage}
+      endDateFilter={endDateFilter ?? ""}
       facultyFilter={facultyFilter ?? ""}
       facultyOptions={facultyOptions}
       hasAnyStudents={totalStudents > 0}
