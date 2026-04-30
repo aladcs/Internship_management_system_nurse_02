@@ -11,13 +11,13 @@ import {
   initialResetStudentPasswordActionState,
   initialSaveStudentActionState,
   type StudentListItem,
-} from "@/app/intern/admin/students/action-state";
+} from "@/app/admin/students/action-state";
 import {
   deleteStudentAction,
   logoutAction,
   resetStudentPasswordAction,
   saveStudentAction,
-} from "@/app/intern/admin/students/actions";
+} from "@/app/admin/students/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
@@ -46,10 +46,10 @@ type StudentListPageProps = {
 };
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/dashboard", label: "แดชบอร์ด" },
-  { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
-  { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
+  { href: "/dashboard", label: "แดชบอร์ด" },
+  { href: "/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
+  { href: "/notifications", label: "การแจ้งเตือน" },
+  { href: "/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 type StudentDialogProps = {
@@ -295,7 +295,7 @@ function buildStudentListHref(
 
   const queryString = searchParams.toString();
 
-  return queryString ? `/intern/admin/students?${queryString}` : "/intern/admin/students";
+  return queryString ? `/admin/students?${queryString}` : "/admin/students";
 }
 
 function getPaginationPages(currentPage: number, totalPages: number) {
@@ -744,9 +744,9 @@ export function StudentListPage({
 
   return (
     <AdminLayoutShell
-      currentPath="/intern/admin/students"
+      currentPath="/admin/students"
       currentUser={currentUser}
-      homeHref="/intern/dashboard"
+      homeHref="/dashboard"
       logoutAction={logoutAction}
       navItems={ADMIN_NAV_ITEMS}
       roleLabel="ผู้ดูแลระบบ"
@@ -854,7 +854,7 @@ export function StudentListPage({
             {hasActiveFilters ? (
               <div className="mt-3">
                 <Link
-                  href="/intern/admin/students"
+                  href="/admin/students"
                   className="inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   ล้าง
@@ -968,7 +968,7 @@ export function StudentListPage({
                             {student.hasSubmittedForm ? (
                               <ViewStudentLink
                                 email={student.email}
-                                href={`/intern/admin/students/${student.id}`}
+                                href={`/admin/students/${student.id}`}
                               />
                             ) : null}
                             <ActionIconButton
@@ -1019,7 +1019,7 @@ export function StudentListPage({
                       {student.hasSubmittedForm ? (
                         <ViewStudentLink
                           email={student.email}
-                          href={`/intern/admin/students/${student.id}`}
+                          href={`/admin/students/${student.id}`}
                         />
                       ) : null}
                       <ActionIconButton

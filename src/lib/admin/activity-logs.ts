@@ -121,7 +121,7 @@ function toActivityLogItem(log: {
     studentId: log.student.id,
     studentLabel: getStudentDisplayName(log.student),
     studentEmail: log.student.user.email,
-    targetPath: `/intern/admin/students/${log.student.id}`,
+    targetPath: `/admin/students/${log.student.id}`,
   };
 }
 

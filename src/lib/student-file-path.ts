@@ -1,4 +1,5 @@
 import path from "node:path";
+import { withAppBasePath } from "@/lib/app-paths";
 
 const LEGACY_PUBLIC_PREFIXES = [
   "/uploads/student-files/",
@@ -15,13 +16,13 @@ export function getStudentProfileImageSrc(value: string) {
     value.startsWith("/uploads/student-profile-images/") ||
     value.startsWith("/storage/student-profile-images/")
   ) {
-    return value.replace(
+    return withAppBasePath(value.replace(
       /^\/(uploads|storage)\/student-profile-images\//,
-      "/intern/api/student-profile-images/",
-    );
+      "/api/student-profile-images/",
+    ));
   }
 
-  return value;
+  return value.startsWith("/") ? withAppBasePath(value) : value;
 }
 
 export function getStudentProfileImageDownloadHref(value: string) {
@@ -39,13 +40,13 @@ export function getStudentAttachmentDownloadHref(value: string) {
     value.startsWith("/uploads/student-files/") ||
     value.startsWith("/storage/student-files/")
   ) {
-    return value.replace(
+    return withAppBasePath(value.replace(
       /^\/(uploads|storage)\/student-files\//,
-      "/intern/api/student-files/",
-    );
+      "/api/student-files/",
+    ));
   }
 
-  return value;
+  return value.startsWith("/") ? withAppBasePath(value) : value;
 }
 
 export function getPrivateStorageRoot() {

@@ -9,13 +9,13 @@ import {
   logoutAction,
   resetAdminPasswordAction,
   saveAdminAction,
-} from "@/app/intern/admins/actions";
+} from "@/app/admins/actions";
 import {
   type AdminListItem,
   initialDeleteAdminActionState,
   initialResetAdminPasswordActionState,
   initialSaveAdminActionState,
-} from "@/app/intern/admins/action-state";
+} from "@/app/admins/action-state";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { ModalFrame } from "@/components/admin/modal-frame";
 import { formatThaiDateTime } from "@/lib/date-format";
@@ -54,7 +54,7 @@ type ResetPasswordDialogProps = {
 };
 
 const SUPER_ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/admins", label: "รายชื่อผู้ดูแลระบบ" },
+  { href: "/admins", label: "รายชื่อผู้ดูแลระบบ" },
 ];
 
 function SearchIcon() {
@@ -165,7 +165,7 @@ function buildAdminListHref(params: { page?: number; searchQuery: string }) {
 
   const queryString = searchParams.toString();
 
-  return queryString ? `/intern/admins?${queryString}` : "/intern/admins";
+  return queryString ? `/admins?${queryString}` : "/admins";
 }
 
 function getPaginationPages(currentPage: number, totalPages: number) {
@@ -632,9 +632,9 @@ export function AdminListPage({
   return (
     <AdminLayoutShell
       backgroundClassName="bg-[#f7f2f8] text-slate-950"
-      currentPath="/intern/admins"
+      currentPath="/admins"
       currentUser={currentUser}
-      homeHref="/intern/admins"
+      homeHref="/admins"
       logoutAction={logoutAction}
       navItems={SUPER_ADMIN_NAV_ITEMS}
       roleLabel="ผู้ดูแลระบบสูงสุด"
@@ -681,7 +681,7 @@ export function AdminListPage({
 
             {hasActiveFilters ? (
               <Link
-                href="/intern/admins"
+                href="/admins"
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 ล้าง

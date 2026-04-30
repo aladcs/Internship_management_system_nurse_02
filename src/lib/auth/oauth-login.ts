@@ -1,5 +1,6 @@
 import { type UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { stripAppBasePath } from "@/lib/app-paths";
 import { getSafePostLoginRedirectPath } from "@/lib/auth/roles";
 import { createSession } from "@/lib/auth/session";
 
@@ -34,7 +35,7 @@ export function normalizeOAuthNextPath(nextPath: string | null | undefined) {
     return null;
   }
 
-  return normalized;
+  return stripAppBasePath(normalized);
 }
 
 export async function signInOAuthUser({

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  basePath: "/intern",
   output: "standalone",
   reactCompiler: true,
   experimental: {

@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginAction } from "@/app/login/actions";
 import { initialLoginActionState } from "@/app/login/action-state";
+import { CMU_LOGIN_BANNER_PATH, GOOGLE_LOGO_PATH } from "@/lib/app-paths";
 
 function AlertIcon() {
   return (
@@ -169,7 +170,7 @@ export function LoginForm({
           aria-label="เข้าสู่ระบบด้วย Google"
         >
           <Image
-            src="/google-logo.svg"
+            src={GOOGLE_LOGO_PATH}
             alt="Google"
             width={20}
             height={20}
@@ -184,7 +185,7 @@ export function LoginForm({
           title="ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ Google สำหรับสภาพแวดล้อมนี้"
         >
           <Image
-            src="/google-logo.svg"
+            src={GOOGLE_LOGO_PATH}
             alt="Google"
             width={20}
             height={20}
@@ -201,7 +202,7 @@ export function LoginForm({
           aria-label="เข้าสู่ระบบด้วยบัญชี CMU"
         >
           <Image
-            src="/login_cmu.png"
+            src={CMU_LOGIN_BANNER_PATH}
             alt="เข้าสู่ระบบด้วยบัญชี CMU"
             width={640}
             height={186}
@@ -216,7 +217,7 @@ export function LoginForm({
           title="ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ CMU Entra สำหรับสภาพแวดล้อมนี้"
         >
           <Image
-            src="/login_cmu.png"
+            src={CMU_LOGIN_BANNER_PATH}
             alt="ไม่สามารถเข้าสู่ระบบด้วยบัญชี CMU ได้ในขณะนี้"
             width={640}
             height={186}

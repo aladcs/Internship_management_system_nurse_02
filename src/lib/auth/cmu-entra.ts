@@ -1,7 +1,9 @@
+import { withAppBasePath } from "@/lib/app-paths";
+
 const DEFAULT_SCOPE = "openid profile email";
 
-export const CMU_ENTRA_LOGIN_PATH = "/intern/auth/cmu";
-export const CMU_ENTRA_CALLBACK_PATH = "/intern/api/auth/callback";
+export const CMU_ENTRA_LOGIN_PATH = "/auth/cmu";
+export const CMU_ENTRA_CALLBACK_PATH = "/api/auth/callback";
 
 type RequiredEnvName =
   | "APP_BASE_URL"
@@ -70,6 +72,7 @@ export function getCmuEntraConfig(): CmuEntraConfig {
   const callbackPath = normalizePath(
     process.env.CMU_ENTRA_CALLBACK_PATH?.trim() || CMU_ENTRA_CALLBACK_PATH,
   );
+  const externalCallbackPath = withAppBasePath(callbackPath);
   const authorizeUrl =
     getOptionalEndpoint("CMU_ENTRA_AUTHORIZE_URL") ||
     `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`;
@@ -91,8 +94,8 @@ export function getCmuEntraConfig(): CmuEntraConfig {
     tokenUrl,
     basicInfoUrl,
     userinfoUrl,
-    callbackPath,
-    callbackUrl: `${appBaseUrl}${callbackPath}`,
+    callbackPath: externalCallbackPath,
+    callbackUrl: `${appBaseUrl}${externalCallbackPath}`,
     scope,
   };
 }

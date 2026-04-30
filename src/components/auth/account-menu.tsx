@@ -131,7 +131,7 @@ export function AccountMenu({
           <div className="mt-2 space-y-1">
             {tone === "admin" ? (
               <Link
-                href="/intern/account/name"
+                href="/account/name"
                 className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${accentClasses.item}`}
                 onClick={() => setOpen(false)}
               >
@@ -141,7 +141,7 @@ export function AccountMenu({
             ) : null}
 
             <Link
-              href="/intern/account/password"
+              href="/account/password"
               className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${accentClasses.item}`}
               onClick={() => setOpen(false)}
             >

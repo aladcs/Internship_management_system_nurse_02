@@ -4,14 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import type { InternshipStatus } from "@prisma/client";
 import { startTransition, useActionState, useMemo, useRef, useState } from "react";
-import { type StudentFormActionState } from "@/app/intern/form/action-state";
+import { type StudentFormActionState } from "@/app/form/action-state";
 import {
   logoutAction as defaultLogoutAction,
   saveStudentFormAction as defaultSaveStudentFormAction,
-} from "@/app/intern/form/actions";
+} from "@/app/form/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
+import { BRAND_LOGO_PATH } from "@/lib/app-paths";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -514,9 +515,9 @@ export function StudentFormPage({
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const isAdminMode = mode === "admin";
   const hasAdminDisplayName = Boolean(currentUser.name?.trim());
-  const resolvedBackHref = backHref ?? (isAdminMode ? "/intern/admin/students" : "/intern/overview");
+  const resolvedBackHref = backHref ?? (isAdminMode ? "/admin/students" : "/overview");
   const resolvedBackLabel = backLabel ?? (isAdminMode ? "กลับไปหน้ารายชื่อนักศึกษา" : "กลับไปหน้าภาพรวม");
-  const resolvedCancelHref = cancelHref ?? (isAdminMode ? resolvedBackHref : "/intern/overview");
+  const resolvedCancelHref = cancelHref ?? (isAdminMode ? resolvedBackHref : "/overview");
   const pageTitle = isAdminMode ? "แก้ไขข้อมูลนักศึกษา" : "แบบฟอร์มฝึกงาน";
   const pageDescription = isAdminMode
     ? "อัปเดตข้อมูลส่วนตัว การศึกษา รายละเอียดการฝึกงาน และไฟล์แนบของนักศึกษาได้จากหน้าฟอร์มเดียวกัน"
@@ -789,9 +790,9 @@ export function StudentFormPage({
       <div className="min-h-screen bg-[#fff7f1] text-slate-950">
         <header className="sticky top-0 z-30 border-b border-orange-100/80 bg-white/90 backdrop-blur-xl">
           <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
-            <Link href="/intern/overview" className="flex items-center gap-3">
+            <Link href="/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
+                <Image src={BRAND_LOGO_PATH} alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
@@ -820,7 +821,7 @@ export function StudentFormPage({
               สถานะการฝึกงานของคุณคือ {formatInternshipStatusLabel(student.status)} จึงไม่สามารถแก้ไขได้ แต่ยังสามารถตรวจสอบข้อมูลที่ส่งไว้จากหน้าภาพรวมได้
             </p>
             <Link
-              href="/intern/overview"
+              href="/overview"
               className="mt-8 inline-flex h-12 items-center justify-center rounded-2xl bg-(--color-student) px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
             >
               กลับไปหน้าภาพรวม
@@ -836,9 +837,9 @@ export function StudentFormPage({
       <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${isAdminMode ? "border-slate-200/80" : theme.headerBorder}`}>
         <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
-            <Link href={isAdminMode ? "/intern/admin/students" : "/intern/overview"} className="flex items-center gap-3">
+            <Link href={isAdminMode ? "/admin/students" : "/overview"} className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
+                <Image src={BRAND_LOGO_PATH} alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
               </div>
               <div className="hidden sm:block">
                 {isAdminMode ? (
@@ -857,22 +858,22 @@ export function StudentFormPage({
             <nav className="hidden items-center gap-2 md:flex">
               {isAdminMode ? (
                 <>
-                  <Link href="/intern/dashboard" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                  <Link href="/dashboard" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                     แดชบอร์ด
                   </Link>
-                  <Link href="/intern/admin/students" className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)" aria-current="page">
+                  <Link href="/admin/students" className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)" aria-current="page">
                     รายชื่อนักศึกษา
                   </Link>
-                  <Link href="/intern/notifications" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                  <Link href="/notifications" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                     การแจ้งเตือน
                   </Link>
                 </>
               ) : (
                 <>
-                  <Link href="/intern/overview" className={`rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition ${theme.navHover}`}>
+                  <Link href="/overview" className={`rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition ${theme.navHover}`}>
                     ภาพรวม
                   </Link>
-                  <Link href="/intern/form" className={`rounded-full px-4 py-2 text-sm font-semibold ${theme.navActive}`} aria-current="page">
+                  <Link href="/form" className={`rounded-full px-4 py-2 text-sm font-semibold ${theme.navActive}`} aria-current="page">
                     แบบฟอร์ม
                   </Link>
                 </>
@@ -909,7 +910,7 @@ export function StudentFormPage({
                 </p>
               </div>
               <Link
-                href="/intern/account/name"
+                href="/account/name"
                 className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
               >
                 ตั้งชื่อที่แสดง
@@ -940,29 +941,29 @@ export function StudentFormPage({
             <nav className="mt-8 space-y-2">
               {isAdminMode ? (
                 <>
-                  <Link href="/intern/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
                     แดชบอร์ด
                   </Link>
-                  <Link href="/intern/admin/students" className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)" aria-current="page" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/admin/students" className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)" aria-current="page" onClick={() => setMobileMenuOpen(false)}>
                     รายชื่อนักศึกษา
                   </Link>
-                  <Link href="/intern/notifications" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/notifications" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
                     การแจ้งเตือน
                   </Link>
                 </>
               ) : (
                 <>
-                  <Link href="/intern/overview" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/overview" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
                     ภาพรวม
                   </Link>
-                  <Link href="/intern/form" className={`block rounded-2xl px-4 py-3 text-sm font-semibold ${theme.navActive}`} aria-current="page" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/form" className={`block rounded-2xl px-4 py-3 text-sm font-semibold ${theme.navActive}`} aria-current="page" onClick={() => setMobileMenuOpen(false)}>
                     แบบฟอร์ม
                   </Link>
                 </>
               )}
               {isAdminMode ? (
                 <Link
-                  href="/intern/account/name"
+                  href="/account/name"
                   className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -970,7 +971,7 @@ export function StudentFormPage({
                 </Link>
               ) : null}
               <Link
-                href="/intern/account/password"
+                href="/account/password"
                 className={`block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition ${isAdminMode ? "hover:bg-admin/6 hover:text-(--color-admin)" : "hover:bg-orange-50 hover:text-orange-700"}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -1048,7 +1049,7 @@ export function StudentFormPage({
                       unoptimized={
                         visibleProfileImage.src.startsWith("blob:") ||
                         visibleProfileImage.src.startsWith("/uploads/") ||
-                        visibleProfileImage.src.startsWith("/intern/api/")
+                        visibleProfileImage.src.startsWith("/api/")
                       }
                     />
                   ) : (

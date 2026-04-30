@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { InternshipStatus } from "@prisma/client";
 import { type ReactNode, useEffect, useState } from "react";
-import { logoutAction } from "@/app/intern/overview/actions";
+import { logoutAction } from "@/app/overview/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import {
   Accordion,
@@ -13,6 +13,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { InternshipStatusStepper } from "@/components/ui/internship-status-stepper";
+import { BRAND_LOGO_PATH } from "@/lib/app-paths";
 import { appShellClass } from "@/lib/page-shell";
 
 type SummaryItem = {
@@ -309,7 +310,7 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
             ) : null}
             {student.canEdit ? (
               <Link
-                href="/intern/form"
+                href="/form"
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-student) px-4 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
               >
                 จัดการรูปโปรไฟล์
@@ -349,7 +350,7 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
           </p>
           {student.canEdit ? (
             <Link
-              href="/intern/form"
+              href="/form"
               className="mt-4 inline-flex text-sm font-semibold text-(--color-student) underline decoration-orange-200 underline-offset-4 transition hover:decoration-orange-500"
             >
               อัปโหลดตอนนี้
@@ -421,10 +422,10 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
       <header className="sticky top-0 z-30 border-b border-orange-100/80 bg-white/90 backdrop-blur-xl">
         <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
-            <Link href="/intern/overview" className="flex items-center gap-3">
+            <Link href="/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
-                  src="/nurse_logo.svg"
+                  src={BRAND_LOGO_PATH}
                   alt="ระบบจัดการฝึกงาน"
                   width={27}
                   height={30}
@@ -440,7 +441,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
             <nav className="hidden md:flex">
               <Link
-                href="/intern/overview"
+                href="/overview"
                 className="rounded-full bg-student/12 px-4 py-2 text-sm font-semibold text-(--color-student)"
                 aria-current="page"
               >
@@ -493,7 +494,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
 
             <nav className="mt-8 space-y-2">
               <Link
-                href="/intern/overview"
+                href="/overview"
                 className="block rounded-2xl bg-student/12 px-4 py-3 text-sm font-semibold text-(--color-student)"
                 aria-current="page"
                 onClick={() => setMobileMenuOpen(false)}
@@ -501,14 +502,14 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 ภาพรวม
               </Link>
               <Link
-                href="/intern/account/name"
+                href="/account/name"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
               </Link>
               <Link
-                href="/intern/account/password"
+                href="/account/password"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-orange-50 hover:text-orange-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -573,7 +574,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               <div className="mt-3 space-y-3">
                 {student.canEdit ? (
                   <Link
-                    href="/intern/form"
+                    href="/form"
                     className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-(--color-student) px-5 text-sm font-semibold text-white shadow-lg shadow-orange-600/25 transition hover:brightness-95"
                   >
                     {ctaLabel}

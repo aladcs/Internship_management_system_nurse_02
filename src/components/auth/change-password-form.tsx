@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { changePasswordAction } from "@/app/intern/account/password/actions";
-import { initialChangePasswordActionState } from "@/app/intern/account/password/action-state";
+import { changePasswordAction } from "@/app/account/password/actions";
+import { initialChangePasswordActionState } from "@/app/account/password/action-state";
 
 type ChangePasswordFormProps = {
   backHref: string;
@@ -168,7 +168,7 @@ export function ChangePasswordForm({
           กลับไปหน้าก่อนหน้า
         </Link>
 
-        <section className={`mt-5 rounded-[32px] border p-6 shadow-xl sm:p-8 ${accentClasses.panel}`}>
+        <section className={`mt-5 rounded-4xl border p-6 shadow-xl sm:p-8 ${accentClasses.panel}`}>
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-3">
               <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${accentClasses.chip}`}>

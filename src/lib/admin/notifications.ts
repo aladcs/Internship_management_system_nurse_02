@@ -143,10 +143,10 @@ export function resolveNotificationTargetPath(notification: {
   }
 
   if (notification.entityType === "student" && notification.entityId) {
-    return `/intern/admin/students/${notification.entityId}`;
+    return `/admin/students/${notification.entityId}`;
   }
 
-  return "/intern/admin/students";
+  return "/admin/students";
 }
 
 function toAdminNotificationItem(
