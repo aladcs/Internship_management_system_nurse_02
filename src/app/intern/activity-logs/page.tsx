@@ -7,7 +7,7 @@ import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 
 export const metadata: Metadata = {
-  title: "Activity Log | ระบบจัดการฝึกงาน",
+  title: "บันทึกกิจกรรม | ระบบจัดการฝึกงาน",
   description: "รายการกิจกรรมทั้งหมดสำหรับผู้ดูแลระบบ พร้อมเวลาอัปเดตล่าสุดและผู้ที่ดำเนินการ",
 };
 
