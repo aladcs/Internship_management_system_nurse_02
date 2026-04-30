@@ -1,8 +1,10 @@
-import "dotenv/config";
 import { randomUUID } from "node:crypto";
+import { loadEnvConfig } from "@next/env";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
+
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 
 function getDatabaseUrl() {
   if (!process.env.DATABASE_URL) {
