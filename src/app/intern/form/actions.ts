@@ -29,10 +29,13 @@ import {
 const GENDER_VALUES = ["male", "female", "other", "prefer_not_to_say"] as const;
 const EDUCATION_LEVEL_VALUES = ["diploma", "bachelor", "master", "doctorate", "other"] as const;
 const PREFIX_VALUES = ["นาย", "นาง", "นางสาว"] as const;
-const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const ATTACHMENT_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const PORTFOLIO_FILE_TYPES = new Set(["application/pdf"]);
 const ALLOWED_PROFILE_IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
-const MAX_FILE_COUNT = 5;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENT_FILE_COUNT = 5;
+const MAX_PORTFOLIO_FILE_COUNT = 5;
+const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PORTFOLIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_PROFILE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 function normalizeText(value: FormDataEntryValue | null) {
@@ -287,35 +290,54 @@ export async function saveStudentFormAction(
     ),
   );
 
-  const newFiles = formData
-    .getAll("attachments")
-    .filter((value): value is File => value instanceof File && value.size > 0);
   const profileImageEntry = formData.get("profileImage");
   const newProfileImage = profileImageEntry instanceof File && profileImageEntry.size > 0 ? profileImageEntry : null;
   const removeProfileImage = String(formData.get("removeProfileImage") ?? "") === "true";
 
   if (newProfileImage) {
     if (!ALLOWED_PROFILE_IMAGE_TYPES.has(newProfileImage.type)) {
-      fieldErrors.files = "รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น";
+      fieldErrors.profileImage = "รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น";
     } else if (newProfileImage.size > MAX_PROFILE_IMAGE_SIZE_BYTES) {
-      fieldErrors.files = "รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB";
+      fieldErrors.profileImage = "รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB";
     }
   }
 
-  const remainingExistingFileCount = student.files.filter((file) => !removeFileIds.includes(file.id)).length;
+  const newAttachmentFiles = formData
+    .getAll("attachments")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+  const newPortfolioFiles = formData
+    .getAll("portfolioAttachments")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+  const newFiles = [...newAttachmentFiles, ...newPortfolioFiles];
 
-  if (remainingExistingFileCount + newFiles.length > MAX_FILE_COUNT) {
-    fieldErrors.files = `คุณสามารถเก็บไฟล์ได้รวมสูงสุด ${MAX_FILE_COUNT} ไฟล์`;
+  if (newAttachmentFiles.length > MAX_ATTACHMENT_FILE_COUNT) {
+    fieldErrors.attachments = `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`;
   }
 
-  for (const file of newFiles) {
-    if (!ALLOWED_FILE_TYPES.has(file.type)) {
-      fieldErrors.files = "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น";
+  if (newPortfolioFiles.length > MAX_PORTFOLIO_FILE_COUNT) {
+    fieldErrors.portfolioAttachments = `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`;
+  }
+
+  for (const file of newAttachmentFiles) {
+    if (!ATTACHMENT_FILE_TYPES.has(file.type)) {
+      fieldErrors.attachments = "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น";
       break;
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      fieldErrors.files = "แต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
+    if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+      fieldErrors.attachments = "เอกสารประกอบการฝึกงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
+      break;
+    }
+  }
+
+  for (const file of newPortfolioFiles) {
+    if (!PORTFOLIO_FILE_TYPES.has(file.type)) {
+      fieldErrors.portfolioAttachments = "แฟ้มสะสมผลงานอนุญาตเฉพาะไฟล์ PDF เท่านั้น";
+      break;
+    }
+
+    if (file.size > MAX_PORTFOLIO_FILE_SIZE_BYTES) {
+      fieldErrors.portfolioAttachments = "แฟ้มสะสมผลงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 10 MB";
       break;
     }
   }

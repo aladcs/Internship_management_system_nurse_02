@@ -15,9 +15,12 @@ import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
-const MAX_FILE_COUNT = 5;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const MAX_ATTACHMENT_FILE_COUNT = 5;
+const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PORTFOLIO_FILE_COUNT = 5;
+const MAX_PORTFOLIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const ATTACHMENT_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const PORTFOLIO_FILE_TYPES = new Set(["application/pdf"]);
 const CURRENT_YEAR = new Date().getUTCFullYear();
 
 type ExistingFileItem = {
@@ -278,6 +281,14 @@ function FieldError({ message }: { message?: string }) {
   return <p className="mt-2 text-sm font-medium text-red-600">{message}</p>;
 }
 
+function formatUploadFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024 * 1024) {
+    return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function FieldShell({
   label,
   htmlFor,
@@ -488,13 +499,18 @@ export function StudentFormPage({
   const [state, formAction, isPending] = useActionState(saveAction, initialState);
   const [formValues, setFormValues] = useState(initialState.values);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
+  const [attachmentDragActive, setAttachmentDragActive] = useState(false);
+  const [portfolioDragActive, setPortfolioDragActive] = useState(false);
   const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedAttachmentFiles, setSelectedAttachmentFiles] = useState<File[]>([]);
+  const [selectedPortfolioFiles, setSelectedPortfolioFiles] = useState<File[]>([]);
   const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
-  const [localFileError, setLocalFileError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [localAttachmentError, setLocalAttachmentError] = useState<string | null>(null);
+  const [localPortfolioError, setLocalPortfolioError] = useState<string | null>(null);
+  const [localProfileImageError, setLocalProfileImageError] = useState<string | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const portfolioInputRef = useRef<HTMLInputElement | null>(null);
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const isAdminMode = mode === "admin";
   const hasAdminDisplayName = Boolean(currentUser.name?.trim());
@@ -586,24 +602,24 @@ export function StudentFormPage({
     }
 
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setLocalFileError("รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น");
+      setLocalProfileImageError("รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น");
       event.target.value = "";
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setLocalFileError("รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+    if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+      setLocalProfileImageError("รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB");
       event.target.value = "";
       return;
     }
 
-    setLocalFileError(null);
+    setLocalProfileImageError(null);
     setRemoveProfileImage(false);
     setSelectedProfileImage(file);
   }
 
   function handleRemoveProfileImage() {
-    setLocalFileError(null);
+    setLocalProfileImageError(null);
     setSelectedProfileImage(null);
     setRemoveProfileImage(Boolean(profileImage));
 
@@ -620,80 +636,151 @@ export function StudentFormPage({
     window.open(visibleProfileImage.src, "_blank", "noopener,noreferrer");
   }
 
-  function syncInputFiles(files: File[]) {
+  function syncInputFiles(input: HTMLInputElement | null, files: File[]) {
     const dataTransfer = new DataTransfer();
 
     files.forEach((file) => dataTransfer.items.add(file));
 
-    if (inputRef.current) {
-      inputRef.current.files = dataTransfer.files;
+    if (input) {
+      input.files = dataTransfer.files;
     }
   }
 
-  function validateIncomingFiles(incomingFiles: File[], queuedFiles: File[]) {
-    if (visibleExistingFiles.length + queuedFiles.length + incomingFiles.length > MAX_FILE_COUNT) {
-      return `คุณสามารถเก็บไฟล์ได้รวมสูงสุด ${MAX_FILE_COUNT} ไฟล์`;
-    }
+  function mergeFiles(params: {
+    incomingFiles: File[];
+    currentFiles: File[];
+    maxCount: number;
+    maxSizeBytes: number;
+    allowedTypes: Set<string>;
+    invalidTypeMessage: string;
+    invalidSizeMessage: string;
+    maxCountMessage: string;
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+    setError: React.Dispatch<React.SetStateAction<string | null>>;
+    clearOtherError?: React.Dispatch<React.SetStateAction<string | null>>;
+    input: HTMLInputElement | null;
+  }) {
+    const mergedFiles = [...params.currentFiles];
 
-    for (const file of incomingFiles) {
-      if (!ALLOWED_FILE_TYPES.has(file.type)) {
-        return "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น";
-      }
-
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        return "แต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
-      }
-    }
-
-    return null;
-  }
-
-  function mergeFiles(incomingFiles: File[]) {
-    const mergedFiles = [...selectedFiles];
-
-    incomingFiles.forEach((file) => {
+    params.incomingFiles.forEach((file) => {
       if (!mergedFiles.some((currentFile) => currentFile.name === file.name && currentFile.size === file.size)) {
         mergedFiles.push(file);
       }
     });
 
-    const validationError = validateIncomingFiles(
-      mergedFiles.filter((file) => !selectedFiles.some((currentFile) => currentFile.name === file.name && currentFile.size === file.size)),
-      selectedFiles,
-    );
-
-    if (validationError) {
-      setLocalFileError(validationError);
-      syncInputFiles(selectedFiles);
+    if (mergedFiles.length > params.maxCount) {
+      params.setError(params.maxCountMessage);
+      syncInputFiles(params.input, params.currentFiles);
       return;
     }
 
-    setLocalFileError(null);
-    setSelectedFiles(mergedFiles);
-    syncInputFiles(mergedFiles);
+    for (const file of mergedFiles) {
+      if (!params.allowedTypes.has(file.type)) {
+        params.setError(params.invalidTypeMessage);
+        syncInputFiles(params.input, params.currentFiles);
+        return;
+      }
+
+      if (file.size > params.maxSizeBytes) {
+        params.setError(params.invalidSizeMessage);
+        syncInputFiles(params.input, params.currentFiles);
+        return;
+      }
+    }
+
+    params.setError(null);
+    params.clearOtherError?.(null);
+    params.setFiles(mergedFiles);
+    syncInputFiles(params.input, mergedFiles);
   }
 
-  function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    mergeFiles(files);
+  function handleAttachmentInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    mergeFiles({
+      incomingFiles: Array.from(event.target.files ?? []),
+      currentFiles: selectedAttachmentFiles,
+      maxCount: MAX_ATTACHMENT_FILE_COUNT,
+      maxSizeBytes: MAX_ATTACHMENT_FILE_SIZE_BYTES,
+      allowedTypes: ATTACHMENT_FILE_TYPES,
+      invalidTypeMessage: "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น",
+      invalidSizeMessage: "เอกสารประกอบการฝึกงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB",
+      maxCountMessage: `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedAttachmentFiles,
+      setError: setLocalAttachmentError,
+      input: attachmentInputRef.current,
+    });
   }
 
-  function handleDrop(event: React.DragEvent<HTMLButtonElement>) {
+  function handlePortfolioInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    mergeFiles({
+      incomingFiles: Array.from(event.target.files ?? []),
+      currentFiles: selectedPortfolioFiles,
+      maxCount: MAX_PORTFOLIO_FILE_COUNT,
+      maxSizeBytes: MAX_PORTFOLIO_FILE_SIZE_BYTES,
+      allowedTypes: PORTFOLIO_FILE_TYPES,
+      invalidTypeMessage: "แฟ้มสะสมผลงานอนุญาตเฉพาะไฟล์ PDF เท่านั้น",
+      invalidSizeMessage: "แฟ้มสะสมผลงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 10 MB",
+      maxCountMessage: `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedPortfolioFiles,
+      setError: setLocalPortfolioError,
+      input: portfolioInputRef.current,
+    });
+  }
+
+  function handleAttachmentDrop(event: React.DragEvent<HTMLButtonElement>) {
     event.preventDefault();
-    setDragActive(false);
-    mergeFiles(Array.from(event.dataTransfer.files ?? []));
+    setAttachmentDragActive(false);
+    mergeFiles({
+      incomingFiles: Array.from(event.dataTransfer.files ?? []),
+      currentFiles: selectedAttachmentFiles,
+      maxCount: MAX_ATTACHMENT_FILE_COUNT,
+      maxSizeBytes: MAX_ATTACHMENT_FILE_SIZE_BYTES,
+      allowedTypes: ATTACHMENT_FILE_TYPES,
+      invalidTypeMessage: "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น",
+      invalidSizeMessage: "เอกสารประกอบการฝึกงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB",
+      maxCountMessage: `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedAttachmentFiles,
+      setError: setLocalAttachmentError,
+      input: attachmentInputRef.current,
+    });
   }
 
-  function removeSelectedFile(index: number) {
-    const nextFiles = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+  function handlePortfolioDrop(event: React.DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    setPortfolioDragActive(false);
+    mergeFiles({
+      incomingFiles: Array.from(event.dataTransfer.files ?? []),
+      currentFiles: selectedPortfolioFiles,
+      maxCount: MAX_PORTFOLIO_FILE_COUNT,
+      maxSizeBytes: MAX_PORTFOLIO_FILE_SIZE_BYTES,
+      allowedTypes: PORTFOLIO_FILE_TYPES,
+      invalidTypeMessage: "แฟ้มสะสมผลงานอนุญาตเฉพาะไฟล์ PDF เท่านั้น",
+      invalidSizeMessage: "แฟ้มสะสมผลงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 10 MB",
+      maxCountMessage: `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedPortfolioFiles,
+      setError: setLocalPortfolioError,
+      input: portfolioInputRef.current,
+    });
+  }
 
-    setLocalFileError(null);
-    setSelectedFiles(nextFiles);
-    syncInputFiles(nextFiles);
+  function removeSelectedAttachmentFile(index: number) {
+    const nextFiles = selectedAttachmentFiles.filter((_, fileIndex) => fileIndex !== index);
+
+    setLocalAttachmentError(null);
+    setSelectedAttachmentFiles(nextFiles);
+    syncInputFiles(attachmentInputRef.current, nextFiles);
+  }
+
+  function removeSelectedPortfolioFile(index: number) {
+    const nextFiles = selectedPortfolioFiles.filter((_, fileIndex) => fileIndex !== index);
+
+    setLocalPortfolioError(null);
+    setSelectedPortfolioFiles(nextFiles);
+    syncInputFiles(portfolioInputRef.current, nextFiles);
   }
 
   function markExistingFileRemoved(fileId: string) {
-    setLocalFileError(null);
+    setLocalAttachmentError(null);
+    setLocalPortfolioError(null);
     setRemovedFileIds((currentFileIds) => (currentFileIds.includes(fileId) ? currentFileIds : [...currentFileIds, fileId]));
   }
 
@@ -1016,6 +1103,7 @@ export function StudentFormPage({
             </div>
 
             {removeProfileImage ? <input type="hidden" name="removeProfileImage" value="true" /> : null}
+            <FieldError message={localProfileImageError ?? state.fieldErrors.profileImage} />
           </SectionCard>
 
           {hiddenFields.map((field) => (
@@ -1127,46 +1215,150 @@ export function StudentFormPage({
           <SectionCard
             icon={<FileIcon />}
             title="ไฟล์แนบ"
-            description="อัปโหลดไฟล์ PDF หรือรูปภาพเพื่อประกอบข้อมูลการฝึกงานของคุณ สามารถเก็บได้สูงสุด 5 ไฟล์ และแต่ละไฟล์ต้องไม่เกิน 5 MB"
+            description="แยกอัปโหลดเอกสารประกอบการฝึกงานและแฟ้มสะสมผลงานเป็นคนละพื้นที่ เพื่อกำหนดประเภทไฟล์และขนาดได้ชัดเจน"
             accentTileClass={theme.accentTile}
             className="xl:col-span-12"
           >
-            <div>
+            <div className="space-y-6">
               <input
-                ref={inputRef}
+                ref={attachmentInputRef}
                 id="attachments"
                 name="attachments"
                 type="file"
                 multiple
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 className="hidden"
-                onChange={handleFileInputChange}
+                onChange={handleAttachmentInputChange}
               />
 
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setDragActive(true);
-                }}
-                onDragLeave={() => setDragActive(false)}
-                onDrop={handleDrop}
-                className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${dragActive ? theme.uploadActive : theme.uploadIdle}`}
-              >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
-                  <UploadIcon />
+              <input
+                ref={portfolioInputRef}
+                id="portfolioAttachments"
+                name="portfolioAttachments"
+                type="file"
+                multiple
+                accept=".pdf,application/pdf"
+                className="hidden"
+                onChange={handlePortfolioInputChange}
+              />
+
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">เอกสารประกอบการฝึกงาน</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">อัปโหลดได้สูงสุด 5 ไฟล์ รองรับ PDF, PNG, JPG และแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB</p>
                 </div>
-                <p className="mt-4 text-base font-semibold text-slate-950">อัปโหลดไฟล์ฝึกงาน</p>
-                <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
-                  ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับ PDF, JPG, PNG รวมได้สูงสุด 5 ไฟล์
-                </p>
-              </button>
 
-              <FieldError message={localFileError ?? state.fieldErrors.files} />
+                <button
+                  type="button"
+                  onClick={() => attachmentInputRef.current?.click()}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setAttachmentDragActive(true);
+                  }}
+                  onDragLeave={() => setAttachmentDragActive(false)}
+                  onDrop={handleAttachmentDrop}
+                  className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${attachmentDragActive ? theme.uploadActive : theme.uploadIdle}`}
+                >
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
+                    <UploadIcon />
+                  </div>
+                  <p className="mt-4 text-base font-semibold text-slate-950">General Attachments (เอกสารประกอบการฝึกงาน)</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
+                    ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับ PDF, PNG, JPG สูงสุด 5 ไฟล์
+                  </p>
+                </button>
 
+                <FieldError message={localAttachmentError ?? state.fieldErrors.attachments} />
+
+                {selectedAttachmentFiles.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedAttachmentFiles.map((file, index) => (
+                      <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                            <FileIcon />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">{formatUploadFileSize(file.size)}</p>
+                            <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedAttachmentFile(index)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">Portfolio &amp; Work Samples (แฟ้มสะสมผลงาน)</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">อัปโหลดแฟ้มสะสมผลงานหรือโปรเจกต์ของคุณ (เฉพาะไฟล์ PDF, ขนาดไม่เกิน 10MB ต่อไฟล์)</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => portfolioInputRef.current?.click()}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setPortfolioDragActive(true);
+                  }}
+                  onDragLeave={() => setPortfolioDragActive(false)}
+                  onDrop={handlePortfolioDrop}
+                  className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${portfolioDragActive ? theme.uploadActive : theme.uploadIdle}`}
+                >
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
+                    <UploadIcon />
+                  </div>
+                  <p className="mt-4 text-base font-semibold text-slate-950">Portfolio &amp; Work Samples (แฟ้มสะสมผลงาน)</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
+                    ลากไฟล์ PDF มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับสูงสุด 5 ไฟล์
+                  </p>
+                </button>
+
+                <FieldError message={localPortfolioError ?? state.fieldErrors.portfolioAttachments} />
+
+                {selectedPortfolioFiles.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedPortfolioFiles.map((file, index) => (
+                      <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                            <FileIcon />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">{formatUploadFileSize(file.size)}</p>
+                            <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedPortfolioFile(index)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               {visibleExistingFiles.length > 0 ? (
                 <div className="mt-5 space-y-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-950">ไฟล์ที่อัปโหลดแล้ว</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">ไฟล์ที่บันทึกไว้ก่อนหน้านี้จะแสดงรวมกันในส่วนนี้ และยังสามารถลบออกได้ก่อนบันทึก</p>
+                  </div>
                   {visibleExistingFiles.map((file) => (
                     <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                       <div className="flex items-start gap-3">
@@ -1193,33 +1385,6 @@ export function StudentFormPage({
                         onClick={() => markExistingFileRemoved(file.id)}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
                         aria-label={`ลบ ${file.name}`}
-                      >
-                        <CloseIcon />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {selectedFiles.length > 0 ? (
-                <div className="mt-5 space-y-3">
-                  {selectedFiles.map((file, index) => (
-                    <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
-                          <FileIcon />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-slate-500">{`${(file.size / 1024).toFixed(1)} KB`}</p>
-                          <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeSelectedFile(index)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-                        aria-label={`Remove ${file.name}`}
                       >
                         <CloseIcon />
                       </button>

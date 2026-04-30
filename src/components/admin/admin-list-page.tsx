@@ -320,7 +320,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
           ) : null}
           {mode === "create" ? (
             <p className="text-sm leading-6 text-slate-500">
-              ระบบจะสร้างบัญชีจากอีเมลนี้ก่อน และผู้ดูแลสามารถตั้งชื่อที่แสดงเองได้หลังเข้าสู่ระบบครั้งแรก
+            
             </p>
           ) : null}
         </div>
@@ -563,9 +563,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
               <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 รายชื่อผู้ดูแลระบบ
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                จัดการบัญชีผู้ดูแลระบบ สร้างรหัสผ่านสำหรับผู้ดูแลใหม่ และจำกัดการเข้าถึงเฉพาะข้อมูลผู้ดูแลเท่านั้น
-              </p>
+              
             </div>
           </div>
 
