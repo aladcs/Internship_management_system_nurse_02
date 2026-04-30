@@ -178,9 +178,7 @@ export function ChangePasswordForm({
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                   เปลี่ยนรหัสผ่าน
                 </h1>
-                <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
-                  อัปเดตรหัสผ่านของบัญชีนี้โดยยืนยันรหัสผ่านปัจจุบันก่อนทุกครั้ง
-                </p>
+                
               </div>
             </div>
 
@@ -235,7 +233,6 @@ export function ChangePasswordForm({
             </div>
 
             <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 text-sm leading-6 text-slate-600">
-              <p className="font-semibold text-slate-800">ข้อกำหนด</p>
               <p className="mt-2">รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร และต้องไม่ซ้ำกับรหัสผ่านเดิม</p>
             </div>
 

@@ -7,6 +7,12 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { InternshipStatus } from "@prisma/client";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   initialUpdateStudentStatusActionState,
   type UpdateStudentStatusActionState,
 } from "@/app/intern/admin/students/[id]/action-state";
@@ -14,6 +20,7 @@ import { updateStudentStatusAction } from "@/app/intern/admin/students/[id]/acti
 import { logoutAction } from "@/app/intern/admin/students/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { ModalFrame } from "@/components/admin/modal-frame";
+import { InternshipStatusStepper } from "@/components/ui/internship-status-stepper";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -33,6 +40,28 @@ type ProfileImageItem = {
   src: string;
   name: string;
   downloadHref: string;
+};
+
+type ReviewHistoryItem = {
+  id: string;
+  message: string;
+  createdAtLabel: string;
+  adminLabel: string;
+};
+
+type ActivityLogItem = {
+  id: string;
+  action: string;
+  message: string;
+  createdAtLabel: string;
+  actorLabel: string;
+};
+
+type SectionShellProps = {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
 };
 
 export type AdminStudentDetailPageProps = {
@@ -58,8 +87,12 @@ export type AdminStudentDetailPageProps = {
     internship: SummaryItem[];
     education: SummaryItem[];
     files: FileItem[];
+    reviewHistory: ReviewHistoryItem[];
+    activityLog: ActivityLogItem[];
     summary: {
       lastUpdatedLabel: string;
+      lastUpdatedByLabel: string | null;
+      lastUpdatedByEmail: string | null;
       submittedAtLabel: string;
     };
   };
@@ -69,12 +102,8 @@ const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
   { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
   { href: "/intern/notifications", label: "การแจ้งเตือน" },
+  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
 ];
-
-type StatusDefinition = {
-  id: InternshipStatus;
-  label: string;
-};
 
 function ArrowLeftIcon() {
   return (
@@ -169,9 +198,36 @@ function AcademicIcon() {
   );
 }
 
+function ReviewIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.65" aria-hidden="true" className="h-4 w-4">
+      <path d="M4.25 5.25A2.25 2.25 0 0 1 6.5 3h7A2.25 2.25 0 0 1 15.75 5.25v9.5L12 12.5l-2 2-2-2-3.75 2.25v-9.5Z" />
+      <path d="M7 7h6" />
+      <path d="M7 9.75h4.5" />
+    </svg>
+  );
+}
+
+function ActivityIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.65" aria-hidden="true" className="h-4 w-4">
+      <circle cx="10" cy="10" r="6.75" />
+      <path d="M10 6.5v3.75l2.5 1.5" />
+    </svg>
+  );
+}
+
 function getStatusClasses(status: InternshipStatus) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {
@@ -181,49 +237,24 @@ function getStatusClasses(status: InternshipStatus) {
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
 }
 
-function getStatusDefinitions(): StatusDefinition[] {
-  return [
-    {
-      id: "pending",
-      label: formatInternshipStatusLabel("pending"),
-    },
-    {
-      id: "in_progress",
-      label: formatInternshipStatusLabel("in_progress"),
-    },
-    {
-      id: "completed",
-      label: formatInternshipStatusLabel("completed"),
-    },
-  ];
-}
-
-function getStatusCardClasses(definitionId: InternshipStatus, currentStatus: InternshipStatus) {
-  if (definitionId === currentStatus) {
-    return "border-admin/20 bg-white text-slate-900 shadow-lg shadow-admin/10 ring-1 ring-admin/10";
-  }
-
-  return "border-white/70 bg-white/65 text-slate-600";
-}
-
 function getStatusAction(status: InternshipStatus) {
-  if (status === "pending") {
+  if (status === "needs_fix") {
     return {
-      label: "ย้อนกลับเป็นรอดำเนินการ",
+      label: "ส่งกลับให้แก้ไข",
       tone: "secondary" as const,
     };
   }
 
   if (status === "in_progress") {
     return {
-      label: "เปลี่ยนเป็นกำลังฝึกงาน",
+      label: "อนุมัติแบบฟอร์ม",
       tone: "primary" as const,
     };
   }
 
   if (status === "completed") {
     return {
-      label: "เปลี่ยนเป็นเสร็จสิ้น",
+      label: "ทำเครื่องหมายว่าเสร็จสิ้น",
       tone: "primary" as const,
     };
   }
@@ -295,20 +326,10 @@ function SummaryCard({
   items: SummaryItem[];
 }) {
   return (
-    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-950">{title}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-        </div>
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
-          {icon}
-        </div>
-      </div>
-
-      <dl className="mt-6 grid gap-3 sm:grid-cols-2">
+    <SectionShell title={title} description={description} icon={icon}>
+      <dl className="grid gap-4 md:grid-cols-2">
         {items.map((item) => (
-          <div key={item.label} className="rounded-2xl bg-slate-50 px-4 py-3">
+          <div key={item.label} className="rounded-2xl bg-slate-50 px-4 py-3.5">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               {item.label}
             </dt>
@@ -316,7 +337,178 @@ function SummaryCard({
           </div>
         ))}
       </dl>
-    </section>
+    </SectionShell>
+  );
+}
+
+function SectionShell({ title, description, icon, children }: SectionShellProps) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">{title}</h2>
+          <p className="text-sm leading-relaxed text-slate-600">{description}</p>
+        </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+          {icon}
+        </div>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function AdminDataAccordionTrigger({ title, icon }: { title: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-base font-semibold text-slate-950">{title}</p>
+      </div>
+    </div>
+  );
+}
+
+function DesktopSectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-[28px] border border-admin/15 bg-white p-5 shadow-sm shadow-admin/10 md:p-6">
+      {children}
+    </div>
+  );
+}
+
+function AttachmentsSection({ student }: { student: AdminStudentDetailPageProps["student"] }) {
+  return (
+    <SectionShell
+      title="ไฟล์และเอกสารแนบ"
+      description="รูปโปรไฟล์และไฟล์อัปโหลดที่เกี่ยวข้องกับข้อมูลฝึกงานของนักศึกษา"
+      icon={<FileIcon />}
+    >
+      <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-950">รูปโปรไฟล์นักศึกษา</h3>
+          </div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-admin ring-1 ring-admin/15">
+            <CameraIcon />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-admin/15 bg-admin/10 text-(--color-admin)">
+              {student.profileImage ? (
+                <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
+              ) : (
+                <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                {student.profileImage ? "ใช้สำหรับแสดงตัวตนของนักศึกษาในระบบ" : "สามารถเพิ่มหรือเปลี่ยนรูปได้จากหน้าจัดการข้อมูลนักศึกษา"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {student.profileImage ? (
+              <a
+                href={student.profileImage.downloadHref}
+                download={student.profileImage.name}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-admin/20 hover:text-admin"
+              >
+                ดาวน์โหลดรูป
+              </a>
+            ) : null}
+            <Link
+              href={`/intern/admin/students/${student.id}/edit`}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
+            >
+              จัดการโปรไฟล์
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {student.files.length > 0 ? (
+        <div className="space-y-3">
+          {student.files.map((file) => (
+            <a
+              key={file.id}
+              href={file.href}
+              download={file.name}
+              className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-admin/5"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+                <FileIcon />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[28px] border border-dashed border-admin/20 bg-[#faf6fa] px-5 py-8 text-center">
+          <div className="mx-auto flex justify-center text-(--color-admin)">
+            <EmptyFilesIcon />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีการอัปโหลดไฟล์</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            นักศึกษาคนนี้ยังไม่ได้อัปโหลดเอกสารประกอบ
+          </p>
+        </div>
+      )}
+    </SectionShell>
+  );
+}
+
+function ListCard({
+  title,
+  description,
+  emptyTitle,
+  emptyDescription,
+  items,
+}: {
+  title: string;
+  description: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  items: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    meta: string;
+  }>;
+}) {
+  return (
+    <SectionShell title={title} description={description} icon={<FileIcon />}>
+
+      {items.length > 0 ? (
+        <div className="space-y-3">
+          {items.map((item) => (
+            <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                <span className="text-xs font-medium text-slate-500">{item.meta}</span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-700">{item.subtitle}</p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[28px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+          <h3 className="text-lg font-semibold text-slate-950">{emptyTitle}</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{emptyDescription}</p>
+        </div>
+      )}
+    </SectionShell>
   );
 }
 
@@ -325,14 +517,16 @@ export function AdminStudentDetailPage({
   student,
 }: AdminStudentDetailPageProps) {
   const [confirmStatus, setConfirmStatus] = useState<InternshipStatus | null>(null);
+  const [openSections, setOpenSections] = useState<string[]>([]);
+  const [reviewMessage, setReviewMessage] = useState("");
   const [statusState, formAction] = useActionState<UpdateStudentStatusActionState, FormData>(
     updateStudentStatusAction,
     initialUpdateStudentStatusActionState,
   );
   const router = useRouter();
-  const statusDefinitions = getStatusDefinitions();
   const hasStatusActions = student.statusControl.allowedTransitions.length > 0;
   const isStatusChangeBlocked = Boolean(student.statusControl.blockReason && hasStatusActions);
+  const isCompletedStatus = student.status === "completed";
 
   useEffect(() => {
     if (statusState.status === "success") {
@@ -340,8 +534,19 @@ export function AdminStudentDetailPage({
     }
   }, [router, statusState.status]);
 
+  useEffect(() => {
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      setOpenSections(["personal"]);
+    }
+  }, []);
+
   const confirmAction = confirmStatus ? getStatusAction(confirmStatus) : null;
   const confirmStatusLabel = confirmStatus ? formatInternshipStatusLabel(confirmStatus) : null;
+
+  function closeStatusModal() {
+    setConfirmStatus(null);
+    setReviewMessage("");
+  }
 
   return (
     <AdminLayoutShell
@@ -400,7 +605,7 @@ export function AdminStudentDetailPage({
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">การควบคุมสถานะ</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Review Actions</p>
               <div className="mt-3 space-y-3">
                 {hasStatusActions ? (
                   <div className="space-y-3">
@@ -420,7 +625,7 @@ export function AdminStudentDetailPage({
                     <span className="mt-0.5 text-slate-500">
                       <LockIcon />
                     </span>
-                    <span>ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว</span>
+                    <span>{isCompletedStatus ? "ข้อมูลการฝึกงานนี้เสร็จสมบูรณ์แล้ว" : student.statusControl.blockReason ?? "ยังไม่มีการดำเนินการเพิ่มเติมในสถานะนี้"}</span>
                   </div>
                 )}
 
@@ -437,6 +642,12 @@ export function AdminStudentDetailPage({
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">อัปเดตล่าสุด</p>
                     <p className="mt-2 font-medium text-slate-900">{student.summary.lastUpdatedLabel}</p>
+                    {student.summary.lastUpdatedByLabel || student.summary.lastUpdatedByEmail ? (
+                      <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                        <p>ผู้แก้ไขล่าสุด: {student.summary.lastUpdatedByLabel ?? "ระบบ"}</p>
+                        {student.summary.lastUpdatedByEmail ? <p>{student.summary.lastUpdatedByEmail}</p> : null}
+                      </div>
+                    ) : null}
                   </div>
                   {/* <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ส่งข้อมูลแล้ว</p>
@@ -447,151 +658,187 @@ export function AdminStudentDetailPage({
             </div>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
-            {statusDefinitions.map((definition, index) => (
-              <div
-                key={definition.id}
-                className={`rounded-3xl border p-4 ${getStatusCardClasses(definition.id, student.status)}`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    ขั้นตอนที่ {index + 1}
-                  </span>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-xs font-semibold text-slate-700 ring-1 ring-black/5">
-                    {index + 1}
-                  </span>
-                </div>
-                <p className="mt-4 text-sm font-semibold text-current sm:text-base">{definition.label}</p>
-              </div>
-            ))}
-          </div>
+          <InternshipStatusStepper currentStatus={student.status} tone="admin" className="mt-8" />
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
-          <div className="space-y-6">
-            <SummaryCard
-              title="ข้อมูลส่วนตัว"
-              description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
-              icon={<SummaryIcon />}
-              items={student.personal}
-            />
+          <div className="lg:col-span-2">
+            <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 md:hidden">
+              <Accordion
+                type="multiple"
+                value={openSections}
+                onValueChange={setOpenSections}
+                className="px-5 sm:px-6 md:px-7"
+              >
+                <AccordionItem value="personal">
+                  <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
+                    <AdminDataAccordionTrigger title="ข้อมูลส่วนตัว" icon={<SummaryIcon />} />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <SummaryCard
+                      title="ข้อมูลส่วนตัว"
+                      description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
+                      icon={<SummaryIcon />}
+                      items={student.personal}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-            <SummaryCard
-              title="ข้อมูลการฝึกงาน"
-              description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
-              icon={<CalendarIcon />}
-              items={student.internship}
-            />
+                <AccordionItem value="education">
+                  <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
+                    <AdminDataAccordionTrigger title="ประวัติการศึกษา" icon={<AcademicIcon />} />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <SummaryCard
+                      title="ประวัติการศึกษา"
+                      description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
+                      icon={<AcademicIcon />}
+                      items={student.education}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-            <SummaryCard
-              title="ข้อมูลการศึกษา"
-              description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
-              icon={<AcademicIcon />}
-              items={student.education}
-            />
-          </div>
+                <AccordionItem value="internship">
+                  <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
+                    <AdminDataAccordionTrigger title="รายละเอียดการฝึกงาน" icon={<CalendarIcon />} />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <SummaryCard
+                      title="รายละเอียดการฝึกงาน"
+                      description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
+                      icon={<CalendarIcon />}
+                      items={student.internship}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-          <div className="space-y-6">
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">รูปโปรไฟล์นักศึกษา</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    ผู้ดูแลสามารถตรวจสอบ ดาวน์โหลด หรือไปยังหน้าจัดการรูปโปรไฟล์ได้โดยตรง
-                  </p>
-                </div>
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
-                  <CameraIcon />
-                </div>
-              </div>
+                <AccordionItem value="attachments">
+                  <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
+                    <AdminDataAccordionTrigger title="ไฟล์และเอกสารแนบ" icon={<FileIcon />} />
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <AttachmentsSection student={student} />
+                  </AccordionContent>
+                </AccordionItem>
 
-              <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-admin/15 bg-admin/10 text-(--color-admin)">
-                    {student.profileImage ? (
-                      <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
-                    ) : (
-                      <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {student.profileImage ? "ใช้สำหรับแสดงตัวตนของนักศึกษาในระบบ" : "สามารถเพิ่มหรือเปลี่ยนรูปได้จากหน้าจัดการข้อมูลนักศึกษา"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  {student.profileImage ? (
-                    <a
-                      href={student.profileImage.downloadHref}
-                      download={student.profileImage.name}
-                      className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                    >
-                      ดาวน์โหลดรูป
-                    </a>
-                  ) : null}
-                  <Link
-                    href={`/intern/admin/students/${student.id}/edit`}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
-                  >
-                    จัดการโปรไฟล์
-                  </Link>
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-slate-950">ไฟล์</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    ตรวจสอบไฟล์ที่นักศึกษาอัปโหลดได้จากพื้นที่ผู้ดูแลระบบโดยตรง
-                  </p>
-                </div>
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
-                  <FileIcon />
-                </div>
-              </div>
-
-              {student.files.length > 0 ? (
-                <div className="mt-6 space-y-3">
-                  {student.files.map((file) => (
-                    <a
-                      key={file.id}
-                      href={file.href}
-                      download={file.name}
-                      className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-slate-100"
-                    >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-(--color-admin)">
-                        <FileIcon />
+                <AccordionItem value="review-history">
+                  <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+                        <ReviewIcon />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+                        <p className="text-base font-semibold text-slate-950">ประวัติการรีวิว</p>
                       </div>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-6 rounded-[28px] border border-dashed border-admin/20 bg-[#faf6fa] px-5 py-8 text-center">
-                  <div className="mx-auto flex justify-center text-(--color-admin)">
-                    <EmptyFilesIcon />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-950">ยังไม่มีการอัปโหลดไฟล์</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    นักศึกษาคนนี้ยังไม่ได้อัปโหลดเอกสารประกอบ
-                  </p>
-                </div>
-              )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ListCard
+                      title="ประวัติการรีวิว"
+                      description="รายการเหตุผลหรือข้อคิดเห็นที่ผู้ดูแลใช้ประกอบการส่งกลับให้แก้ไข"
+                      emptyTitle="ยังไม่มีประวัติการรีวิว"
+                      emptyDescription="เมื่อผู้ดูแลส่งกลับให้แก้ไขพร้อมเหตุผล รายการจะปรากฏที่นี่"
+                      items={student.reviewHistory.map((comment) => ({
+                        id: comment.id,
+                        title: comment.adminLabel,
+                        subtitle: comment.message,
+                        meta: comment.createdAtLabel,
+                      }))}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="activity-log">
+                  <AccordionTrigger accentClassName="hover:text-admin focus-visible:ring-admin/30" chevronClassName="text-admin">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-admin/10 text-admin">
+                        <ActivityIcon />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-base font-semibold text-slate-950">บันทึกกิจกรรม</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ListCard
+                      title="บันทึกกิจกรรม"
+                      description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
+                      emptyTitle="ยังไม่มีกิจกรรม"
+                      emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"
+                      items={student.activityLog.map((entry) => ({
+                        id: entry.id,
+                        title: entry.actorLabel,
+                        subtitle: entry.message,
+                        meta: entry.createdAtLabel,
+                      }))}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </section>
 
-            {/* <section className="rounded-[30px] border border-admin/15 bg-admin/8 p-6 shadow-xl shadow-admin/10 sm:p-7">
-              <h2 className="text-xl font-semibold tracking-tight text-slate-950">บันทึกการตรวจสอบของผู้ดูแล</h2>
-            </section> */}
+            <div className="hidden md:block md:space-y-6">
+              <section className="grid gap-6 md:grid-cols-2">
+                <DesktopSectionCard>
+                  <SummaryCard
+                    title="ข้อมูลส่วนตัว"
+                    description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
+                    icon={<SummaryIcon />}
+                    items={student.personal}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <SummaryCard
+                    title="ประวัติการศึกษา"
+                    description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
+                    icon={<AcademicIcon />}
+                    items={student.education}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <SummaryCard
+                    title="รายละเอียดการฝึกงาน"
+                    description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
+                    icon={<CalendarIcon />}
+                    items={student.internship}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <AttachmentsSection student={student} />
+                </DesktopSectionCard>
+              </section>
+
+              <section className="grid gap-6 md:grid-cols-2">
+                <DesktopSectionCard>
+                  <ListCard
+                    title="ประวัติการรีวิว"
+                    description="รายการเหตุผลหรือข้อคิดเห็นที่ผู้ดูแลใช้ประกอบการส่งกลับให้แก้ไข"
+                    emptyTitle="ยังไม่มีประวัติการรีวิว"
+                    emptyDescription="เมื่อผู้ดูแลส่งกลับให้แก้ไขพร้อมเหตุผล รายการจะปรากฏที่นี่"
+                    items={student.reviewHistory.map((comment) => ({
+                      id: comment.id,
+                      title: comment.adminLabel,
+                      subtitle: comment.message,
+                      meta: comment.createdAtLabel,
+                    }))}
+                  />
+                </DesktopSectionCard>
+                <DesktopSectionCard>
+                  <ListCard
+                    title="บันทึกกิจกรรม"
+                    description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
+                    emptyTitle="ยังไม่มีกิจกรรม"
+                    emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"
+                    items={student.activityLog.map((entry) => ({
+                      id: entry.id,
+                      title: entry.actorLabel,
+                      subtitle: entry.message,
+                      meta: entry.createdAtLabel,
+                    }))}
+                  />
+                </DesktopSectionCard>
+              </section>
+            </div>
           </div>
         </section>
       </main>
@@ -604,19 +851,43 @@ export function AdminStudentDetailPage({
           <form
             action={formAction}
             className="space-y-4"
-            onSubmit={() => setConfirmStatus(null)}
+            onSubmit={closeStatusModal}
           >
             <input type="hidden" name="studentId" value={student.id} />
             <input type="hidden" name="nextStatus" value={confirmStatus} />
+            {confirmStatus === "needs_fix" ? (
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="reviewMessage" className="mb-2 block text-sm font-medium text-slate-800">
+                    เหตุผลในการส่งกลับให้แก้ไข
+                  </label>
+                  <textarea
+                    id="reviewMessage"
+                    name="reviewMessage"
+                    value={reviewMessage}
+                    onChange={(event) => setReviewMessage(event.target.value)}
+                    rows={4}
+                    placeholder="ระบุสิ่งที่นักศึกษาต้องแก้ไขหรือข้อมูลที่ยังขาด"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-admin/40 focus:ring-4 focus:ring-admin/10"
+                  />
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    จำเป็นต้องระบุข้อความเมื่อส่งกลับให้แก้ไข และข้อความล่าสุดจะแสดงให้นักศึกษาเห็นในหน้าภาพรวมและแบบฟอร์ม
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  ข้อความที่จะส่งให้นักศึกษา: {reviewMessage.trim() || "กรุณาระบุเหตุผลก่อนยืนยันการส่งกลับ"}
+                </div>
+              </div>
+            ) : null}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={() => setConfirmStatus(null)}
+                onClick={closeStatusModal}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 ยกเลิก
               </button>
-              <StatusSubmitButton label="ยืนยัน" tone="primary" />
+              <StatusSubmitButton label="ยืนยัน" tone="primary" disabled={confirmStatus === "needs_fix" && !reviewMessage.trim()} />
             </div>
           </form>
         </ModalFrame>

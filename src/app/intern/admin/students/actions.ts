@@ -15,24 +15,64 @@ import { generatePassword, hashPassword } from "@/lib/auth/password";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
+const EMPTY_STUDENT_NAME = "ยังไม่ได้กรอกชื่อ";
+
 function normalizeEmail(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().toLowerCase();
 }
 
-function toStudentListItem(student: {
-  id: string;
-  internshipStatus: StudentListItem["status"];
-  major: string | null;
+function getStudentDisplayName(student: {
+  firstName?: string | null;
+  lastName?: string | null;
   user: {
     email: string;
     name: string | null;
   };
 }) {
+  const profileName = [student.firstName, student.lastName].filter(Boolean).join(" ").trim();
+  const accountName = student.user.name?.trim() ?? "";
+
+  if (profileName) {
+    return {
+      hasDisplayName: true,
+      name: profileName,
+    };
+  }
+
+  if (accountName && accountName.toLowerCase() !== student.user.email.toLowerCase()) {
+    return {
+      hasDisplayName: true,
+      name: accountName,
+    };
+  }
+
+  return {
+    hasDisplayName: false,
+    name: EMPTY_STUDENT_NAME,
+  };
+}
+
+function toStudentListItem(student: {
+  id: string;
+  internshipStatus: StudentListItem["status"];
+  firstName?: string | null;
+  lastName?: string | null;
+  major: string | null;
+  submittedAt?: Date | null;
+  user: {
+    email: string;
+    name: string | null;
+  };
+}) {
+  const displayName = getStudentDisplayName(student);
+
   return {
     id: student.id,
     email: student.user.email,
+    hasDisplayName: displayName.hasDisplayName,
+    hasSubmittedForm: Boolean(student.submittedAt),
     major: student.major,
-    name: student.user.name?.trim() || student.user.email,
+    name: displayName.name,
     status: student.internshipStatus,
   };
 }
@@ -123,7 +163,10 @@ export async function saveStudentAction(
       select: {
         id: true,
         internshipStatus: true,
+        firstName: true,
+        lastName: true,
         major: true,
+        submittedAt: true,
         user: {
           select: {
             email: true,
@@ -224,7 +267,10 @@ export async function resetStudentPasswordAction(
     select: {
       id: true,
       internshipStatus: true,
+      firstName: true,
+      lastName: true,
       major: true,
+      submittedAt: true,
       userId: true,
       user: {
         select: {

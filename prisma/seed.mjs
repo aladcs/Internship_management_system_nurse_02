@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
@@ -37,6 +38,78 @@ async function upsertUser({ email, name, role, createdById }) {
   });
 }
 
+async function backfillAdminNotificationReceipts() {
+  const [admins, notificationEvents] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        role: "admin",
+      },
+      select: {
+        id: true,
+      },
+    }),
+    prisma.notificationEvent.findMany({
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
+
+  if (admins.length === 0 || notificationEvents.length === 0) {
+    return 0;
+  }
+
+  const existingReceipts = await prisma.adminNotificationReceipt.findMany({
+    where: {
+      adminUserId: {
+        in: admins.map((admin) => admin.id),
+      },
+      notificationEventId: {
+        in: notificationEvents.map((notificationEvent) => notificationEvent.id),
+      },
+    },
+    select: {
+      adminUserId: true,
+      notificationEventId: true,
+    },
+  });
+
+  const existingReceiptKeys = new Set(
+    existingReceipts.map((receipt) => `${receipt.adminUserId}:${receipt.notificationEventId}`),
+  );
+
+  const receiptsToCreate = notificationEvents.flatMap((notificationEvent) => (
+    admins.flatMap((admin) => {
+      const key = `${admin.id}:${notificationEvent.id}`;
+
+      if (existingReceiptKeys.has(key)) {
+        return [];
+      }
+
+      return [{
+        id: randomUUID(),
+        adminUserId: admin.id,
+        notificationEventId: notificationEvent.id,
+        createdAt: notificationEvent.createdAt,
+        updatedAt: notificationEvent.updatedAt,
+      }];
+    })
+  ));
+
+  if (receiptsToCreate.length === 0) {
+    return 0;
+  }
+
+  await prisma.adminNotificationReceipt.createMany({
+    data: receiptsToCreate,
+    skipDuplicates: true,
+  });
+
+  return receiptsToCreate.length;
+}
+
 async function main() {
   const superAdmin = await upsertUser({
     email: "nupong.pr@cmu.ac.th",
@@ -69,10 +142,13 @@ async function main() {
     },
   });
 
+  const createdReceiptCount = await backfillAdminNotificationReceipts();
+
   console.log("Seeded login users:");
   console.log(`- super_admin: nupong.pr@cmu.ac.th / ${defaultPassword}`);
   console.log(`- admin: admin.demo@cmu.ac.th / ${defaultPassword}`);
   console.log(`- student: student.demo@cmu.ac.th / ${defaultPassword}`);
+  console.log(`- backfilled notification receipts for admins: ${createdReceiptCount}`);
 }
 
 main()

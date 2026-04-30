@@ -1,15 +1,20 @@
+import type { NotificationType, Prisma } from "@prisma/client";
+import { formatThaiDateTime } from "@/lib/date-format";
+import { sendTelegramAdminAlert } from "@/lib/admin/telegram";
 import { prisma } from "@/lib/prisma";
 
 export type AdminNotificationItem = {
   id: string;
   title: string;
   message: string;
+  createdAtIso: string;
   createdAtLabel: string;
   isRead: boolean;
   targetPath: string;
   type: string;
   entityId: string | null;
   entityType: string | null;
+  studentName: string | null;
 };
 
 export type AdminNotificationSummary = {
@@ -18,6 +23,83 @@ export type AdminNotificationSummary = {
 };
 
 export type AdminNotificationsFilter = "all" | "unread";
+export type AdminNotificationTypeFilter = "all" | "submission" | "resubmission" | "form_update" | "file_update";
+
+export type AdminNotificationsPageData = {
+  notifications: AdminNotificationItem[];
+  unreadNotificationCount: number;
+  allCount: number;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  filter: AdminNotificationsFilter;
+  query: string;
+  type: AdminNotificationTypeFilter;
+  date: string;
+};
+
+export async function createAdminNotificationEvent(input: {
+  studentId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  targetPath: string;
+}) {
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "admin",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (admins.length === 0) {
+    return;
+  }
+
+  await prisma.notificationEvent.create({
+    data: {
+      studentId: input.studentId,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      targetPath: input.targetPath,
+      entityId: input.studentId,
+      entityType: "student",
+      receipts: {
+        createMany: {
+          data: admins.map((admin) => ({
+            adminUserId: admin.id,
+          })),
+        },
+      },
+    },
+  });
+
+  await sendTelegramAdminAlert({
+    title: input.title,
+    message: input.message,
+    targetPath: input.targetPath,
+  });
+}
+
+function getStudentDisplayName(student: {
+  firstName: string | null;
+  lastName: string | null;
+  user: {
+    name: string | null;
+    email: string;
+  };
+} | null) {
+  if (!student) {
+    return null;
+  }
+
+  const profileName = [student.firstName, student.lastName].filter(Boolean).join(" ").trim();
+
+  return student.user.name?.trim() || profileName || student.user.email;
+}
 
 function getRelativeTimeLabel(value: Date, now = new Date()) {
   const diffMs = now.getTime() - value.getTime();
@@ -48,11 +130,7 @@ function getRelativeTimeLabel(value: Date, now = new Date()) {
     return `${diffDays} วันที่แล้ว`;
   }
 
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
+  return formatThaiDateTime(value);
 }
 
 export function resolveNotificationTargetPath(notification: {
@@ -81,6 +159,14 @@ function toAdminNotificationItem(
     entityId: string | null;
     entityType: string | null;
     createdAt: Date;
+    student: {
+      firstName: string | null;
+      lastName: string | null;
+      user: {
+        name: string | null;
+        email: string;
+      };
+    } | null;
     receipts: Array<{
       isRead: boolean;
     }>;
@@ -92,20 +178,64 @@ function toAdminNotificationItem(
     type: notification.type,
     title: notification.title,
     message: notification.message,
+    createdAtIso: notification.createdAt.toISOString(),
     createdAtLabel: getRelativeTimeLabel(notification.createdAt, now),
     isRead: notification.receipts[0]?.isRead ?? true,
     targetPath: resolveNotificationTargetPath(notification),
     entityId: notification.entityId,
     entityType: notification.entityType,
+    studentName: getStudentDisplayName(notification.student),
   };
 }
 
-async function getAdminNotifications(adminUserId: string, options?: { take?: number; filter?: AdminNotificationsFilter }) {
-  const filter = options?.filter ?? "all";
-  const now = new Date();
+function getNotificationTypeCondition(type: AdminNotificationTypeFilter): Prisma.NotificationEventWhereInput {
+  if (type === "submission") {
+    return {
+      type: {
+        in: ["form_submitted"],
+      },
+    };
+  }
 
-  const notifications = await prisma.notificationEvent.findMany({
-    where: {
+  if (type === "resubmission") {
+    return {
+      type: {
+        in: ["form_resubmitted"],
+      },
+    };
+  }
+
+  if (type === "form_update") {
+    return {
+      type: {
+        in: ["form_updated", "form_updated_in_progress"],
+      },
+    };
+  }
+
+  if (type === "file_update") {
+    return {
+      type: {
+        in: ["file_changed_in_progress"],
+      },
+    };
+  }
+
+  return {};
+}
+
+function buildAdminNotificationWhere(adminUserId: string, options?: {
+  filter?: AdminNotificationsFilter;
+  query?: string | null;
+  type?: AdminNotificationTypeFilter;
+  date?: string | null;
+}): Prisma.NotificationEventWhereInput {
+  const filter = options?.filter ?? "all";
+  const query = options?.query?.trim() ?? "";
+  const type = options?.type ?? "all";
+  const date = options?.date?.trim() ?? "";
+  const andConditions: Prisma.NotificationEventWhereInput[] = [
+    {
       receipts: {
         some: {
           adminUserId,
@@ -113,9 +243,104 @@ async function getAdminNotifications(adminUserId: string, options?: { take?: num
         },
       },
     },
+  ];
+
+  const typeCondition = getNotificationTypeCondition(type);
+
+  if (Object.keys(typeCondition).length > 0) {
+    andConditions.push(typeCondition);
+  }
+
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T00:00:00.000Z`);
+    end.setUTCDate(end.getUTCDate() + 1);
+    andConditions.push({
+      createdAt: {
+        gte: start,
+        lt: end,
+      },
+    });
+  }
+
+  if (query) {
+    andConditions.push({
+      OR: [
+        {
+          title: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          message: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          student: {
+            is: {
+              OR: [
+                {
+                  firstName: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  lastName: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  user: {
+                    is: {
+                      email: {
+                        contains: query,
+                        mode: "insensitive",
+                      },
+                    },
+                  },
+                },
+                {
+                  user: {
+                    is: {
+                      name: {
+                        contains: query,
+                        mode: "insensitive",
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  return andConditions.length > 0 ? { AND: andConditions } : {};
+}
+
+async function getAdminNotifications(adminUserId: string, options?: {
+  take?: number;
+  skip?: number;
+  filter?: AdminNotificationsFilter;
+  query?: string | null;
+  type?: AdminNotificationTypeFilter;
+  date?: string | null;
+}) {
+  const now = new Date();
+
+  const notifications = await prisma.notificationEvent.findMany({
+    where: buildAdminNotificationWhere(adminUserId, options),
     orderBy: {
       createdAt: "desc",
     },
+    skip: options?.skip,
     take: options?.take,
     select: {
       id: true,
@@ -126,6 +351,18 @@ async function getAdminNotifications(adminUserId: string, options?: { take?: num
       entityId: true,
       entityType: true,
       createdAt: true,
+      student: {
+        select: {
+          firstName: true,
+          lastName: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
       receipts: {
         where: {
           adminUserId,
@@ -158,21 +395,66 @@ export async function getAdminNotificationSummary(adminUserId: string): Promise<
   };
 }
 
-export async function getAdminNotificationsPageData(adminUserId: string) {
-  const [allNotifications, unreadNotificationCount, unreadNotifications] = await Promise.all([
-    getAdminNotifications(adminUserId),
-    prisma.adminNotificationReceipt.count({
-      where: {
-        adminUserId,
-        isRead: false,
-      },
+export async function getAdminNotificationsPageData(input: {
+  adminUserId: string;
+  currentPage: number;
+  pageSize: number;
+  filter: AdminNotificationsFilter;
+  query?: string | null;
+  type?: AdminNotificationTypeFilter;
+  date?: string | null;
+}): Promise<AdminNotificationsPageData> {
+  const normalizedQuery = input.query?.trim() ?? "";
+  const normalizedDate = input.date?.trim() ?? "";
+  const currentType = input.type ?? "all";
+  const [unreadNotificationCount, allCount, totalCount] = await Promise.all([
+    prisma.notificationEvent.count({
+      where: buildAdminNotificationWhere(input.adminUserId, {
+        filter: "unread",
+        query: normalizedQuery,
+        type: currentType,
+        date: normalizedDate,
+      }),
     }),
-    getAdminNotifications(adminUserId, { filter: "unread" }),
+    prisma.notificationEvent.count({
+      where: buildAdminNotificationWhere(input.adminUserId, {
+        filter: "all",
+        query: normalizedQuery,
+        type: currentType,
+        date: normalizedDate,
+      }),
+    }),
+    prisma.notificationEvent.count({
+      where: buildAdminNotificationWhere(input.adminUserId, {
+        filter: input.filter,
+        query: normalizedQuery,
+        type: currentType,
+        date: normalizedDate,
+      }),
+    }),
   ]);
 
+  const totalPages = Math.max(1, Math.ceil(totalCount / input.pageSize));
+  const effectivePage = Math.min(input.currentPage, totalPages);
+  const notifications = await getAdminNotifications(input.adminUserId, {
+    filter: input.filter,
+    query: normalizedQuery,
+    type: currentType,
+    date: normalizedDate,
+    skip: (effectivePage - 1) * input.pageSize,
+    take: input.pageSize,
+  });
+
   return {
+    notifications,
     unreadNotificationCount,
-    allNotifications,
-    unreadNotifications,
+    allCount,
+    totalCount,
+    currentPage: effectivePage,
+    totalPages,
+    filter: input.filter,
+    query: normalizedQuery,
+    type: currentType,
+    date: normalizedDate,
   };
 }

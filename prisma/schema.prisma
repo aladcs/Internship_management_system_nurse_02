@@ -16,6 +16,8 @@ model User {
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
   adminNotificationReceipts AdminNotificationReceipt[]
+  adminReviewComments       ReviewComment[]            @relation("ReviewCommentAdmin")
+  activityLogs              ActivityLog[]              @relation("ActivityLogActor")
   studentProfile            Student?
   createdBy                 User?                      @relation("UserCreatedUsers", fields: [createdById], references: [id], onDelete: SetNull)
   createdUsers              User[]                     @relation("UserCreatedUsers")
@@ -29,7 +31,7 @@ model User {
 model Student {
   id                 String              @id @default(uuid()) @db.Uuid
   userId             String              @unique @db.Uuid
-  internshipStatus   InternshipStatus    @default(pending)
+  internshipStatus   InternshipStatus    @default(draft)
   tosAcceptedAt      DateTime?
   profileImagePath   String?             @db.VarChar(1024)
   profileImageName   String?             @db.VarChar(255)
@@ -52,8 +54,10 @@ model Student {
   lastStudentEditAt  DateTime?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  activityLogs       ActivityLog[]
   internshipRecord   Internship?
   notificationEvents NotificationEvent[]
+  reviewComments     ReviewComment[]
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   files              UploadedFile[]
 
@@ -119,6 +123,36 @@ model NotificationEvent {
   @@index([updatedAt])
 }
 
+model ReviewComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @db.Uuid
+  adminId   String?  @db.Uuid
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  admin     User?    @relation("ReviewCommentAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, createdAt])
+  @@index([adminId])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @db.Uuid
+  studentId String   @db.Uuid
+  action    String   @db.VarChar(100)
+  message   String   @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+  actor     User?    @relation("ActivityLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, createdAt])
+  @@index([actorId])
+  @@index([action])
+}
+
 model AdminNotificationReceipt {
   id                  String            @id @default(uuid()) @db.Uuid
   notificationEventId String            @db.Uuid
@@ -144,7 +178,9 @@ enum UserRole {
 }
 
 enum InternshipStatus {
+  draft
   pending
+  needs_fix
   in_progress
   completed
 }
@@ -166,7 +202,9 @@ enum EducationLevel {
 
 enum NotificationType {
   form_submitted
+  form_resubmitted
   form_updated
   form_updated_in_progress
+  file_changed_in_progress
   status_changed
 }

@@ -191,17 +191,20 @@
 ### Logic
 
 * [x] save/update data
+* [x] save draft without submitting
 * [x] submit → status = pending
 * [x] editable when:
 
+  * draft
   * pending
+  * needs_fix
   * in_progress
 * [x] read-only when:
 
   * completed
 
-* [ ] block admin status change before first student submit
-* [ ] preserve in_progress on student edit and notify admin
+* [x] block admin status change before first student submit
+* [x] preserve in_progress on student edit and notify admin
 
 ---
 
@@ -245,7 +248,22 @@
 * [x] change status:
 
   * pending → in_progress
+  * pending → needs_fix
+  * needs_fix → in_progress
+  * in_progress → needs_fix
   * in_progress → completed
+
+### PHASE 4 Checklist
+
+* [x] Add needs_fix/revision status
+* [x] Admin approve form
+* [x] Admin send back form with reason
+* [x] Student sees revision reason
+* [x] Student resubmits after revision
+* [x] Activity log for submit/edit/status/file events
+* [x] Admin review history on student detail
+* [x] Notifications for submit/resubmit/edit-after-approved/file-change
+* [x] RBAC enforced server-side for review actions
 
 ---
 
@@ -374,3 +392,4 @@ Each feature is complete when:
 * RBAC enforced
 * Works end-to-end
 * No mock data
+

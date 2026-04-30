@@ -21,7 +21,9 @@ export type StudentFormValues = {
   additionalDetails: string;
 };
 
-export type StudentFormFieldErrors = Partial<Record<keyof StudentFormValues | "files", string>>;
+export type StudentFormFieldErrors = Partial<
+  Record<keyof StudentFormValues | "attachments" | "portfolioAttachments" | "profileImage", string>
+>;
 
 export type StudentFormActionState = {
   status: "idle" | "validation-error" | "error";

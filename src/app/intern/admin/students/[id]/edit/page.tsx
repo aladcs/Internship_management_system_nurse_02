@@ -8,6 +8,7 @@ import { saveStudentFormAction } from "@/app/intern/form/actions";
 import { logoutAction } from "@/app/intern/admin/students/actions";
 import { StudentFormPage, type StudentFormPageProps } from "@/components/student/student-form-page";
 import { readSession } from "@/lib/auth/session";
+import { formatThaiDateTime } from "@/lib/date-format";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 import {
@@ -27,14 +28,6 @@ function formatDateInput(value: Date | null | undefined) {
   }
 
   return value.toISOString().slice(0, 10);
-}
-
-function formatFileDate(value: Date) {
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
 }
 
 function formatFileSize(sizeBytes: number | null) {
@@ -139,6 +132,10 @@ export default async function InternAdminStudentEditPage({
     notFound();
   }
 
+  if (!student.submittedAt) {
+    notFound();
+  }
+
   const initialValues: StudentFormValues = {
     prefix: student.prefix ?? "",
     firstName: student.firstName ?? "",
@@ -173,9 +170,10 @@ export default async function InternAdminStudentEditPage({
       status: student.internshipStatus,
       isReadOnly: false,
       hasSubmitted: Boolean(student.submittedAt),
+      latestReviewComment: null,
     },
     existingFiles: student.files.map((file) => {
-      const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatFileDate(file.createdAt)].filter(Boolean);
+      const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatThaiDateTime(file.createdAt)].filter(Boolean);
 
       return {
         id: file.id,

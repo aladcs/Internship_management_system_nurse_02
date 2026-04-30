@@ -140,8 +140,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <Image
                 src="/nurse_logo.svg"
                 alt="ระบบจัดการฝึกงาน"
-                width={32}
+                width={29}
                 height={32}
+                style={{ width: "auto" }}
                 priority
               />
             </div>
@@ -186,8 +187,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 <Image
                   src="/nurse_logo.svg"
                   alt="โลโก้คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
-                  width={60}
+                  width={55}
                   height={60}
+                  style={{ width: "auto" }}
                   priority
                 />
               </div>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { InternshipStatus } from "@prisma/client";
 import { startTransition, useActionState, useMemo, useRef, useState } from "react";
 import { type StudentFormActionState } from "@/app/intern/form/action-state";
 import {
@@ -9,12 +10,18 @@ import {
   saveStudentFormAction as defaultSaveStudentFormAction,
 } from "@/app/intern/form/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
+import { AppDatePicker } from "@/components/ui/app-date-picker";
+import { AppSelect } from "@/components/ui/app-select";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { appShellClass } from "@/lib/page-shell";
 
-const MAX_FILE_COUNT = 5;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const MAX_ATTACHMENT_FILE_COUNT = 5;
+const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PORTFOLIO_FILE_COUNT = 5;
+const MAX_PORTFOLIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const ATTACHMENT_FILE_TYPES = new Set(["application/pdf", "image/jpeg", "image/png"]);
+const PORTFOLIO_FILE_TYPES = new Set(["application/pdf"]);
+const CURRENT_YEAR = new Date().getUTCFullYear();
 
 type ExistingFileItem = {
   id: string;
@@ -61,9 +68,15 @@ export type StudentFormPageProps = {
   student: {
     displayName: string;
     email: string;
-    status: "pending" | "in_progress" | "completed";
+    status: InternshipStatus;
     isReadOnly: boolean;
     hasSubmitted: boolean;
+    latestReviewComment: {
+      id: string;
+      message: string;
+      createdAtLabel: string;
+      adminLabel: string;
+    } | null;
   };
   existingFiles: ExistingFileItem[];
   profileImage: ProfileImageItem | null;
@@ -203,8 +216,16 @@ function CameraIcon() {
 }
 
 function getStatusClasses(status: StudentFormPageProps["student"]["status"]) {
+  if (status === "draft") {
+    return "bg-slate-100 text-slate-700 ring-slate-200";
+  }
+
   if (status === "pending") {
     return "bg-amber-100 text-amber-800 ring-amber-200";
+  }
+
+  if (status === "needs_fix") {
+    return "bg-rose-100 text-rose-800 ring-rose-200";
   }
 
   if (status === "in_progress") {
@@ -258,6 +279,14 @@ function FieldError({ message }: { message?: string }) {
   }
 
   return <p className="mt-2 text-sm font-medium text-red-600">{message}</p>;
+}
+
+function formatUploadFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024 * 1024) {
+    return `${(sizeBytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function FieldShell({
@@ -325,7 +354,7 @@ function SelectInput({
   options,
   placeholder,
   error,
-  inputFocusClass,
+  tone,
 }: {
   id: string;
   name: string;
@@ -334,23 +363,21 @@ function SelectInput({
   options: ReadonlyArray<{ value: string; label: string }>;
   placeholder: string;
   error?: string;
-  inputFocusClass: string;
+  tone: "admin" | "student";
 }) {
   return (
-    <select
+    <AppSelect
       id={id}
       name={name}
       value={value}
       onChange={onChange}
-      className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm text-slate-950 outline-none transition focus:bg-white focus:ring-4 ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : inputFocusClass}`}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+      options={options}
+      placeholder={placeholder}
+      error={error}
+      tone={tone}
+      size="lg"
+      surface="muted"
+    />
   );
 }
 
@@ -417,18 +444,24 @@ function SectionCard({
   );
 }
 
-function PrimaryActionButton({
+function SubmitActionButton({
   label,
   className,
   pending,
+  name = "intent",
+  value = "save_changes",
 }: {
   label: string;
   className: string;
   pending: boolean;
+  name?: string;
+  value?: string;
 }) {
   return (
     <button
       type="submit"
+      name={name}
+      value={value}
       className={`inline-flex h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70 ${className}`}
       disabled={pending}
     >
@@ -466,23 +499,32 @@ export function StudentFormPage({
   const [state, formAction, isPending] = useActionState(saveAction, initialState);
   const [formValues, setFormValues] = useState(initialState.values);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
+  const [attachmentDragActive, setAttachmentDragActive] = useState(false);
+  const [portfolioDragActive, setPortfolioDragActive] = useState(false);
   const [removedFileIds, setRemovedFileIds] = useState<string[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedAttachmentFiles, setSelectedAttachmentFiles] = useState<File[]>([]);
+  const [selectedPortfolioFiles, setSelectedPortfolioFiles] = useState<File[]>([]);
   const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
   const [removeProfileImage, setRemoveProfileImage] = useState(false);
-  const [localFileError, setLocalFileError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [localAttachmentError, setLocalAttachmentError] = useState<string | null>(null);
+  const [localPortfolioError, setLocalPortfolioError] = useState<string | null>(null);
+  const [localProfileImageError, setLocalProfileImageError] = useState<string | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const portfolioInputRef = useRef<HTMLInputElement | null>(null);
   const profileImageInputRef = useRef<HTMLInputElement | null>(null);
   const isAdminMode = mode === "admin";
+  const hasAdminDisplayName = Boolean(currentUser.name?.trim());
   const resolvedBackHref = backHref ?? (isAdminMode ? "/intern/admin/students" : "/intern/overview");
   const resolvedBackLabel = backLabel ?? (isAdminMode ? "กลับไปหน้ารายชื่อนักศึกษา" : "กลับไปหน้าภาพรวม");
   const resolvedCancelHref = cancelHref ?? (isAdminMode ? resolvedBackHref : "/intern/overview");
   const pageTitle = isAdminMode ? "แก้ไขข้อมูลนักศึกษา" : "แบบฟอร์มฝึกงาน";
   const pageDescription = isAdminMode
     ? "อัปเดตข้อมูลส่วนตัว การศึกษา รายละเอียดการฝึกงาน และไฟล์แนบของนักศึกษาได้จากหน้าฟอร์มเดียวกัน"
-    : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
-  const primaryButtonLabel = isAdminMode || student.hasSubmitted ? "บันทึกการเปลี่ยนแปลง" : "ส่งแบบฟอร์ม";
+    : student.status === "needs_fix"
+      ? "แก้ไขข้อมูลตามข้อคิดเห็นของผู้ดูแล แล้วส่งกลับมาเพื่อให้ตรวจสอบอีกครั้ง"
+      : student.status === "draft"
+        ? "กรอกข้อมูลการฝึกงานและแนบไฟล์ประกอบให้ครบถ้วนก่อนส่งให้ผู้ดูแลตรวจสอบ"
+        : "กรอกข้อมูลการฝึกงาน แนบไฟล์ประกอบ และส่งการอัปเดตให้ผู้ดูแลตรวจสอบ";
   const theme = getFormTheme(isAdminMode);
   const selectedProfileImagePreview = useMemo(
     () => (selectedProfileImage ? URL.createObjectURL(selectedProfileImage) : null),
@@ -500,6 +542,38 @@ export function StudentFormPage({
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
   );
+  const formNotice =
+    !isAdminMode && student.status === "needs_fix"
+      ? {
+          tone: "border-rose-200 bg-rose-50 text-rose-800",
+          title: "ผู้ดูแลส่งแบบฟอร์มกลับให้แก้ไข",
+          description: student.latestReviewComment?.message || "กรุณาแก้ไขข้อมูลตามข้อคิดเห็นล่าสุด แล้วส่งใหม่อีกครั้ง",
+          meta: student.latestReviewComment
+            ? `${student.latestReviewComment.adminLabel} • ${student.latestReviewComment.createdAtLabel}`
+            : null,
+        }
+      : !isAdminMode && student.status === "pending"
+        ? {
+            tone: "border-amber-200 bg-amber-50 text-amber-800",
+            title: "แบบฟอร์มกำลังรอการตรวจสอบ",
+            description: "คุณยังแก้ไขข้อมูลได้ หากต้องการอัปเดตข้อมูลเพิ่มเติมก่อนผู้ดูแลอนุมัติ",
+            meta: null,
+          }
+        : !isAdminMode && student.status === "in_progress"
+          ? {
+              tone: "border-sky-200 bg-sky-50 text-sky-800",
+              title: "แบบฟอร์มได้รับการอนุมัติแล้ว",
+              description: "ทุกการแก้ไขข้อมูลหรือไฟล์ในสถานะนี้จะสร้างการแจ้งเตือนไปยังผู้ดูแลระบบ",
+              meta: null,
+            }
+          : !isAdminMode && student.status === "draft"
+            ? {
+                tone: "border-slate-200 bg-slate-50 text-slate-700",
+                title: "ยังไม่ได้ส่งแบบฟอร์ม",
+                description: "กรอกข้อมูลให้ครบถ้วนแล้วส่งแบบฟอร์มเพื่อให้ผู้ดูแลเริ่มตรวจสอบ",
+                meta: null,
+              }
+            : null;
 
   function updateFormValue<Key extends keyof typeof formValues>(key: Key, value: (typeof formValues)[Key]) {
     setFormValues((currentValues) => ({
@@ -511,7 +585,9 @@ export function StudentFormPage({
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
+    const submitEvent = event.nativeEvent as SubmitEvent;
+    const submitter = submitEvent.submitter instanceof HTMLElement ? submitEvent.submitter : undefined;
+    const formData = submitter ? new FormData(event.currentTarget, submitter) : new FormData(event.currentTarget);
 
     startTransition(() => {
       formAction(formData);
@@ -526,24 +602,24 @@ export function StudentFormPage({
     }
 
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setLocalFileError("รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น");
+      setLocalProfileImageError("รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น");
       event.target.value = "";
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setLocalFileError("รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+    if (file.size > MAX_ATTACHMENT_FILE_SIZE_BYTES) {
+      setLocalProfileImageError("รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB");
       event.target.value = "";
       return;
     }
 
-    setLocalFileError(null);
+    setLocalProfileImageError(null);
     setRemoveProfileImage(false);
     setSelectedProfileImage(file);
   }
 
   function handleRemoveProfileImage() {
-    setLocalFileError(null);
+    setLocalProfileImageError(null);
     setSelectedProfileImage(null);
     setRemoveProfileImage(Boolean(profileImage));
 
@@ -560,80 +636,151 @@ export function StudentFormPage({
     window.open(visibleProfileImage.src, "_blank", "noopener,noreferrer");
   }
 
-  function syncInputFiles(files: File[]) {
+  function syncInputFiles(input: HTMLInputElement | null, files: File[]) {
     const dataTransfer = new DataTransfer();
 
     files.forEach((file) => dataTransfer.items.add(file));
 
-    if (inputRef.current) {
-      inputRef.current.files = dataTransfer.files;
+    if (input) {
+      input.files = dataTransfer.files;
     }
   }
 
-  function validateIncomingFiles(incomingFiles: File[], queuedFiles: File[]) {
-    if (visibleExistingFiles.length + queuedFiles.length + incomingFiles.length > MAX_FILE_COUNT) {
-      return `คุณสามารถเก็บไฟล์ได้รวมสูงสุด ${MAX_FILE_COUNT} ไฟล์`;
-    }
+  function mergeFiles(params: {
+    incomingFiles: File[];
+    currentFiles: File[];
+    maxCount: number;
+    maxSizeBytes: number;
+    allowedTypes: Set<string>;
+    invalidTypeMessage: string;
+    invalidSizeMessage: string;
+    maxCountMessage: string;
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+    setError: React.Dispatch<React.SetStateAction<string | null>>;
+    clearOtherError?: React.Dispatch<React.SetStateAction<string | null>>;
+    input: HTMLInputElement | null;
+  }) {
+    const mergedFiles = [...params.currentFiles];
 
-    for (const file of incomingFiles) {
-      if (!ALLOWED_FILE_TYPES.has(file.type)) {
-        return "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น";
-      }
-
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        return "แต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
-      }
-    }
-
-    return null;
-  }
-
-  function mergeFiles(incomingFiles: File[]) {
-    const mergedFiles = [...selectedFiles];
-
-    incomingFiles.forEach((file) => {
+    params.incomingFiles.forEach((file) => {
       if (!mergedFiles.some((currentFile) => currentFile.name === file.name && currentFile.size === file.size)) {
         mergedFiles.push(file);
       }
     });
 
-    const validationError = validateIncomingFiles(
-      mergedFiles.filter((file) => !selectedFiles.some((currentFile) => currentFile.name === file.name && currentFile.size === file.size)),
-      selectedFiles,
-    );
-
-    if (validationError) {
-      setLocalFileError(validationError);
-      syncInputFiles(selectedFiles);
+    if (mergedFiles.length > params.maxCount) {
+      params.setError(params.maxCountMessage);
+      syncInputFiles(params.input, params.currentFiles);
       return;
     }
 
-    setLocalFileError(null);
-    setSelectedFiles(mergedFiles);
-    syncInputFiles(mergedFiles);
+    for (const file of mergedFiles) {
+      if (!params.allowedTypes.has(file.type)) {
+        params.setError(params.invalidTypeMessage);
+        syncInputFiles(params.input, params.currentFiles);
+        return;
+      }
+
+      if (file.size > params.maxSizeBytes) {
+        params.setError(params.invalidSizeMessage);
+        syncInputFiles(params.input, params.currentFiles);
+        return;
+      }
+    }
+
+    params.setError(null);
+    params.clearOtherError?.(null);
+    params.setFiles(mergedFiles);
+    syncInputFiles(params.input, mergedFiles);
   }
 
-  function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    mergeFiles(files);
+  function handleAttachmentInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    mergeFiles({
+      incomingFiles: Array.from(event.target.files ?? []),
+      currentFiles: selectedAttachmentFiles,
+      maxCount: MAX_ATTACHMENT_FILE_COUNT,
+      maxSizeBytes: MAX_ATTACHMENT_FILE_SIZE_BYTES,
+      allowedTypes: ATTACHMENT_FILE_TYPES,
+      invalidTypeMessage: "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น",
+      invalidSizeMessage: "เอกสารประกอบการฝึกงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB",
+      maxCountMessage: `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedAttachmentFiles,
+      setError: setLocalAttachmentError,
+      input: attachmentInputRef.current,
+    });
   }
 
-  function handleDrop(event: React.DragEvent<HTMLButtonElement>) {
+  function handlePortfolioInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    mergeFiles({
+      incomingFiles: Array.from(event.target.files ?? []),
+      currentFiles: selectedPortfolioFiles,
+      maxCount: MAX_PORTFOLIO_FILE_COUNT,
+      maxSizeBytes: MAX_PORTFOLIO_FILE_SIZE_BYTES,
+      allowedTypes: PORTFOLIO_FILE_TYPES,
+      invalidTypeMessage: "แฟ้มสะสมผลงานอนุญาตเฉพาะไฟล์ PDF เท่านั้น",
+      invalidSizeMessage: "แฟ้มสะสมผลงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 10 MB",
+      maxCountMessage: `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedPortfolioFiles,
+      setError: setLocalPortfolioError,
+      input: portfolioInputRef.current,
+    });
+  }
+
+  function handleAttachmentDrop(event: React.DragEvent<HTMLButtonElement>) {
     event.preventDefault();
-    setDragActive(false);
-    mergeFiles(Array.from(event.dataTransfer.files ?? []));
+    setAttachmentDragActive(false);
+    mergeFiles({
+      incomingFiles: Array.from(event.dataTransfer.files ?? []),
+      currentFiles: selectedAttachmentFiles,
+      maxCount: MAX_ATTACHMENT_FILE_COUNT,
+      maxSizeBytes: MAX_ATTACHMENT_FILE_SIZE_BYTES,
+      allowedTypes: ATTACHMENT_FILE_TYPES,
+      invalidTypeMessage: "อนุญาตเฉพาะไฟล์ PDF, JPG และ PNG เท่านั้น",
+      invalidSizeMessage: "เอกสารประกอบการฝึกงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB",
+      maxCountMessage: `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedAttachmentFiles,
+      setError: setLocalAttachmentError,
+      input: attachmentInputRef.current,
+    });
   }
 
-  function removeSelectedFile(index: number) {
-    const nextFiles = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+  function handlePortfolioDrop(event: React.DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    setPortfolioDragActive(false);
+    mergeFiles({
+      incomingFiles: Array.from(event.dataTransfer.files ?? []),
+      currentFiles: selectedPortfolioFiles,
+      maxCount: MAX_PORTFOLIO_FILE_COUNT,
+      maxSizeBytes: MAX_PORTFOLIO_FILE_SIZE_BYTES,
+      allowedTypes: PORTFOLIO_FILE_TYPES,
+      invalidTypeMessage: "แฟ้มสะสมผลงานอนุญาตเฉพาะไฟล์ PDF เท่านั้น",
+      invalidSizeMessage: "แฟ้มสะสมผลงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 10 MB",
+      maxCountMessage: `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`,
+      setFiles: setSelectedPortfolioFiles,
+      setError: setLocalPortfolioError,
+      input: portfolioInputRef.current,
+    });
+  }
 
-    setLocalFileError(null);
-    setSelectedFiles(nextFiles);
-    syncInputFiles(nextFiles);
+  function removeSelectedAttachmentFile(index: number) {
+    const nextFiles = selectedAttachmentFiles.filter((_, fileIndex) => fileIndex !== index);
+
+    setLocalAttachmentError(null);
+    setSelectedAttachmentFiles(nextFiles);
+    syncInputFiles(attachmentInputRef.current, nextFiles);
+  }
+
+  function removeSelectedPortfolioFile(index: number) {
+    const nextFiles = selectedPortfolioFiles.filter((_, fileIndex) => fileIndex !== index);
+
+    setLocalPortfolioError(null);
+    setSelectedPortfolioFiles(nextFiles);
+    syncInputFiles(portfolioInputRef.current, nextFiles);
   }
 
   function markExistingFileRemoved(fileId: string) {
-    setLocalFileError(null);
+    setLocalAttachmentError(null);
+    setLocalPortfolioError(null);
     setRemovedFileIds((currentFileIds) => (currentFileIds.includes(fileId) ? currentFileIds : [...currentFileIds, fileId]));
   }
 
@@ -644,7 +791,7 @@ export function StudentFormPage({
           <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
             <Link href="/intern/overview" className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
+                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-student)">ระบบ</p>
@@ -686,26 +833,38 @@ export function StudentFormPage({
 
   return (
     <div className={`min-h-screen text-slate-950 ${theme.pageBackground}`}>
-      <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${theme.headerBorder}`}>
+      <header className={`sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl ${isAdminMode ? "border-slate-200/80" : theme.headerBorder}`}>
         <div className={`${appShellClass} flex items-center justify-between gap-4 py-3`}>
           <div className="flex items-center gap-4">
             <Link href={isAdminMode ? "/intern/admin/students" : "/intern/overview"} className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={30} height={30} priority />
+                <Image src="/nurse_logo.svg" alt="ระบบจัดการฝึกงาน" width={27} height={30} style={{ width: "auto" }} priority />
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-slate-700">ระบบจัดการนักศึกษาฝึกงานทั้งหมด</p>
+                {isAdminMode ? (
+                  <>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-(--color-admin)">
+                      ระบบ
+                    </p>
+                    <p className="text-sm font-medium text-slate-700">จัดการนักศึกษาฝึกงาน</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-medium text-slate-700">ระบบจัดการนักศึกษาฝึกงานทั้งหมด</p>
+                )}
               </div>
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">
               {isAdminMode ? (
                 <>
-                  <Link href="/intern/dashboard" className={`rounded-full px-4 py-2 text-sm font-medium text-slate-500 transition ${theme.navHover}`}>
+                  <Link href="/intern/dashboard" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                     แดชบอร์ด
                   </Link>
-                  <Link href="/intern/admin/students" className={`rounded-full px-4 py-2 text-sm font-semibold ${theme.navActive}`} aria-current="page">
-                    แก้ไขข้อมูลนักศึกษา
+                  <Link href="/intern/admin/students" className="rounded-full bg-admin/12 px-4 py-2 text-sm font-semibold text-(--color-admin)" aria-current="page">
+                    รายชื่อนักศึกษา
+                  </Link>
+                  <Link href="/intern/notifications" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                    การแจ้งเตือน
                   </Link>
                 </>
               ) : (
@@ -740,6 +899,24 @@ export function StudentFormPage({
             <MenuIcon />
           </button>
         </div>
+
+        {isAdminMode && !hasAdminDisplayName ? (
+          <div className="border-t border-admin/10 bg-linear-to-r from-admin/8 via-white to-admin/5">
+            <div className={`${appShellClass} flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between`}>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  กรุณาตั้งชื่อที่แสดงสำหรับบัญชีของคุณ
+                </p>
+              </div>
+              <Link
+                href="/intern/account/name"
+                className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
+              >
+                ตั้งชื่อที่แสดง
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       {mobileMenuOpen ? (
@@ -763,11 +940,14 @@ export function StudentFormPage({
             <nav className="mt-8 space-y-2">
               {isAdminMode ? (
                 <>
-                  <Link href="/intern/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/intern/dashboard" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
                     แดชบอร์ด
                   </Link>
-                  <Link href="/intern/admin/students" className={`block rounded-2xl px-4 py-3 text-sm font-semibold ${theme.navActive}`} aria-current="page" onClick={() => setMobileMenuOpen(false)}>
-                    แก้ไขข้อมูลนักศึกษา
+                  <Link href="/intern/admin/students" className="block rounded-2xl bg-admin/12 px-4 py-3 text-sm font-semibold text-(--color-admin)" aria-current="page" onClick={() => setMobileMenuOpen(false)}>
+                    รายชื่อนักศึกษา
+                  </Link>
+                  <Link href="/intern/notifications" className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50" onClick={() => setMobileMenuOpen(false)}>
+                    การแจ้งเตือน
                   </Link>
                 </>
               ) : (
@@ -829,6 +1009,14 @@ export function StudentFormPage({
             {pageDescription}
           </p>
         </div>
+
+        {formNotice ? (
+          <section className={`mt-6 rounded-[28px] border px-5 py-4 ${formNotice.tone}`}>
+            <p className="text-sm font-semibold">{formNotice.title}</p>
+            <p className="mt-2 text-sm leading-6">{formNotice.description}</p>
+            {formNotice.meta ? <p className="mt-2 text-xs font-medium">{formNotice.meta}</p> : null}
+          </section>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="mt-8 grid gap-6 pb-24 xl:grid-cols-12">
           <SectionCard
@@ -915,6 +1103,7 @@ export function StudentFormPage({
             </div>
 
             {removeProfileImage ? <input type="hidden" name="removeProfileImage" value="true" /> : null}
+            <FieldError message={localProfileImageError ?? state.fieldErrors.profileImage} />
           </SectionCard>
 
           {hiddenFields.map((field) => (
@@ -935,10 +1124,10 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="คำนำหน้า" htmlFor="prefix" required error={state.fieldErrors.prefix}>
-                <SelectInput id="prefix" name="prefix" value={formValues.prefix} onChange={(event) => updateFormValue("prefix", event.target.value)} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="prefix" name="prefix" value={formValues.prefix} onChange={(event) => updateFormValue("prefix", event.target.value)} options={PREFIX_OPTIONS} placeholder="เลือกคำนำหน้า" error={state.fieldErrors.prefix} tone={isAdminMode ? "admin" : "student"} />
               </FieldShell>
               <FieldShell label="เพศ" htmlFor="gender" required error={state.fieldErrors.gender}>
-                <SelectInput id="gender" name="gender" value={formValues.gender} onChange={(event) => updateFormValue("gender", event.target.value)} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="gender" name="gender" value={formValues.gender} onChange={(event) => updateFormValue("gender", event.target.value)} options={GENDER_OPTIONS} placeholder="เลือกเพศ" error={state.fieldErrors.gender} tone={isAdminMode ? "admin" : "student"} />
               </FieldShell>
               <FieldShell label="ชื่อ" htmlFor="firstName" required error={state.fieldErrors.firstName}>
                 <TextInput id="firstName" name="firstName" value={formValues.firstName} onChange={(event) => updateFormValue("firstName", event.target.value)} placeholder="ชื่อ" error={state.fieldErrors.firstName} inputFocusClass={theme.inputFocus} />
@@ -947,7 +1136,7 @@ export function StudentFormPage({
                 <TextInput id="lastName" name="lastName" value={formValues.lastName} onChange={(event) => updateFormValue("lastName", event.target.value)} placeholder="นามสกุล" error={state.fieldErrors.lastName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเกิด" htmlFor="dateOfBirth" required error={state.fieldErrors.dateOfBirth}>
-                <TextInput id="dateOfBirth" name="dateOfBirth" type="date" value={formValues.dateOfBirth} onChange={(event) => updateFormValue("dateOfBirth", event.target.value)} error={state.fieldErrors.dateOfBirth} inputFocusClass={theme.inputFocus} />
+                <AppDatePicker id="dateOfBirth" name="dateOfBirth" value={formValues.dateOfBirth} onChange={(nextValue) => updateFormValue("dateOfBirth", nextValue)} placeholder="เลือกวันเกิด" error={state.fieldErrors.dateOfBirth} tone={isAdminMode ? "admin" : "student"} size="lg" startYear={1950} endYear={CURRENT_YEAR} required />
               </FieldShell>
               <FieldShell label="หมายเลขโทรศัพท์" htmlFor="phoneNumber" required error={state.fieldErrors.phoneNumber}>
                 <TextInput id="phoneNumber" name="phoneNumber" value={formValues.phoneNumber} onChange={(event) => updateFormValue("phoneNumber", event.target.value)} placeholder="หมายเลขโทรศัพท์" error={state.fieldErrors.phoneNumber} inputFocusClass={theme.inputFocus} />
@@ -972,7 +1161,7 @@ export function StudentFormPage({
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldShell label="ระดับการศึกษา" htmlFor="educationLevel" required error={state.fieldErrors.educationLevel}>
-                <SelectInput id="educationLevel" name="educationLevel" value={formValues.educationLevel} onChange={(event) => updateFormValue("educationLevel", event.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} inputFocusClass={theme.inputFocus} />
+                <SelectInput id="educationLevel" name="educationLevel" value={formValues.educationLevel} onChange={(event) => updateFormValue("educationLevel", event.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="เลือกระดับการศึกษา" error={state.fieldErrors.educationLevel} tone={isAdminMode ? "admin" : "student"} />
               </FieldShell>
               <FieldShell label="สถานศึกษา" htmlFor="institution" required error={state.fieldErrors.institution}>
                 <TextInput id="institution" name="institution" value={formValues.institution} onChange={(event) => updateFormValue("institution", event.target.value)} placeholder="สถานศึกษา" error={state.fieldErrors.institution} inputFocusClass={theme.inputFocus} />
@@ -1010,10 +1199,10 @@ export function StudentFormPage({
                 <TextInput id="supervisorName" name="supervisorName" value={formValues.supervisorName} onChange={(event) => updateFormValue("supervisorName", event.target.value)} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเริ่มฝึกงาน" htmlFor="startDate" required error={state.fieldErrors.startDate}>
-                <TextInput id="startDate" name="startDate" type="date" value={formValues.startDate} onChange={(event) => updateFormValue("startDate", event.target.value)} error={state.fieldErrors.startDate} inputFocusClass={theme.inputFocus} />
+                <AppDatePicker id="startDate" name="startDate" value={formValues.startDate} onChange={(nextValue) => updateFormValue("startDate", nextValue)} placeholder="เลือกวันเริ่มฝึกงาน" error={state.fieldErrors.startDate} tone={isAdminMode ? "admin" : "student"} size="lg" startYear={CURRENT_YEAR - 1} endYear={CURRENT_YEAR + 5} required />
               </FieldShell>
               <FieldShell label="วันสิ้นสุดฝึกงาน" htmlFor="endDate" required error={state.fieldErrors.endDate}>
-                <TextInput id="endDate" name="endDate" type="date" value={formValues.endDate} onChange={(event) => updateFormValue("endDate", event.target.value)} error={state.fieldErrors.endDate} inputFocusClass={theme.inputFocus} />
+                <AppDatePicker id="endDate" name="endDate" value={formValues.endDate} onChange={(nextValue) => updateFormValue("endDate", nextValue)} placeholder="เลือกวันสิ้นสุดฝึกงาน" error={state.fieldErrors.endDate} tone={isAdminMode ? "admin" : "student"} size="lg" startYear={CURRENT_YEAR - 1} endYear={CURRENT_YEAR + 5} required />
               </FieldShell>
               <div className="md:col-span-2">
                 <FieldShell label="รายละเอียดเพิ่มเติม" htmlFor="additionalDetails" error={state.fieldErrors.additionalDetails}>
@@ -1026,46 +1215,150 @@ export function StudentFormPage({
           <SectionCard
             icon={<FileIcon />}
             title="ไฟล์แนบ"
-            description="อัปโหลดไฟล์ PDF หรือรูปภาพเพื่อประกอบข้อมูลการฝึกงานของคุณ สามารถเก็บได้สูงสุด 5 ไฟล์ และแต่ละไฟล์ต้องไม่เกิน 5 MB"
+            description="แยกอัปโหลดเอกสารประกอบการฝึกงานและแฟ้มสะสมผลงานเป็นคนละพื้นที่ เพื่อกำหนดประเภทไฟล์และขนาดได้ชัดเจน"
             accentTileClass={theme.accentTile}
             className="xl:col-span-12"
           >
-            <div>
+            <div className="space-y-6">
               <input
-                ref={inputRef}
+                ref={attachmentInputRef}
                 id="attachments"
                 name="attachments"
                 type="file"
                 multiple
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 className="hidden"
-                onChange={handleFileInputChange}
+                onChange={handleAttachmentInputChange}
               />
 
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setDragActive(true);
-                }}
-                onDragLeave={() => setDragActive(false)}
-                onDrop={handleDrop}
-                className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${dragActive ? theme.uploadActive : theme.uploadIdle}`}
-              >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
-                  <UploadIcon />
+              <input
+                ref={portfolioInputRef}
+                id="portfolioAttachments"
+                name="portfolioAttachments"
+                type="file"
+                multiple
+                accept=".pdf,application/pdf"
+                className="hidden"
+                onChange={handlePortfolioInputChange}
+              />
+
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">เอกสารประกอบการฝึกงาน</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">อัปโหลดได้สูงสุด 5 ไฟล์ รองรับ PDF, PNG, JPG และแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB</p>
                 </div>
-                <p className="mt-4 text-base font-semibold text-slate-950">อัปโหลดไฟล์ฝึกงาน</p>
-                <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
-                  ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับ PDF, JPG, PNG รวมได้สูงสุด 5 ไฟล์
-                </p>
-              </button>
 
-              <FieldError message={localFileError ?? state.fieldErrors.files} />
+                <button
+                  type="button"
+                  onClick={() => attachmentInputRef.current?.click()}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setAttachmentDragActive(true);
+                  }}
+                  onDragLeave={() => setAttachmentDragActive(false)}
+                  onDrop={handleAttachmentDrop}
+                  className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${attachmentDragActive ? theme.uploadActive : theme.uploadIdle}`}
+                >
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
+                    <UploadIcon />
+                  </div>
+                  <p className="mt-4 text-base font-semibold text-slate-950">General Attachments (เอกสารประกอบการฝึกงาน)</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
+                    ลากไฟล์มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับ PDF, PNG, JPG สูงสุด 5 ไฟล์
+                  </p>
+                </button>
 
+                <FieldError message={localAttachmentError ?? state.fieldErrors.attachments} />
+
+                {selectedAttachmentFiles.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedAttachmentFiles.map((file, index) => (
+                      <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                            <FileIcon />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">{formatUploadFileSize(file.size)}</p>
+                            <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedAttachmentFile(index)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">Portfolio &amp; Work Samples (แฟ้มสะสมผลงาน)</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">อัปโหลดแฟ้มสะสมผลงานหรือโปรเจกต์ของคุณ (เฉพาะไฟล์ PDF, ขนาดไม่เกิน 10MB ต่อไฟล์)</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => portfolioInputRef.current?.click()}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setPortfolioDragActive(true);
+                  }}
+                  onDragLeave={() => setPortfolioDragActive(false)}
+                  onDrop={handlePortfolioDrop}
+                  className={`flex w-full flex-col items-center justify-center rounded-[28px] border-2 border-dashed px-6 py-10 text-center transition ${portfolioDragActive ? theme.uploadActive : theme.uploadIdle}`}
+                >
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full ${theme.accentTile}`}>
+                    <UploadIcon />
+                  </div>
+                  <p className="mt-4 text-base font-semibold text-slate-950">Portfolio &amp; Work Samples (แฟ้มสะสมผลงาน)</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
+                    ลากไฟล์ PDF มาวางที่นี่หรือคลิกเพื่อเลือกไฟล์ รองรับสูงสุด 5 ไฟล์
+                  </p>
+                </button>
+
+                <FieldError message={localPortfolioError ?? state.fieldErrors.portfolioAttachments} />
+
+                {selectedPortfolioFiles.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedPortfolioFiles.map((file, index) => (
+                      <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                            <FileIcon />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">{formatUploadFileSize(file.size)}</p>
+                            <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedPortfolioFile(index)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               {visibleExistingFiles.length > 0 ? (
                 <div className="mt-5 space-y-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-950">ไฟล์ที่อัปโหลดแล้ว</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">ไฟล์ที่บันทึกไว้ก่อนหน้านี้จะแสดงรวมกันในส่วนนี้ และยังสามารถลบออกได้ก่อนบันทึก</p>
+                  </div>
                   {visibleExistingFiles.map((file) => (
                     <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                       <div className="flex items-start gap-3">
@@ -1100,33 +1393,6 @@ export function StudentFormPage({
                 </div>
               ) : null}
 
-              {selectedFiles.length > 0 ? (
-                <div className="mt-5 space-y-3">
-                  {selectedFiles.map((file, index) => (
-                    <div key={`${file.name}-${file.size}-${index}`} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
-                          <FileIcon />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-slate-500">{`${(file.size / 1024).toFixed(1)} KB`}</p>
-                          <p className={`mt-2 hidden text-xs font-medium sm:block ${theme.readyText}`}>Ready to upload</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeSelectedFile(index)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-                        aria-label={`Remove ${file.name}`}
-                      >
-                        <CloseIcon />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
               {removedFileIds.map((fileId) => (
                 <input key={fileId} type="hidden" name="removeFileIds" value={fileId} />
               ))}
@@ -1136,7 +1402,25 @@ export function StudentFormPage({
           <div className={`sticky bottom-0 z-20 xl:col-span-12 -mx-4 border-t px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ${theme.stickyBar}`}>
             <div className="mx-auto flex max-w-7xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
               <CancelLink href={resolvedCancelHref} pending={isPending} />
-              <PrimaryActionButton label={primaryButtonLabel} className={theme.primaryButton} pending={isPending} />
+              {!isAdminMode && student.status === "draft" ? (
+                <SubmitActionButton label="ส่งแบบฟอร์ม" className={theme.primaryButton} pending={isPending} value="submit" />
+              ) : !isAdminMode && student.status === "needs_fix" ? (
+                <>
+                  <SubmitActionButton
+                    label="แก้ไขแล้วส่งใหม่"
+                    className={theme.primaryButton}
+                    pending={isPending}
+                    value="submit"
+                  />
+                </>
+              ) : (
+                <SubmitActionButton
+                  label="บันทึกการเปลี่ยนแปลง"
+                  className={theme.primaryButton}
+                  pending={isPending}
+                  value="save_changes"
+                />
+              )}
             </div>
           </div>
         </form>

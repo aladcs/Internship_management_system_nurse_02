@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components/student/student-overview-page";
 import { readSession } from "@/lib/auth/session";
+import { formatThaiDate, formatThaiDateTime } from "@/lib/date-format";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
-import { formatInternshipStatusLabel } from "@/lib/internship-status";
+import { formatInternshipStatusLabel, isStudentEditableStatus } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
 import { clearSession } from "@/lib/auth/session";
@@ -18,30 +19,6 @@ export const metadata: Metadata = {
 };
 
 const EMPTY_VALUE = "ยังไม่ได้ระบุ";
-
-function formatDate(value: Date | null | undefined) {
-  if (!value) {
-    return EMPTY_VALUE;
-  }
-
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
-}
-
-function formatDateTime(value: Date | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
-}
 
 function formatGender(value: string | null) {
   if (!value) {
@@ -186,6 +163,39 @@ export default async function InternOverviewPage() {
           createdAt: true,
         },
       },
+      reviewComments: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          id: true,
+          message: true,
+          createdAt: true,
+          admin: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
+      activityLogs: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          createdAt: true,
+          actor: {
+            select: {
+              role: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -194,7 +204,18 @@ export default async function InternOverviewPage() {
     redirect("/login?cmu=student_profile_missing");
   }
 
-  const canEdit = student.internshipStatus !== "completed";
+  const canEdit = isStudentEditableStatus(student.internshipStatus);
+  const studentDisplayName = getDisplayName(student);
+  const latestActivity = student.activityLogs[0] ?? null;
+  const latestUpdateMoment = latestActivity?.createdAt ?? student.lastStudentEditAt ?? student.updatedAt;
+  const latestUpdateActor = latestActivity?.actor ?? null;
+  const latestUpdateActorLabel = latestUpdateActor
+    ? latestUpdateActor.role === "student"
+      ? latestUpdateActor.name?.trim() || studentDisplayName || latestUpdateActor.email
+      : latestUpdateActor.name?.trim() || latestUpdateActor.email || "ผู้ดูแลระบบ"
+    : latestActivity
+      ? "ระบบ"
+      : null;
   const hasStartedForm = Boolean(
     student.submittedAt ||
       student.lastStudentEditAt ||
@@ -226,7 +247,7 @@ export default async function InternOverviewPage() {
     },
     student: {
       firstName: getFirstName(student),
-      displayName: getDisplayName(student),
+      displayName: studentDisplayName,
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatInternshipStatusLabel(student.internshipStatus),
@@ -236,6 +257,17 @@ export default async function InternOverviewPage() {
         student.internshipStatus === "completed"
           ? "ข้อมูลฝึกงานของคุณเสร็จสมบูรณ์และเป็นแบบอ่านอย่างเดียวแล้ว"
           : null,
+      latestReviewComment: student.reviewComments[0]
+        ? {
+            id: student.reviewComments[0].id,
+            message: student.reviewComments[0].message,
+            createdAtLabel: formatThaiDateTime(student.reviewComments[0].createdAt, EMPTY_VALUE),
+            adminLabel:
+              student.reviewComments[0].admin?.name?.trim() ||
+              student.reviewComments[0].admin?.email ||
+              "ผู้ดูแลระบบ",
+          }
+        : null,
       profileImage:
         student.profileImagePath
           ? {
@@ -245,11 +277,11 @@ export default async function InternOverviewPage() {
             }
           : null,
       personal: [
-        { label: "ชื่อ - นามสกุล", value: getDisplayName(student) },
+        { label: "ชื่อ - นามสกุล", value: studentDisplayName },
         { label: "อีเมล", value: student.user.email },
         { label: "หมายเลขโทรศัพท์", value: student.phoneNumber || EMPTY_VALUE },
         { label: "เพศ", value: formatGender(student.gender) },
-        { label: "วันเกิด", value: formatDate(student.dateOfBirth) },
+        { label: "วันเกิด", value: formatThaiDate(student.dateOfBirth, EMPTY_VALUE) },
         { label: "ที่อยู่", value: student.address || EMPTY_VALUE },
         { label: "เบอร์โทรผู้ปกครอง", value: student.parentPhone || EMPTY_VALUE },
       ],
@@ -272,11 +304,11 @@ export default async function InternOverviewPage() {
         },
         {
           label: "วันเริ่มต้น",
-          value: formatDate(student.internshipRecord?.startDate),
+          value: formatThaiDate(student.internshipRecord?.startDate, EMPTY_VALUE),
         },
         {
           label: "วันสิ้นสุด",
-          value: formatDate(student.internshipRecord?.endDate),
+          value: formatThaiDate(student.internshipRecord?.endDate, EMPTY_VALUE),
         },
       ],
       education: [
@@ -297,7 +329,7 @@ export default async function InternOverviewPage() {
         },
       ],
       files: student.files.map((file) => {
-        const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatDateTime(file.createdAt)].filter(Boolean);
+        const metaParts = [file.mimeType, formatFileSize(file.sizeBytes), formatThaiDateTime(file.createdAt)].filter(Boolean);
 
         return {
           id: file.id,
@@ -307,8 +339,10 @@ export default async function InternOverviewPage() {
         };
       }),
       summary: {
-        lastUpdatedLabel: formatDateTime(student.lastStudentEditAt ?? student.updatedAt) ?? EMPTY_VALUE,
-        submittedAtLabel: formatDateTime(student.submittedAt) ?? "ยังไม่ได้ส่ง",
+        lastUpdatedLabel: formatThaiDateTime(latestUpdateMoment, EMPTY_VALUE),
+        lastUpdatedByLabel: latestUpdateActorLabel,
+        lastUpdatedByEmail: latestUpdateActor?.email ?? null,
+        submittedAtLabel: formatThaiDateTime(student.submittedAt, "ยังไม่ได้ส่ง"),
       },
     },
   };

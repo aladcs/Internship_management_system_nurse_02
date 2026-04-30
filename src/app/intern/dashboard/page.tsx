@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminDashboardPage, type AdminDashboardPageProps } from "@/components/admin/admin-dashboard-page";
 import { getAdminNotificationSummary } from "@/lib/admin/notifications";
 import { readSession } from "@/lib/auth/session";
+import { formatThaiDateTime } from "@/lib/date-format";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { formatInternshipStatusLabel } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
@@ -11,14 +12,6 @@ export const metadata: Metadata = {
   title: "แดชบอร์ด | ระบบจัดการฝึกงาน",
   description: "แดชบอร์ดสำหรับผู้ดูแลเพื่อตรวจสอบจำนวนนักศึกษา รายการล่าสุด และการแจ้งเตือน",
 };
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("th-TH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value);
-}
 
 function getStudentDisplayName(student: {
   firstName: string | null;
@@ -47,7 +40,13 @@ export default async function InternDashboardPage() {
   const [totalStudents, pendingStudents, inProgressStudents, completedStudents, recentStudents, notificationSummary] =
     await Promise.all([
       prisma.student.count(),
-      prisma.student.count({ where: { internshipStatus: "pending" } }),
+      prisma.student.count({
+        where: {
+          internshipStatus: {
+            in: ["draft", "pending"],
+          },
+        },
+      }),
       prisma.student.count({ where: { internshipStatus: "in_progress" } }),
       prisma.student.count({ where: { internshipStatus: "completed" } }),
       prisma.student.findMany({
@@ -90,7 +89,11 @@ export default async function InternDashboardPage() {
       email: student.user.email,
       status: student.internshipStatus,
       statusLabel: formatInternshipStatusLabel(student.internshipStatus),
-      meta: student.major?.trim() || `อัปเดต ${formatDateTime(student.updatedAt)}`,
+      meta:
+        student.major?.trim() ||
+        (student.internshipStatus === "draft"
+          ? "ยังไม่ได้ส่งแบบฟอร์ม"
+          : `อัปเดต ${formatThaiDateTime(student.updatedAt)}`),
     })),
     notifications: notificationSummary.notifications,
   };
