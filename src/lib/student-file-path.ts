@@ -52,15 +52,23 @@ export function getPrivateStorageRoot() {
   return path.join(process.cwd(), "storage");
 }
 
+function getPublicUploadsRoot() {
+  return path.join(process.cwd(), "public", "uploads");
+}
+
 export function resolveStoredAssetAbsolutePath(storedPath: string) {
   const normalizedPath = storedPath.replace(/\\/g, "/");
 
   if (LEGACY_PUBLIC_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix))) {
-    return path.join(process.cwd(), "public", normalizedPath.replace(/^\//, ""));
+    const relativePath = normalizedPath.replace(/^\/uploads\//, "");
+
+    return path.join(getPublicUploadsRoot(), relativePath);
   }
 
   if (PRIVATE_STORAGE_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix))) {
-    return path.join(process.cwd(), normalizedPath.replace(/^\//, ""));
+    const relativePath = normalizedPath.replace(/^\/storage\//, "");
+
+    return path.join(getPrivateStorageRoot(), relativePath);
   }
 
   return null;

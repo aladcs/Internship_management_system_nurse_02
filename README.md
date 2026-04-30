@@ -1,5 +1,34 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Docker Deploy
+
+This repository now includes a production Docker setup for the app and PostgreSQL.
+
+Required files before deploy:
+
+- `.env` for shared Postgres container values used by Compose
+- `.env.production` for app runtime secrets and production `DATABASE_URL`
+
+If you use the bundled Postgres service from `docker-compose.prod.yml`, set `DATABASE_URL` host to `db`.
+
+Example:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@db:5432/internship_management_system"
+```
+
+Deploy:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The app container automatically runs `prisma migrate deploy` before starting Next.js.
+
+Uploaded files are stored in the named Docker volume mounted at `/app/storage`, so student attachments and profile images survive container restarts.
+
+If you already have an external PostgreSQL server, point `DATABASE_URL` at that server and remove or override the `db` service.
+
 ## Local Dev Data
 
 Run `npm run db:seed` to ensure the local demo accounts exist.
