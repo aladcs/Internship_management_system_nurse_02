@@ -1,42 +1,57 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 import { logoutAction, markAllNotificationsReadAction } from "@/app/intern/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { AdminNotificationFeed } from "@/components/admin/admin-notification-menu";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
-import type { AdminNotificationItem } from "@/lib/admin/notifications";
+import type {
+  AdminNotificationItem,
+  AdminNotificationsFilter,
+  AdminNotificationTypeFilter,
+} from "@/lib/admin/notifications";
 
 type AdminNotificationsPageProps = {
   currentUser: {
     email: string;
     name: string | null;
   };
-  allNotifications: AdminNotificationItem[];
-  unreadNotifications: AdminNotificationItem[];
+  notifications: AdminNotificationItem[];
+  allCount: number;
+  unreadCount: number;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  filter: AdminNotificationsFilter;
+  searchQuery: string;
+  typeFilter: AdminNotificationTypeFilter;
+  dateFilter: string;
   roleLabel?: string;
 };
 
 type NotificationTab = "all" | "unread";
-type NotificationTypeFilter = "all" | "submission" | "resubmission" | "form_update" | "file_update";
-
-type FilterSelectProps<T extends string> = {
-  value: T;
-  onChange: (value: T) => void;
-  options: Array<{
-    value: T;
-    label: string;
-    count: number;
-  }>;
-};
-
-type DatePreset = {
-  value: string;
-  label: string;
-};
 
 const CURRENT_YEAR = new Date().getUTCFullYear();
+
+const NOTIFICATION_TYPE_OPTIONS: Array<{
+  value: AdminNotificationTypeFilter;
+  label: string;
+}> = [
+  { value: "all", label: "ทุกประเภท" },
+  { value: "submission", label: "ส่งฟอร์มครั้งแรก" },
+  { value: "resubmission", label: "ส่งกลับมาอีกครั้ง" },
+  { value: "form_update", label: "แก้ไขข้อมูลฝึกงาน" },
+  { value: "file_update", label: "เปลี่ยนไฟล์แนบ" },
+];
+
+function parseNotificationTypeFromUrl(value: string | null): AdminNotificationTypeFilter {
+  return value === "submission" || value === "resubmission" || value === "form_update" || value === "file_update"
+    ? value
+    : "all";
+}
 
 type GroupedNotifications = {
   label: string;
@@ -49,13 +64,6 @@ const dateHeaderFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   year: "numeric",
-  timeZone: DISPLAY_TIME_ZONE,
-});
-
-const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
   timeZone: DISPLAY_TIME_ZONE,
 });
 
@@ -91,17 +99,6 @@ function SearchIcon() {
   );
 }
 
-function CalendarIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
-      <rect x="3.5" y="4.5" width="13" height="11" rx="2.5" />
-      <path d="M6.5 2.75v3.5" strokeLinecap="round" />
-      <path d="M13.5 2.75v3.5" strokeLinecap="round" />
-      <path d="M3.5 8h13" />
-    </svg>
-  );
-}
-
 function EmptyIcon() {
   return (
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className="h-14 w-14">
@@ -114,55 +111,45 @@ function EmptyIcon() {
   );
 }
 
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m11.75 4.5-5.5 5.5 5.5 5.5" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m8.25 4.5 5.5 5.5-5.5 5.5" />
+    </svg>
+  );
+}
+
 function TabButton({
   active,
   count,
   label,
-  onClick,
 }: {
   active: boolean;
   count: number;
   label: string;
-  onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <span
       className={active
         ? "inline-flex items-center gap-2 rounded-full bg-admin px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-admin/20"
         : "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-admin/25 hover:text-(--color-admin)"}
     >
       <span>{label}</span>
       <span className={active ? "text-white/90" : "text-slate-400"}>{count}</span>
-    </button>
+    </span>
   );
 }
 
-function FilterSelect<T extends string>({ value, onChange, options }: FilterSelectProps<T>) {
-  return (
-    <AppSelect
-      value={value}
-      onChange={(event) => onChange(event.target.value as T)}
-      options={options}
-      tone="admin"
-      size="md"
-      surface="muted"
-      wrapperClassName="min-w-42"
-      className="font-medium"
-    />
-  );
-}
-
-function getDateKey(value: string) {
-  return dateKeyFormatter.format(new Date(value));
-}
-
-function getDateOffsetValue(offsetDays: number, now = new Date()) {
-  const date = new Date(now);
-  date.setDate(now.getDate() + offsetDays);
-
-  return getDateKey(date.toISOString());
+function getDateGroupLabel(value: string) {
+  return dateHeaderFormatter.format(new Date(value));
 }
 
 function formatSelectedDateLabel(value: string) {
@@ -171,10 +158,6 @@ function formatSelectedDateLabel(value: string) {
   }
 
   return selectedDateFormatter.format(new Date(`${value}T00:00:00+07:00`));
-}
-
-function getDateGroupLabel(value: string) {
-  return dateHeaderFormatter.format(new Date(value));
 }
 
 function groupNotificationsByDate(items: AdminNotificationItem[]) {
@@ -198,105 +181,160 @@ function groupNotificationsByDate(items: AdminNotificationItem[]) {
   return groups;
 }
 
-function getNotificationTypeFilter(type: string): NotificationTypeFilter {
-  if (type === "form_submitted") {
-    return "submission";
-  }
-
-  if (type === "form_resubmitted") {
-    return "resubmission";
-  }
-
-  if (type === "form_updated" || type === "form_updated_in_progress") {
-    return "form_update";
-  }
-
-  if (type === "file_changed_in_progress") {
-    return "file_update";
-  }
-
-  return "all";
-}
-
-function getNotificationTypeLabel(type: NotificationTypeFilter) {
-  if (type === "submission") {
-    return "ส่งฟอร์มครั้งแรก";
-  }
-
-  if (type === "resubmission") {
-    return "ส่งกลับมาอีกครั้ง";
-  }
-
-  if (type === "form_update") {
-    return "แก้ไขข้อมูลฝึกงาน";
-  }
-
-  if (type === "file_update") {
-    return "เปลี่ยนไฟล์แนบ";
-  }
-
-  return "ทุกประเภท";
-}
-
-function filterNotifications(items: AdminNotificationItem[], input: {
-  query: string;
-  type: NotificationTypeFilter;
-  selectedDate: string;
+function buildNotificationsHref(input: {
+  page?: number;
+  filter: NotificationTab;
+  searchQuery: string;
+  typeFilter: AdminNotificationTypeFilter;
+  dateFilter: string;
 }) {
-  return items.filter((item) => {
-    const matchesQuery = input.query.length === 0
-      ? true
-      : [item.studentName, item.title, item.message]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(input.query));
+  const searchParams = new URLSearchParams();
 
-    const matchesType = input.type === "all"
-      ? true
-      : getNotificationTypeFilter(item.type) === input.type;
+  if (input.page && input.page > 1) {
+    searchParams.set("page", String(input.page));
+  }
 
-    const matchesDate = input.selectedDate.length === 0
-      ? true
-      : getDateKey(item.createdAtIso) === input.selectedDate;
+  if (input.filter !== "all") {
+    searchParams.set("filter", input.filter);
+  }
 
-    return matchesQuery && matchesType && matchesDate;
-  });
+  if (input.searchQuery.trim()) {
+    searchParams.set("q", input.searchQuery.trim());
+  }
+
+  if (input.typeFilter !== "all") {
+    searchParams.set("type", input.typeFilter);
+  }
+
+  if (input.dateFilter) {
+    searchParams.set("date", input.dateFilter);
+  }
+
+  const queryString = searchParams.toString();
+
+  return queryString ? `/intern/notifications?${queryString}` : "/intern/notifications";
+}
+
+function getNotificationsFilterQuery(input: {
+  filter: NotificationTab;
+  searchQuery: string;
+  typeFilter: AdminNotificationTypeFilter;
+  dateFilter: string;
+}) {
+  return buildNotificationsHref({
+    page: 1,
+    filter: input.filter,
+    searchQuery: input.searchQuery,
+    typeFilter: input.typeFilter,
+    dateFilter: input.dateFilter,
+  }).split("?")[1] ?? "";
 }
 
 export function AdminNotificationsPage({
   currentUser,
-  allNotifications,
-  unreadNotifications,
+  notifications,
+  allCount,
+  unreadCount,
+  totalCount,
+  currentPage,
+  totalPages,
+  filter,
+  searchQuery,
+  typeFilter,
+  dateFilter,
   roleLabel = "ผู้ดูแลระบบ",
 }: AdminNotificationsPageProps) {
-  const [activeTab, setActiveTab] = useState<NotificationTab>("all");
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<NotificationTypeFilter>("all");
-  const [selectedDate, setSelectedDate] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+  const isSyncingFromUrlRef = useRef(false);
+  const [query, setQuery] = useState(searchQuery);
+  const [selectedType, setSelectedType] = useState<AdminNotificationTypeFilter>(typeFilter);
+  const [selectedDate, setSelectedDate] = useState(dateFilter);
   const deferredQuery = useDeferredValue(query);
-  const normalizedQuery = deferredQuery.trim().toLowerCase();
-  const baseNotifications = activeTab === "all" ? allNotifications : unreadNotifications;
-  const visibleNotifications = filterNotifications(baseNotifications, {
-    query: normalizedQuery,
-    type: typeFilter,
-    selectedDate,
+  const groupedNotifications = groupNotificationsByDate(notifications);
+  const selectedDateLabel = formatSelectedDateLabel(dateFilter);
+  const hasSearch = searchQuery.trim().length > 0;
+  const hasActiveFilters = hasSearch || typeFilter !== "all" || dateFilter.length > 0;
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsKey);
+    const nextQuery = params.get("q")?.trim() ?? "";
+    const nextType = parseNotificationTypeFromUrl(params.get("type"));
+    const nextDate = params.get("date") ?? "";
+    const shouldSync = query !== nextQuery || selectedType !== nextType || selectedDate !== nextDate;
+
+    if (shouldSync) {
+      isSyncingFromUrlRef.current = true;
+    }
+
+    if (query !== nextQuery) {
+      setQuery(nextQuery);
+    }
+
+    if (selectedType !== nextType) {
+      setSelectedType(nextType);
+    }
+
+    if (selectedDate !== nextDate) {
+      setSelectedDate(nextDate);
+    }
+  }, [searchParamsKey]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsKey);
+    const nextQuery = params.get("q")?.trim() ?? "";
+    const nextType = parseNotificationTypeFromUrl(params.get("type"));
+    const nextDate = params.get("date") ?? "";
+
+    if (query === nextQuery && selectedType === nextType && selectedDate === nextDate) {
+      isSyncingFromUrlRef.current = false;
+    }
+  }, [query, searchParamsKey, selectedDate, selectedType]);
+
+  useEffect(() => {
+    if (isSyncingFromUrlRef.current) {
+      return;
+    }
+
+    const nextHref = buildNotificationsHref({
+      page: 1,
+      filter,
+      searchQuery: deferredQuery,
+      typeFilter: selectedType,
+      dateFilter: selectedDate,
+    });
+    const nextQuery = getNotificationsFilterQuery({
+      filter,
+      searchQuery: deferredQuery,
+      typeFilter: selectedType,
+      dateFilter: selectedDate,
+    });
+    const currentParams = new URLSearchParams(searchParamsKey);
+    currentParams.delete("page");
+    const currentQuery = currentParams.toString();
+
+    if (nextQuery !== currentQuery) {
+      startTransition(() => {
+        router.replace(nextHref, { scroll: false });
+      });
+    }
+  }, [deferredQuery, filter, router, searchParamsKey, selectedDate, selectedType]);
+
+  const previousPageHref = buildNotificationsHref({
+    page: currentPage - 1,
+    filter,
+    searchQuery,
+    typeFilter,
+    dateFilter,
   });
-  const typeCounts = {
-    all: baseNotifications.length,
-    submission: baseNotifications.filter((item) => getNotificationTypeFilter(item.type) === "submission").length,
-    resubmission: baseNotifications.filter((item) => getNotificationTypeFilter(item.type) === "resubmission").length,
-    form_update: baseNotifications.filter((item) => getNotificationTypeFilter(item.type) === "form_update").length,
-    file_update: baseNotifications.filter((item) => getNotificationTypeFilter(item.type) === "file_update").length,
-  };
-  const typeOptions: FilterSelectProps<NotificationTypeFilter>["options"] = [
-    { value: "all", label: "ทุกประเภท", count: typeCounts.all },
-    { value: "submission", label: "ส่งฟอร์มครั้งแรก", count: typeCounts.submission },
-    { value: "resubmission", label: "ส่งกลับมาอีกครั้ง", count: typeCounts.resubmission },
-    { value: "form_update", label: "แก้ไขข้อมูลฝึกงาน", count: typeCounts.form_update },
-    { value: "file_update", label: "เปลี่ยนไฟล์แนบ", count: typeCounts.file_update },
-  ];
-  const groupedNotifications = groupNotificationsByDate(visibleNotifications);
-  const selectedDateLabel = formatSelectedDateLabel(selectedDate);
-  const hasActiveFilters = query.length > 0 || typeFilter !== "all" || selectedDate.length > 0;
+  const nextPageHref = buildNotificationsHref({
+    page: currentPage + 1,
+    filter,
+    searchQuery,
+    typeFilter,
+    dateFilter,
+  });
 
   return (
     <AdminLayoutShell
@@ -321,21 +359,15 @@ export function AdminNotificationsPage({
         <section className="mt-8 rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex flex-wrap items-center gap-2">
-              <TabButton
-                active={activeTab === "all"}
-                count={allNotifications.length}
-                label="ทั้งหมด"
-                onClick={() => setActiveTab("all")}
-              />
-              <TabButton
-                active={activeTab === "unread"}
-                count={unreadNotifications.length}
-                label="ยังไม่อ่าน"
-                onClick={() => setActiveTab("unread")}
-              />
+              <Link href={buildNotificationsHref({ page: 1, filter: "all", searchQuery, typeFilter, dateFilter })}>
+                <TabButton active={filter === "all"} count={allCount} label="ทั้งหมด" />
+              </Link>
+              <Link href={buildNotificationsHref({ page: 1, filter: "unread", searchQuery, typeFilter, dateFilter })}>
+                <TabButton active={filter === "unread"} count={unreadCount} label="ยังไม่อ่าน" />
+              </Link>
             </div>
 
-            {unreadNotifications.length > 0 ? (
+            {unreadCount > 0 ? (
               <form action={markAllNotificationsReadAction}>
                 <button
                   type="submit"
@@ -384,29 +416,45 @@ export function AdminNotificationsPage({
                     wrapperClassName="min-w-48"
                   />
 
-                  <FilterSelect value={typeFilter} onChange={setTypeFilter} options={typeOptions} />
+                  <AppSelect
+                    value={selectedType}
+                    onChange={(event) => setSelectedType(event.target.value as AdminNotificationTypeFilter)}
+                    options={NOTIFICATION_TYPE_OPTIONS}
+                    tone="admin"
+                    size="md"
+                    surface="muted"
+                    wrapperClassName="min-w-42"
+                    className="font-medium"
+                  />
+
                   {hasActiveFilters ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuery("");
-                        setTypeFilter("all");
-                        setSelectedDate("");
-                      }}
+                    <Link
+                      href={buildNotificationsHref({
+                        page: 1,
+                        filter,
+                        searchQuery: "",
+                        typeFilter: "all",
+                        dateFilter: "",
+                      })}
                       className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                     >
                       ล้าง
-                    </button>
+                    </Link>
                   ) : null}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
-                    {activeTab === "all" ? "ทั้งหมด" : "ยังไม่อ่าน"} {baseNotifications.length.toLocaleString("th-TH")}
+                    {filter === "all" ? "ทั้งหมด" : "ยังไม่อ่าน"} {totalCount.toLocaleString("th-TH")}
                   </span>
+                  {hasSearch ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
+                      ค้นหา {searchQuery}
+                    </span>
+                  ) : null}
                   {typeFilter !== "all" ? (
                     <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
-                      ประเภท {getNotificationTypeLabel(typeFilter)}
+                      {NOTIFICATION_TYPE_OPTIONS.find((option) => option.value === typeFilter)?.label}
                     </span>
                   ) : null}
                   {selectedDateLabel ? (
@@ -415,55 +463,40 @@ export function AdminNotificationsPage({
                     </span>
                   ) : null}
                   <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
-                    แสดง {visibleNotifications.length.toLocaleString("th-TH")} รายการ
+                    หน้า {currentPage.toLocaleString("th-TH")} / {totalPages.toLocaleString("th-TH")}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {baseNotifications.length === 0 ? (
+          {totalCount === 0 ? (
             <div className="flex min-h-105 flex-col items-center justify-center px-6 py-16 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-admin/8 text-(--color-admin)">
                 <EmptyIcon />
               </div>
               <h2 className="mt-6 text-xl font-semibold text-slate-900">
-                {activeTab === "all" ? "ยังไม่มีการแจ้งเตือน" : "ไม่มีรายการที่ยังไม่อ่าน"}
+                {hasActiveFilters
+                  ? "ไม่พบการแจ้งเตือนที่ตรงกับเงื่อนไข"
+                  : filter === "all"
+                    ? "ยังไม่มีการแจ้งเตือน"
+                    : "ไม่มีรายการที่ยังไม่อ่าน"}
               </h2>
               <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                {activeTab === "all"
-                  ? "เมื่อมีการส่งหรืออัปเดตแบบฟอร์มของนักศึกษา รายการจะแสดงที่นี่โดยอัตโนมัติ"
-                  : "รายการที่ยังไม่อ่านจะกลับมาแสดงที่นี่เมื่อมีการแจ้งเตือนใหม่เข้ามา"}
+                {hasActiveFilters
+                  ? "ไม่พบการแจ้งเตือนที่ตรงกับคำค้นหานี้ ลองเปลี่ยนคำค้นหาหรือล้างตัวกรองแล้วค้นหาใหม่"
+                  : filter === "all"
+                    ? "เมื่อมีการส่งหรืออัปเดตแบบฟอร์มของนักศึกษา รายการจะแสดงที่นี่โดยอัตโนมัติ"
+                    : "รายการที่ยังไม่อ่านจะกลับมาแสดงที่นี่เมื่อมีการแจ้งเตือนใหม่เข้ามา"}
               </p>
-            </div>
-          ) : visibleNotifications.length === 0 ? (
-            <div className="flex min-h-85 flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="flex h-18 w-18 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                <SearchIcon />
-              </div>
-              <h2 className="mt-6 text-xl font-semibold text-slate-900">ไม่พบการแจ้งเตือนที่ตรงกับเงื่อนไข</h2>
-              <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                ลองค้นหาด้วยชื่อนักศึกษา หัวข้อการแจ้งเตือน หรือเปลี่ยนตัวกรองเพื่อดูรายการทั้งหมดอีกครั้ง
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("");
-                  setTypeFilter("all");
-                  setSelectedDate("");
-                }}
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                ล้างตัวกรอง
-              </button>
             </div>
           ) : (
-            <div className="max-h-[calc(100vh-17rem)] overflow-y-auto">
+            <div>
               <div className="flex items-center gap-3 border-b border-slate-200/80 px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 sm:px-6">
                 <BellIcon />
                 <span>คลิกที่รายการเพื่ออ่านและเปิดหน้าที่เกี่ยวข้อง</span>
               </div>
-              <div className="px-5 sm:px-6">
+              <div className="max-h-[calc(100vh-19rem)] overflow-y-auto px-5 sm:px-6">
                 {groupedNotifications.map((group) => (
                   <section key={group.label} className="py-3 first:pt-4 last:pb-4">
                     <div className="sticky top-0 z-10 mb-2 bg-white/95 py-2 text-sm font-semibold text-gray-900 backdrop-blur">
@@ -474,6 +507,31 @@ export function AdminNotificationsPage({
                     </div>
                   </section>
                 ))}
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4 sm:px-6">
+                {currentPage > 1 ? (
+                  <Link
+                    href={previousPageHref}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <ChevronLeftIcon />
+                    Previous
+                  </Link>
+                ) : <span className="inline-flex px-4 py-2 text-sm text-slate-300">Previous</span>}
+
+                <p className="text-sm font-medium text-slate-500">
+                  Page {currentPage} of {totalPages}
+                </p>
+
+                {currentPage < totalPages ? (
+                  <Link
+                    href={nextPageHref}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Next
+                    <ChevronRightIcon />
+                  </Link>
+                ) : <span className="inline-flex px-4 py-2 text-sm text-slate-300">Next</span>}
               </div>
             </div>
           )}

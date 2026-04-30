@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useRef, useState, startTransition, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { logoutAction } from "../../app/intern/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "./admin-layout-shell";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
 import {
-  filterAdminActivityLogs,
   getActorRoleLabel,
   type ActivityCategoryFilter,
   type ActivityRoleFilter,
@@ -31,13 +31,6 @@ const timeOnlyFormatter = new Intl.DateTimeFormat("en-GB", {
   timeZone: DISPLAY_TIME_ZONE,
 });
 
-const dateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: DISPLAY_TIME_ZONE,
-});
-
 const CURRENT_YEAR = new Date().getUTCFullYear();
 
 const selectedDateFormatter = new Intl.DateTimeFormat("th-TH", {
@@ -53,6 +46,15 @@ type AdminActivityLogPageProps = {
     name: string | null;
   };
   activityLogs: AdminActivityLogItem[];
+  currentPage: number;
+  totalCount: number;
+  totalPages: number;
+  filters: {
+    query: string;
+    role: ActivityRoleFilter;
+    category: ActivityCategoryFilter;
+    date: string;
+  };
   summary: {
     totalLogs: number;
     lastUpdatedLabel: string | null;
@@ -68,20 +70,26 @@ type SummaryChipProps = {
   subvalue?: string | null;
 };
 
-type FilterSelectProps<T extends string> = {
+type SelectOptions<T extends string> = Array<{
   value: T;
-  onChange: (value: T) => void;
-  options: Array<{
-    value: T;
-    label: string;
-    count: number;
-  }>;
-};
+  label: string;
+  count: number;
+}>;
 
 type GroupedActivityLogs = {
   label: string;
   items: AdminActivityLogItem[];
 };
+
+function parseActivityRoleFromUrl(value: string | null): ActivityRoleFilter {
+  return value === "admin" || value === "student" ? value : "all";
+}
+
+function parseActivityCategoryFromUrl(value: string | null): ActivityCategoryFilter {
+  return value === "submission" || value === "edit" || value === "file" || value === "status" || value === "other"
+    ? value
+    : "all";
+}
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
   { href: "/intern/dashboard", label: "แดชบอร์ด" },
@@ -118,17 +126,6 @@ function SearchIcon() {
   );
 }
 
-function CalendarIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
-      <rect x="3.5" y="4.5" width="13" height="11" rx="2.5" />
-      <path d="M6.5 2.75v3.5" strokeLinecap="round" />
-      <path d="M13.5 2.75v3.5" strokeLinecap="round" />
-      <path d="M3.5 8h13" />
-    </svg>
-  );
-}
-
 function ClockIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
@@ -156,6 +153,22 @@ function EmptyIcon() {
       <circle cx="46" cy="41" r="8" className="fill-(--color-admin) text-white" />
       <path d="M42.5 41h7" className="stroke-current" strokeWidth="2.2" strokeLinecap="round" />
       <path d="M46 37.5v7" className="stroke-current" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m11.75 4.5-5.5 5.5 5.5 5.5" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m8.25 4.5 5.5 5.5-5.5 5.5" />
     </svg>
   );
 }
@@ -249,10 +262,6 @@ function getActorIcon(role: AdminActivityLogItem["actorRole"]) {
   return <UserIcon />;
 }
 
-function getDateKey(value: string) {
-  return dateKeyFormatter.format(new Date(value));
-}
-
 function getDateGroupLabel(value: string) {
   const date = new Date(value);
   return dateHeaderFormatter.format(date);
@@ -266,11 +275,31 @@ function formatSelectedDateLabel(value: string) {
   return selectedDateFormatter.format(new Date(`${value}T00:00:00+07:00`));
 }
 
-function getDateOffsetValue(offsetDays: number, now = new Date()) {
-  const date = new Date(now);
-  date.setDate(now.getDate() + offsetDays);
+function buildActivityLogFilterQuery(input: {
+  query: string;
+  role: ActivityRoleFilter;
+  category: ActivityCategoryFilter;
+  date: string;
+}) {
+  const searchParams = new URLSearchParams();
 
-  return getDateKey(date.toISOString());
+  if (input.query.trim()) {
+    searchParams.set("q", input.query.trim());
+  }
+
+  if (input.role !== "all") {
+    searchParams.set("role", input.role);
+  }
+
+  if (input.category !== "all") {
+    searchParams.set("category", input.category);
+  }
+
+  if (input.date) {
+    searchParams.set("date", input.date);
+  }
+
+  return searchParams.toString();
 }
 
 function groupActivityLogsByDate(activityLogs: AdminActivityLogItem[]) {
@@ -307,37 +336,32 @@ function SummaryChip({ icon, label, value, subvalue }: SummaryChipProps) {
   );
 }
 
-function FilterSelect<T extends string>({ value, onChange, options }: FilterSelectProps<T>) {
-  return (
-    <AppSelect
-      value={value}
-      onChange={(event) => onChange(event.target.value as T)}
-      options={options}
-      tone="admin"
-      size="md"
-      surface="muted"
-      wrapperClassName="min-w-42"
-      className="font-medium"
-    />
-  );
-}
-
-export function AdminActivityLogPage({ currentUser, activityLogs, summary }: AdminActivityLogPageProps) {
-  const [query, setQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<ActivityRoleFilter>("all");
-  const [categoryFilter, setCategoryFilter] = useState<ActivityCategoryFilter>("all");
-  const [selectedDate, setSelectedDate] = useState("");
+export function AdminActivityLogPage({
+  currentUser,
+  activityLogs,
+  currentPage,
+  totalCount,
+  totalPages,
+  filters,
+  summary,
+}: AdminActivityLogPageProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+  const isSyncingFromUrlRef = useRef(false);
+  const [query, setQuery] = useState(filters.query);
+  const [roleFilter, setRoleFilter] = useState<ActivityRoleFilter>(filters.role);
+  const [categoryFilter, setCategoryFilter] = useState<ActivityCategoryFilter>(filters.category);
+  const [selectedDate, setSelectedDate] = useState(filters.date);
   const deferredQuery = useDeferredValue(query);
-  const normalizedQuery = deferredQuery.trim().toLowerCase();
-
   const roleCounts = {
-    all: activityLogs.length,
+    all: totalCount,
     admin: activityLogs.filter((entry) => entry.actorRole === "admin" || entry.actorRole === "super_admin").length,
     student: activityLogs.filter((entry) => entry.actorRole === "student").length,
   };
 
   const categoryCounts = {
-    all: activityLogs.length,
+    all: totalCount,
     submission: activityLogs.filter((entry) => entry.actionCategory === "submission").length,
     edit: activityLogs.filter((entry) => entry.actionCategory === "edit").length,
     file: activityLogs.filter((entry) => entry.actionCategory === "file").length,
@@ -345,13 +369,13 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
     other: activityLogs.filter((entry) => entry.actionCategory === "other").length,
   };
 
-  const roleOptions: FilterSelectProps<ActivityRoleFilter>["options"] = [
+  const roleOptions: SelectOptions<ActivityRoleFilter> = [
     { value: "all", label: "ทุกคน", count: roleCounts.all },
     { value: "admin", label: "ผู้ดูแล", count: roleCounts.admin },
     { value: "student", label: "นักศึกษา", count: roleCounts.student },
   ];
 
-  const categoryOptions: FilterSelectProps<ActivityCategoryFilter>["options"] = [
+  const categoryOptions: SelectOptions<ActivityCategoryFilter> = [
     { value: "all", label: "ทุกประเภท", count: categoryCounts.all },
     { value: "submission", label: "ส่งฟอร์ม", count: categoryCounts.submission },
     { value: "edit", label: "แก้ไข", count: categoryCounts.edit },
@@ -360,16 +384,117 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
     { value: "other", label: "อื่น ๆ", count: categoryCounts.other },
   ];
 
-  const filteredLogs = filterAdminActivityLogs(activityLogs, {
-    query: normalizedQuery,
-    role: roleFilter,
-    category: categoryFilter,
-  }).filter((entry) => (selectedDate ? getDateKey(entry.createdAtIso) === selectedDate : true));
-  const groupedLogs = groupActivityLogsByDate(filteredLogs);
-  const selectedDateLabel = formatSelectedDateLabel(selectedDate);
+  const groupedLogs = groupActivityLogsByDate(activityLogs);
+  const selectedDateLabel = formatSelectedDateLabel(filters.date);
 
   const hasActiveFilters =
-    query.length > 0 || roleFilter !== "all" || categoryFilter !== "all" || selectedDate.length > 0;
+    filters.query.length > 0 || filters.role !== "all" || filters.category !== "all" || filters.date.length > 0;
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsKey);
+    const nextQuery = params.get("q")?.trim() ?? "";
+    const nextRole = parseActivityRoleFromUrl(params.get("role"));
+    const nextCategory = parseActivityCategoryFromUrl(params.get("category"));
+    const nextDate = params.get("date") ?? "";
+    const shouldSync =
+      query !== nextQuery || roleFilter !== nextRole || categoryFilter !== nextCategory || selectedDate !== nextDate;
+
+    if (shouldSync) {
+      isSyncingFromUrlRef.current = true;
+    }
+
+    if (query !== nextQuery) {
+      setQuery(nextQuery);
+    }
+
+    if (roleFilter !== nextRole) {
+      setRoleFilter(nextRole);
+    }
+
+    if (categoryFilter !== nextCategory) {
+      setCategoryFilter(nextCategory);
+    }
+
+    if (selectedDate !== nextDate) {
+      setSelectedDate(nextDate);
+    }
+  }, [searchParamsKey]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsKey);
+    const nextQuery = params.get("q")?.trim() ?? "";
+    const nextRole = parseActivityRoleFromUrl(params.get("role"));
+    const nextCategory = parseActivityCategoryFromUrl(params.get("category"));
+    const nextDate = params.get("date") ?? "";
+
+    if (query === nextQuery && roleFilter === nextRole && categoryFilter === nextCategory && selectedDate === nextDate) {
+      isSyncingFromUrlRef.current = false;
+    }
+  }, [categoryFilter, query, roleFilter, searchParamsKey, selectedDate]);
+
+  function buildActivityLogsHref(input?: Partial<AdminActivityLogPageProps["filters"]> & { page?: number }) {
+    const searchParams = new URLSearchParams();
+    const nextFilters = {
+      query: input?.query ?? filters.query,
+      role: input?.role ?? filters.role,
+      category: input?.category ?? filters.category,
+      date: input?.date ?? filters.date,
+    };
+    const nextPage = input?.page ?? currentPage;
+
+    if (nextPage > 1) {
+      searchParams.set("page", String(nextPage));
+    }
+
+    if (nextFilters.query.trim()) {
+      searchParams.set("q", nextFilters.query.trim());
+    }
+
+    if (nextFilters.role !== "all") {
+      searchParams.set("role", nextFilters.role);
+    }
+
+    if (nextFilters.category !== "all") {
+      searchParams.set("category", nextFilters.category);
+    }
+
+    if (nextFilters.date) {
+      searchParams.set("date", nextFilters.date);
+    }
+
+    const queryString = searchParams.toString();
+
+    return queryString ? `/intern/activity-logs?${queryString}` : "/intern/activity-logs";
+  }
+
+  useEffect(() => {
+    if (isSyncingFromUrlRef.current) {
+      return;
+    }
+
+    const nextHref = buildActivityLogsHref({
+      page: 1,
+      query: deferredQuery,
+      role: roleFilter,
+      category: categoryFilter,
+      date: selectedDate,
+    });
+    const nextQuery = buildActivityLogFilterQuery({
+      query: deferredQuery,
+      role: roleFilter,
+      category: categoryFilter,
+      date: selectedDate,
+    });
+    const currentParams = new URLSearchParams(searchParamsKey);
+    currentParams.delete("page");
+    const currentQuery = currentParams.toString();
+
+    if (nextQuery !== currentQuery) {
+      startTransition(() => {
+        router.replace(nextHref, { scroll: false });
+      });
+    }
+  }, [categoryFilter, deferredQuery, roleFilter, router, searchParamsKey, selectedDate]);
 
   return (
     <AdminLayoutShell
@@ -395,12 +520,11 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
               icon={<ActivityIcon />}
               label="ทั้งหมด"
               value={summary.totalLogs.toLocaleString("th-TH")}
-              subvalue={`${filteredLogs.length.toLocaleString("th-TH")} รายการที่แสดง`}
             />
           </div>
         </div>
 
-        <section className="mt-6 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+        {/* <section className="mt-6 flex flex-wrap items-center gap-2 text-sm text-slate-500">
           <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
             ผู้ดูแล {roleCounts.admin.toLocaleString("th-TH")}
           </span>
@@ -408,9 +532,9 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
             นักศึกษา {roleCounts.student.toLocaleString("th-TH")}
           </span>
           <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-slate-200">
-            แสดง {filteredLogs.length.toLocaleString("th-TH")}
+            แสดง {totalCount.toLocaleString("th-TH")}
           </span>
-        </section>
+        </section> */}
 
         <section className="mt-8 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
@@ -450,21 +574,33 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                     wrapperClassName="min-w-48"
                   />
 
-                  <FilterSelect value={roleFilter} onChange={setRoleFilter} options={roleOptions} />
-                  <FilterSelect value={categoryFilter} onChange={setCategoryFilter} options={categoryOptions} />
+                  <AppSelect
+                    value={roleFilter}
+                    onChange={(event) => setRoleFilter(event.target.value as ActivityRoleFilter)}
+                    options={roleOptions}
+                    tone="admin"
+                    size="md"
+                    surface="muted"
+                    wrapperClassName="min-w-42"
+                    className="font-medium"
+                  />
+                  <AppSelect
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value as ActivityCategoryFilter)}
+                    options={categoryOptions}
+                    tone="admin"
+                    size="md"
+                    surface="muted"
+                    wrapperClassName="min-w-42"
+                    className="font-medium"
+                  />
                   {hasActiveFilters ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuery("");
-                        setRoleFilter("all");
-                        setCategoryFilter("all");
-                        setSelectedDate("");
-                      }}
+                    <Link
+                      href="/intern/activity-logs"
                       className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                     >
                       ล้าง
-                    </button>
+                    </Link>
                   ) : null}
                 </div>
 
@@ -475,44 +611,27 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                     </span>
                   ) : null}
                   <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
-                    แสดง {filteredLogs.length.toLocaleString("th-TH")} รายการ
+                    แสดง {totalCount.toLocaleString("th-TH")} รายการ
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-600">
+                    หน้า {currentPage.toLocaleString("th-TH")} / {totalPages.toLocaleString("th-TH")}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {activityLogs.length === 0 ? (
+          {totalCount === 0 ? (
             <div className="flex min-h-105 flex-col items-center justify-center px-6 py-16 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-admin/8 text-(--color-admin)">
                 <EmptyIcon />
               </div>
               <h2 className="mt-6 text-xl font-semibold text-slate-900">ยังไม่มีกิจกรรม</h2>
               <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                เมื่อมีการส่งฟอร์ม แก้ไขข้อมูล อัปโหลดไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่โดยอัตโนมัติ
+                {hasActiveFilters
+                  ? "ไม่พบกิจกรรมที่ตรงกับตัวกรองนี้ ลองเปลี่ยนคำค้นหาหรือล้างตัวกรองเพื่อดูรายการทั้งหมดอีกครั้ง"
+                  : "เมื่อมีการส่งฟอร์ม แก้ไขข้อมูล อัปโหลดไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่โดยอัตโนมัติ"}
               </p>
-            </div>
-          ) : filteredLogs.length === 0 ? (
-            <div className="flex min-h-85 flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="flex h-18 w-18 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                <SearchIcon />
-              </div>
-              <h2 className="mt-6 text-xl font-semibold text-slate-900">ไม่พบกิจกรรมที่ตรงกับเงื่อนไข</h2>
-              <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                ลองค้นหาด้วยชื่อผู้ใช้งาน อีเมล นักศึกษา หรือสลับตัวกรองเพื่อดูรายการทั้งหมดอีกครั้ง
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("");
-                  setRoleFilter("all");
-                  setCategoryFilter("all");
-                  setSelectedDate("");
-                }}
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                ล้างตัวกรอง
-              </button>
             </div>
           ) : (
             <div className="px-5 sm:px-6">
@@ -568,6 +687,31 @@ export function AdminActivityLogPage({ currentUser, activityLogs, summary }: Adm
                   </div>
                 </section>
               ))}
+              <div className="flex items-center justify-between border-t border-slate-200 py-4">
+                {currentPage > 1 ? (
+                  <Link
+                    href={buildActivityLogsHref({ page: currentPage - 1 })}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <ChevronLeftIcon />
+                    Previous
+                  </Link>
+                ) : <span className="inline-flex px-4 py-2 text-sm text-slate-300">Previous</span>}
+
+                <p className="text-sm font-medium text-slate-500">
+                  Page {currentPage} of {totalPages}
+                </p>
+
+                {currentPage < totalPages ? (
+                  <Link
+                    href={buildActivityLogsHref({ page: currentPage + 1 })}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Next
+                    <ChevronRightIcon />
+                  </Link>
+                ) : <span className="inline-flex px-4 py-2 text-sm text-slate-300">Next</span>}
+              </div>
             </div>
           )}
         </section>

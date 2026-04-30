@@ -1,5 +1,22 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Local Dev Data
+
+Run `npm run db:seed` to ensure the local demo accounts exist.
+
+The seed script also backfills `AdminNotificationReceipt` rows for all existing admins on existing notifications, so the notifications page can be exercised in local development without manually patching DB data.
+
+Default local accounts after seeding:
+
+- `nupong.pr@cmu.ac.th / Password123!` (`super_admin`)
+- `admin.demo@cmu.ac.th / Password123!` (`admin`)
+- `student.demo@cmu.ac.th / Password123!` (`student`)
+
+Useful local regression surfaces after seeding:
+
+- `/intern/notifications` should be testable with the seeded admin account because existing notifications are backfilled to all admins.
+- `/intern/activity-logs` should show paginated admin/student activity suitable for search and filter regression checks.
+
 ## Getting Started
 
 First, run the development server:
