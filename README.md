@@ -35,11 +35,17 @@ Run `npm run db:seed` to ensure the local demo accounts exist.
 
 The seed script also backfills `AdminNotificationReceipt` rows for all existing admins on existing notifications, so the notifications page can be exercised in local development without manually patching DB data.
 
-Default local accounts after seeding:
+Set `SEED_LOGIN_PASSWORD` before seeding. Example:
 
-- `nupong.pr@cmu.ac.th / Password123!` (`super_admin`)
-- `admin.demo@cmu.ac.th / Password123!` (`admin`)
-- `student.demo@cmu.ac.th / Password123!` (`student`)
+```bash
+SEED_LOGIN_PASSWORD='replace-with-a-strong-local-password' npm run db:seed
+```
+
+Local accounts created after seeding:
+
+- `nupong.pr@cmu.ac.th / $SEED_LOGIN_PASSWORD` (`super_admin`)
+- `admin.demo@cmu.ac.th / $SEED_LOGIN_PASSWORD` (`admin`)
+- `student.demo@cmu.ac.th / $SEED_LOGIN_PASSWORD` (`student`)
 
 Useful local regression surfaces after seeding:
 

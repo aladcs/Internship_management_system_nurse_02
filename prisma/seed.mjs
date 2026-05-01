@@ -17,7 +17,18 @@ function getDatabaseUrl() {
 const prisma = new PrismaClient({
   adapter: new PrismaPg(getDatabaseUrl()),
 });
-const defaultPassword = process.env.SEED_LOGIN_PASSWORD ?? "Password123!";
+
+function getSeedLoginPassword() {
+  const password = process.env.SEED_LOGIN_PASSWORD?.trim();
+
+  if (!password) {
+    throw new Error("SEED_LOGIN_PASSWORD is required to seed login users.");
+  }
+
+  return password;
+}
+
+const defaultPassword = getSeedLoginPassword();
 
 async function upsertUser({ email, name, role, createdById }) {
   const passwordHash = await bcrypt.hash(defaultPassword, 10);

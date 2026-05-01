@@ -25,11 +25,7 @@ function getAuthSecret() {
     return secret;
   }
 
-  if (process.env.NODE_ENV !== "production") {
-    return "dev-auth-secret-change-me";
-  }
-
-  throw new Error("AUTH_SECRET is required in production.");
+  throw new Error("AUTH_SECRET or SESSION_SECRET is required.");
 }
 
 function encodeBase64Url(value: string) {
