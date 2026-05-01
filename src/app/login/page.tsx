@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+import { BRAND_LOGO_PATH, withAppBasePath } from "@/lib/app-paths";
 import { CMU_ENTRA_LOGIN_PATH, isCmuEntraConfigured } from "@/lib/auth/cmu-entra";
 import { GOOGLE_OAUTH_LOGIN_PATH, isGoogleOAuthConfigured } from "@/lib/auth/google-oauth";
 import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
@@ -66,11 +67,13 @@ function readSearchParam(
 }
 
 function buildOAuthLoginHref(basePath: string, nextPath: string | null) {
+  const externalBasePath = withAppBasePath(basePath);
+
   if (!nextPath) {
-    return basePath;
+    return externalBasePath;
   }
 
-  const loginUrl = new URL(basePath, "http://localhost");
+  const loginUrl = new URL(externalBasePath, "http://localhost");
   loginUrl.searchParams.set("next", nextPath);
 
   return `${loginUrl.pathname}${loginUrl.search}`;
@@ -138,7 +141,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
               <Image
-                src="/nurse_logo.svg"
+                src={BRAND_LOGO_PATH}
                 alt="ระบบจัดการฝึกงาน"
                 width={29}
                 height={32}
@@ -185,7 +188,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="space-y-8">
               <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-white/14 shadow-lg shadow-black/10 ring-1 ring-white/20 backdrop-blur-sm">
                 <Image
-                  src="/nurse_logo.svg"
+                  src={BRAND_LOGO_PATH}
                   alt="โลโก้คณะพยาบาลศาสตร์ มหาวิทยาลัยเชียงใหม่"
                   width={55}
                   height={60}

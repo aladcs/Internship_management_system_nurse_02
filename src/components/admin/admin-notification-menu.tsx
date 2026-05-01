@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { markNotificationReadAction } from "@/app/intern/dashboard/actions";
+import { markNotificationReadAction } from "@/app/dashboard/actions";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
 
 function getInitials(value: string | null, fallback: string) {

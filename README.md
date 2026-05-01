@@ -1,5 +1,34 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Docker Deploy
+
+This repository now includes a production Docker setup for the app and PostgreSQL.
+
+Required files before deploy:
+
+- `.env` for shared Postgres container values used by Compose
+- `.env.production` for app runtime secrets and production `DATABASE_URL`
+
+If you use the bundled Postgres service from `docker-compose.prod.yml`, set `DATABASE_URL` host to `db`.
+
+Example:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@db:5432/internship_management_system"
+```
+
+Deploy:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The app container automatically runs `prisma migrate deploy` before starting Next.js.
+
+Uploaded files are stored in the named Docker volume mounted at `/app/storage`, so student attachments and profile images survive container restarts.
+
+If you already have an external PostgreSQL server, point `DATABASE_URL` at that server and remove or override the `db` service.
+
 ## Local Dev Data
 
 Run `npm run db:seed` to ensure the local demo accounts exist.
@@ -17,6 +46,28 @@ Useful local regression surfaces after seeding:
 - `/intern/notifications` should be testable with the seeded admin account because existing notifications are backfilled to all admins.
 - `/intern/activity-logs` should show paginated admin/student activity suitable for search and filter regression checks.
 
+## Environment Files
+
+This project now separates environment files by responsibility:
+
+- `.env` keeps shared local infrastructure defaults used by Docker Compose and Prisma fallback.
+- `.env.local` keeps local app runtime values such as `APP_BASE_URL`, `AUTH_SECRET`, and optional local OAuth credentials.
+- `.env.production` is the production scaffold. Fill it only on the deployment target, or map the same keys through your hosting platform's secret manager.
+- `.env.example` and `.env.production.example` are safe templates that document the required keys without storing real secrets.
+
+Operationally:
+
+- `next dev` reads `.env.local` before `.env`.
+- `next build` and `next start` read `.env.production`, `.env.local`, then `.env`.
+- Prisma config and the seed script now use Next's env loader too, so the same split applies to `prisma generate` and `prisma db seed`.
+
+Recommended local setup:
+
+1. Keep shared Postgres and pgAdmin defaults in `.env`.
+2. Put app-only local secrets in `.env.local`.
+3. Put production secrets in your server or platform environment, using `.env.production` only as a key checklist when you self-host.
+4. Keep `.env.example` and `.env.production.example` updated whenever you add, remove, or rename environment variables.
+
 ## Getting Started
 
 First, run the development server:
@@ -31,7 +82,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000/intern](http://localhost:3000/intern) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

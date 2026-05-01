@@ -1,1 +1,0 @@
-export { GET } from "@/app/intern/auth/cmu/callback/route";

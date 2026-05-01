@@ -1,3 +1,5 @@
+import { withAppBasePath } from "@/lib/app-paths";
+
 type TelegramAdminAlert = {
   title: string;
   message: string;
@@ -25,9 +27,9 @@ function buildTelegramMessage(input: TelegramAdminAlert) {
   const appBaseUrl = process.env.APP_BASE_URL?.trim();
 
   if (input.targetPath && appBaseUrl) {
-    lines.push(`Open: ${new URL(input.targetPath, appBaseUrl).toString()}`);
+    lines.push(`Open: ${new URL(withAppBasePath(input.targetPath), appBaseUrl).toString()}`);
   } else if (input.targetPath) {
-    lines.push(`Path: ${input.targetPath}`);
+    lines.push(`Path: ${withAppBasePath(input.targetPath)}`);
   }
 
   return lines.join("\n");

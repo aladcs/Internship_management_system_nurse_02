@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useDeferredValue, useEffect, useRef, useState, startTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { logoutAction } from "../../app/intern/dashboard/actions";
+import { logoutAction } from "../../app/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "./admin-layout-shell";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
 import { AppSelect } from "@/components/ui/app-select";
@@ -92,10 +92,10 @@ function parseActivityCategoryFromUrl(value: string | null): ActivityCategoryFil
 }
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/dashboard", label: "แดชบอร์ด" },
-  { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
-  { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
+  { href: "/dashboard", label: "แดชบอร์ด" },
+  { href: "/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
+  { href: "/notifications", label: "การแจ้งเตือน" },
+  { href: "/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 function ActivityIcon() {
@@ -464,7 +464,7 @@ export function AdminActivityLogPage({
 
     const queryString = searchParams.toString();
 
-    return queryString ? `/intern/activity-logs?${queryString}` : "/intern/activity-logs";
+    return queryString ? `/activity-logs?${queryString}` : "/activity-logs";
   }
 
   useEffect(() => {
@@ -498,9 +498,9 @@ export function AdminActivityLogPage({
 
   return (
     <AdminLayoutShell
-      currentPath="/intern/activity-logs"
+      currentPath="/activity-logs"
       currentUser={currentUser}
-      homeHref="/intern/dashboard"
+      homeHref="/dashboard"
       logoutAction={logoutAction}
       navItems={ADMIN_NAV_ITEMS}
       roleLabel="ผู้ดูแลระบบ"
@@ -596,7 +596,7 @@ export function AdminActivityLogPage({
                   />
                   {hasActiveFilters ? (
                     <Link
-                      href="/intern/activity-logs"
+                      href="/activity-logs"
                       className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                     >
                       ล้าง

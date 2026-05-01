@@ -1,17 +1,17 @@
 import type { UserRole } from "@prisma/client";
 
-export const STUDENT_TOS_PATH = "/intern/tos";
+export const STUDENT_TOS_PATH = "/tos";
 
 export const ROLE_REDIRECT_PATHS: Record<UserRole, string> = {
-  super_admin: "/intern/admins",
-  admin: "/intern/dashboard",
-  student: "/intern/overview",
+  super_admin: "/admins",
+  admin: "/dashboard",
+  student: "/overview",
 };
 
 const ROLE_ALLOWED_PREFIXES: Record<UserRole, string[]> = {
-  super_admin: ["/intern/admins", "/intern/account/name", "/intern/account/password"],
-  admin: ["/intern/dashboard", "/intern/admin/students", "/intern/notifications", "/intern/activity-logs", "/intern/account/name", "/intern/account/password"],
-  student: [STUDENT_TOS_PATH, "/intern/overview", "/intern/form", "/intern/account/password"],
+  super_admin: ["/admins", "/account/name", "/account/password"],
+  admin: ["/dashboard", "/admin/students", "/notifications", "/activity-logs", "/account/name", "/account/password"],
+  student: [STUDENT_TOS_PATH, "/overview", "/form", "/account/password"],
 };
 
 type AuthenticatedRedirectInput = {

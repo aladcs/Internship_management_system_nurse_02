@@ -1,7 +1,9 @@
+import { withAppBasePath } from "@/lib/app-paths";
+
 const DEFAULT_SCOPE = "openid email profile";
 
-export const GOOGLE_OAUTH_LOGIN_PATH = "/intern/auth/google";
-export const GOOGLE_OAUTH_CALLBACK_PATH = "/intern/auth/google/callback";
+export const GOOGLE_OAUTH_LOGIN_PATH = "/auth/google";
+export const GOOGLE_OAUTH_CALLBACK_PATH = "/auth/google/callback";
 
 type RequiredEnvName =
   | "APP_BASE_URL"
@@ -33,8 +35,8 @@ function resolveCallbackConfig(appBaseUrl: string, value: string | undefined) {
 
   if (!normalizedValue) {
     return {
-      callbackPath: GOOGLE_OAUTH_CALLBACK_PATH,
-      callbackUrl: `${appBaseUrl}${GOOGLE_OAUTH_CALLBACK_PATH}`,
+      callbackPath: withAppBasePath(GOOGLE_OAUTH_CALLBACK_PATH),
+      callbackUrl: `${appBaseUrl}${withAppBasePath(GOOGLE_OAUTH_CALLBACK_PATH)}`,
     };
   }
 
@@ -48,10 +50,11 @@ function resolveCallbackConfig(appBaseUrl: string, value: string | undefined) {
   }
 
   const callbackPath = normalizePath(normalizedValue);
+  const externalCallbackPath = withAppBasePath(callbackPath);
 
   return {
-    callbackPath,
-    callbackUrl: `${appBaseUrl}${callbackPath}`,
+    callbackPath: externalCallbackPath,
+    callbackUrl: `${appBaseUrl}${externalCallbackPath}`,
   };
 }
 

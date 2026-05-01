@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { InternshipStatus } from "@prisma/client";
-import { logoutAction, markAllNotificationsReadAction } from "@/app/intern/dashboard/actions";
+import { logoutAction, markAllNotificationsReadAction } from "@/app/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { AdminNotificationFeed } from "@/components/admin/admin-notification-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
@@ -33,10 +33,10 @@ export type AdminDashboardPageProps = {
 };
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/dashboard", label: "แดชบอร์ด" },
-  { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
-  { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
+  { href: "/dashboard", label: "แดชบอร์ด" },
+  { href: "/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
+  { href: "/notifications", label: "การแจ้งเตือน" },
+  { href: "/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 function UsersIcon() {
@@ -158,9 +158,9 @@ export function AdminDashboardPage({
 
   return (
     <AdminLayoutShell
-      currentPath="/intern/dashboard"
+      currentPath="/dashboard"
       currentUser={currentUser}
-      homeHref="/intern/dashboard"
+      homeHref="/dashboard"
       logoutAction={logoutAction}
       navItems={ADMIN_NAV_ITEMS}
       roleLabel="ผู้ดูแลระบบ"
@@ -211,7 +211,7 @@ export function AdminDashboardPage({
                 <p className="mt-1 text-sm text-slate-500">ข้อมูลนักศึกษาที่อัปเดตล่าสุด</p>
               </div>
               <Link
-                href="/intern/admin/students"
+                href="/admin/students"
                 className="inline-flex items-center gap-1 text-sm font-medium text-(--color-admin) transition hover:opacity-80"
               >
                 ดูทั้งหมด
@@ -228,7 +228,7 @@ export function AdminDashboardPage({
                 {recentStudents.map((student) => (
                   <Link
                     key={student.id}
-                    href={`/intern/admin/students/${student.id}`}
+                    href={`/admin/students/${student.id}`}
                     className="flex items-center gap-4 px-5 py-4 transition hover:bg-slate-50 sm:px-6"
                   >
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-student/12 text-sm font-semibold text-(--color-student)">

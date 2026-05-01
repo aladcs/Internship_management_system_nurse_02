@@ -1,4 +1,5 @@
 import path from "node:path";
+import { withAppBasePath } from "@/lib/app-paths";
 
 const LEGACY_PUBLIC_PREFIXES = [
   "/uploads/student-files/",
@@ -15,13 +16,13 @@ export function getStudentProfileImageSrc(value: string) {
     value.startsWith("/uploads/student-profile-images/") ||
     value.startsWith("/storage/student-profile-images/")
   ) {
-    return value.replace(
+    return withAppBasePath(value.replace(
       /^\/(uploads|storage)\/student-profile-images\//,
-      "/intern/api/student-profile-images/",
-    );
+      "/api/student-profile-images/",
+    ));
   }
 
-  return value;
+  return value.startsWith("/") ? withAppBasePath(value) : value;
 }
 
 export function getStudentProfileImageDownloadHref(value: string) {
@@ -39,28 +40,36 @@ export function getStudentAttachmentDownloadHref(value: string) {
     value.startsWith("/uploads/student-files/") ||
     value.startsWith("/storage/student-files/")
   ) {
-    return value.replace(
+    return withAppBasePath(value.replace(
       /^\/(uploads|storage)\/student-files\//,
-      "/intern/api/student-files/",
-    );
+      "/api/student-files/",
+    ));
   }
 
-  return value;
+  return value.startsWith("/") ? withAppBasePath(value) : value;
 }
 
 export function getPrivateStorageRoot() {
   return path.join(process.cwd(), "storage");
 }
 
+function getPublicUploadsRoot() {
+  return path.join(process.cwd(), "public", "uploads");
+}
+
 export function resolveStoredAssetAbsolutePath(storedPath: string) {
   const normalizedPath = storedPath.replace(/\\/g, "/");
 
   if (LEGACY_PUBLIC_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix))) {
-    return path.join(process.cwd(), "public", normalizedPath.replace(/^\//, ""));
+    const relativePath = normalizedPath.replace(/^\/uploads\//, "");
+
+    return path.join(getPublicUploadsRoot(), relativePath);
   }
 
   if (PRIVATE_STORAGE_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix))) {
-    return path.join(process.cwd(), normalizedPath.replace(/^\//, ""));
+    const relativePath = normalizedPath.replace(/^\/storage\//, "");
+
+    return path.join(getPrivateStorageRoot(), relativePath);
   }
 
   return null;

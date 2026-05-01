@@ -1,0 +1,13 @@
+.git
+.github
+.next
+.vscode
+node_modules
+npm-debug.log*
+build.log
+build*.log
+.DS_Store
+.env
+.env.local
+.env.production
+storage

@@ -15,9 +15,9 @@ import {
 import {
   initialUpdateStudentStatusActionState,
   type UpdateStudentStatusActionState,
-} from "@/app/intern/admin/students/[id]/action-state";
-import { updateStudentStatusAction } from "@/app/intern/admin/students/[id]/actions";
-import { logoutAction } from "@/app/intern/admin/students/actions";
+} from "@/app/admin/students/[id]/action-state";
+import { updateStudentStatusAction } from "@/app/admin/students/[id]/actions";
+import { logoutAction } from "@/app/admin/students/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { ModalFrame } from "@/components/admin/modal-frame";
 import { InternshipStatusStepper } from "@/components/ui/internship-status-stepper";
@@ -99,10 +99,10 @@ export type AdminStudentDetailPageProps = {
 };
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/dashboard", label: "แดชบอร์ด" },
-  { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
-  { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
+  { href: "/dashboard", label: "แดชบอร์ด" },
+  { href: "/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
+  { href: "/notifications", label: "การแจ้งเตือน" },
+  { href: "/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 function ArrowLeftIcon() {
@@ -426,7 +426,7 @@ function AttachmentsSection({ student }: { student: AdminStudentDetailPageProps[
               </a>
             ) : null}
             <Link
-              href={`/intern/admin/students/${student.id}/edit`}
+              href={`/admin/students/${student.id}/edit`}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
             >
               จัดการโปรไฟล์
@@ -550,9 +550,9 @@ export function AdminStudentDetailPage({
 
   return (
     <AdminLayoutShell
-      currentPath="/intern/admin/students"
+      currentPath="/admin/students"
       currentUser={currentUser}
-      homeHref="/intern/admin/students"
+      homeHref="/admin/students"
       logoutAction={logoutAction}
       navItems={ADMIN_NAV_ITEMS}
       roleLabel="ผู้ดูแลระบบ"
@@ -560,14 +560,14 @@ export function AdminStudentDetailPage({
       <main className={`${appShellClass} py-8 lg:py-10`}>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/intern/admin/students"
+            href="/admin/students"
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             <ArrowLeftIcon />
             กลับไปหน้ารายชื่อนักศึกษา
           </Link>
           <Link
-            href={`/intern/admin/students/${student.id}/edit`}
+            href={`/admin/students/${student.id}/edit`}
             className="inline-flex items-center gap-2 rounded-full bg-(--color-admin) px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-admin/20 transition hover:brightness-95"
           >
             <EditIcon />

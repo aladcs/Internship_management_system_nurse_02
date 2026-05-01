@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { AccountMenu } from "@/components/auth/account-menu";
+import { BRAND_LOGO_PATH } from "@/lib/app-paths";
 import { appShellClass } from "@/lib/page-shell";
 
 type LogoutServerAction = () => Promise<void>;
@@ -79,7 +80,7 @@ export function AdminLayoutShell({
             <Link href={homeHref} className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
                 <Image
-                  src="/nurse_logo.svg"
+                  src={BRAND_LOGO_PATH}
                   alt="ระบบจัดการฝึกงาน"
                   width={27}
                   height={30}
@@ -143,7 +144,7 @@ export function AdminLayoutShell({
                 
               </div>
               <Link
-                href="/intern/account/name"
+                href="/account/name"
                 className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl bg-(--color-admin) px-4 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
               >
                 ตั้งชื่อที่แสดง
@@ -192,14 +193,14 @@ export function AdminLayoutShell({
               })}
 
               <Link
-                href="/intern/account/name"
+                href="/account/name"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {currentUser.name?.trim() ? "แก้ไขชื่อที่แสดง" : "ตั้งชื่อที่แสดง"}
               </Link>
               <Link
-                href="/intern/account/password"
+                href="/account/password"
                 className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-admin/6 hover:text-(--color-admin)"
                 onClick={() => setMobileMenuOpen(false)}
               >

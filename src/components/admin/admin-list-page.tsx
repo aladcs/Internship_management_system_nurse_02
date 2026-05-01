@@ -1,19 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   deleteAdminAction,
   logoutAction,
   resetAdminPasswordAction,
   saveAdminAction,
-} from "@/app/intern/admins/actions";
+} from "@/app/admins/actions";
 import {
   type AdminListItem,
   initialDeleteAdminActionState,
   initialResetAdminPasswordActionState,
   initialSaveAdminActionState,
-} from "@/app/intern/admins/action-state";
+} from "@/app/admins/action-state";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { ModalFrame } from "@/components/admin/modal-frame";
 import { formatThaiDateTime } from "@/lib/date-format";
@@ -21,10 +23,15 @@ import { appShellClass } from "@/lib/page-shell";
 
 type AdminListPageProps = {
   admins: AdminListItem[];
+  currentPage: number;
   currentUser: {
     email: string;
     name: string | null;
   };
+  hasAnyAdmins: boolean;
+  searchQuery: string;
+  totalCount: number;
+  totalPages: number;
 };
 
 type AdminDialogProps = {
@@ -47,7 +54,7 @@ type ResetPasswordDialogProps = {
 };
 
 const SUPER_ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/admins", label: "รายชื่อผู้ดูแลระบบ" },
+  { href: "/admins", label: "รายชื่อผู้ดูแลระบบ" },
 ];
 
 function SearchIcon() {
@@ -127,6 +134,50 @@ function EmptyIcon() {
       <path d="M42.5 41h7" className="stroke-current" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m11.75 4.5-5.5 5.5 5.5 5.5" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className="h-4 w-4">
+      <path d="m8.25 4.5 5.5 5.5-5.5 5.5" />
+    </svg>
+  );
+}
+
+function buildAdminListHref(params: { page?: number; searchQuery: string }) {
+  const searchParams = new URLSearchParams();
+
+  if (params.searchQuery.trim()) {
+    searchParams.set("q", params.searchQuery.trim());
+  }
+
+  if (params.page && params.page > 1) {
+    searchParams.set("page", String(params.page));
+  }
+
+  const queryString = searchParams.toString();
+
+  return queryString ? `/admins?${queryString}` : "/admins";
+}
+
+function getPaginationPages(currentPage: number, totalPages: number) {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const pages = new Set<number>([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+
+  return Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((left, right) => left - right);
 }
 
 function getInitials(name: string | null, email: string) {
@@ -496,34 +547,64 @@ function ResetAdminPasswordDialog({ admin, onClose }: ResetPasswordDialogProps) 
   );
 }
 
-export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListPageProps) {
+export function AdminListPage({
+  admins: initialAdmins,
+  currentPage,
+  currentUser,
+  hasAnyAdmins,
+  searchQuery,
+  totalCount,
+  totalPages,
+}: AdminListPageProps) {
+  const router = useRouter();
   const [admins, setAdmins] = useState(initialAdmins);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchDraft, setSearchDraft] = useState(searchQuery);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminListItem | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState<AdminListItem | null>(null);
   const [resettingAdmin, setResettingAdmin] = useState<AdminListItem | null>(null);
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredAdmins = admins.filter((admin) => {
-    if (!normalizedQuery) {
-      return true;
-    }
+  const paginationPages = useMemo(
+    () => getPaginationPages(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
 
-    return [admin.name ?? "", admin.email]
-      .join(" ")
-      .toLowerCase()
-      .includes(normalizedQuery);
-  });
+  useEffect(() => {
+    setAdmins(initialAdmins);
+  }, [initialAdmins]);
 
-  function handleCreatedAdmin(admin: AdminListItem) {
-    setAdmins((currentAdmins) => {
-      if (currentAdmins.some((currentAdmin) => currentAdmin.id === admin.id)) {
-        return currentAdmins;
+  useEffect(() => {
+    setSearchDraft(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (searchDraft === searchQuery) {
+        return;
       }
 
-      return [admin, ...currentAdmins];
-    });
+      router.replace(
+        buildAdminListHref({
+          searchQuery: searchDraft,
+        }),
+      );
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [router, searchDraft, searchQuery]);
+
+  function handleCreatedAdmin(admin: AdminListItem) {
+    if (!searchQuery && currentPage === 1) {
+      setAdmins((currentAdmins) => {
+        if (currentAdmins.some((currentAdmin) => currentAdmin.id === admin.id)) {
+          return currentAdmins;
+        }
+
+        return [admin, ...currentAdmins].slice(0, 10);
+      });
+    }
+
+    router.refresh();
   }
 
   function handleUpdatedAdmin(admin: AdminListItem) {
@@ -532,23 +613,28 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
         currentAdmin.id === admin.id ? admin : currentAdmin,
       ),
     );
+
+    router.refresh();
   }
 
   function handleDeletedAdmin(adminId: string) {
     setAdmins((currentAdmins) =>
       currentAdmins.filter((currentAdmin) => currentAdmin.id !== adminId),
     );
+
+    router.refresh();
   }
 
-  const emptyState = admins.length === 0;
-  const filteredEmptyState = !emptyState && filteredAdmins.length === 0;
+  const emptyState = !hasAnyAdmins;
+  const filteredEmptyState = hasAnyAdmins && totalCount === 0;
+  const hasActiveFilters = searchQuery.length > 0;
 
   return (
     <AdminLayoutShell
       backgroundClassName="bg-[#f7f2f8] text-slate-950"
-      currentPath="/intern/admins"
+      currentPath="/admins"
       currentUser={currentUser}
-      homeHref="/intern/admins"
+      homeHref="/admins"
       logoutAction={logoutAction}
       navItems={SUPER_ADMIN_NAV_ITEMS}
       roleLabel="ผู้ดูแลระบบสูงสุด"
@@ -578,18 +664,29 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
 
         <section className="mt-8 overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <label className="relative block w-full max-w-md text-slate-500">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                <SearchIcon />
-              </span>
-              <input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
-                placeholder="ค้นหาจากชื่อหรืออีเมล"
-              />
-            </label>
-            <ResultCount count={filteredAdmins.length} />
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <label className="relative block w-full max-w-md text-slate-500">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                  <SearchIcon />
+                </span>
+                <input
+                  value={searchDraft}
+                  onChange={(event) => setSearchDraft(event.target.value)}
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
+                  placeholder="ค้นหาจากชื่อหรืออีเมล"
+                />
+              </label>
+              <ResultCount count={totalCount} />
+            </div>
+
+            {hasActiveFilters ? (
+              <Link
+                href="/admins"
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                ล้าง
+              </Link>
+            ) : null}
           </div>
 
           {emptyState ? (
@@ -636,7 +733,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAdmins.map((admin) => (
+                    {admins.map((admin) => (
                       <tr key={admin.id} className="transition hover:bg-slate-50/80">
                         <td className="border-t border-slate-100 px-6 py-4">
                           <div className="flex items-center gap-4">
@@ -695,7 +792,7 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
               </div>
 
               <div className="divide-y divide-slate-100 md:hidden">
-                {filteredAdmins.map((admin) => (
+                {admins.map((admin) => (
                   <article key={admin.id} className="space-y-4 px-5 py-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
@@ -745,6 +842,61 @@ export function AdminListPage({ admins: initialAdmins, currentUser }: AdminListP
                     </div>
                   </article>
                 ))}
+              </div>
+
+              <div className="flex flex-col gap-4 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p className="text-sm text-slate-500">
+                  หน้า {currentPage} จาก {totalPages}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={buildAdminListHref({
+                      page: Math.max(1, currentPage - 1),
+                      searchQuery,
+                    })}
+                    aria-disabled={currentPage === 1}
+                    className={`inline-flex h-10 items-center justify-center gap-1 rounded-2xl border px-3 text-sm font-medium transition ${currentPage === 1 ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    <ChevronLeftIcon />
+                    ก่อนหน้า
+                  </Link>
+
+                  {paginationPages.map((pageNumber, index) => {
+                    const previousPage = paginationPages[index - 1];
+                    const showGap = previousPage && pageNumber - previousPage > 1;
+
+                    return (
+                      <div key={pageNumber} className="flex items-center gap-2">
+                        {showGap ? <span className="px-1 text-sm text-slate-400">...</span> : null}
+                        <Link
+                          href={buildAdminListHref({
+                            page: pageNumber,
+                            searchQuery,
+                          })}
+                          aria-current={pageNumber === currentPage ? "page" : undefined}
+                          className={pageNumber === currentPage
+                            ? "inline-flex h-10 min-w-10 items-center justify-center rounded-2xl bg-(--color-admin) px-3 text-sm font-semibold text-white"
+                            : "inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                          }
+                        >
+                          {pageNumber}
+                        </Link>
+                      </div>
+                    );
+                  })}
+
+                  <Link
+                    href={buildAdminListHref({
+                      page: Math.min(totalPages, currentPage + 1),
+                      searchQuery,
+                    })}
+                    aria-disabled={currentPage === totalPages}
+                    className={`inline-flex h-10 items-center justify-center gap-1 rounded-2xl border px-3 text-sm font-medium transition ${currentPage === totalPages ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    ถัดไป
+                    <ChevronRightIcon />
+                  </Link>
+                </div>
               </div>
             </>
           )}

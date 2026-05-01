@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
-import { logoutAction, markAllNotificationsReadAction } from "@/app/intern/dashboard/actions";
+import { logoutAction, markAllNotificationsReadAction } from "@/app/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
 import { AdminNotificationFeed } from "@/components/admin/admin-notification-menu";
 import { AppDatePicker } from "@/components/ui/app-date-picker";
@@ -75,10 +75,10 @@ const selectedDateFormatter = new Intl.DateTimeFormat("en-GB", {
 });
 
 const ADMIN_NAV_ITEMS: AdminShellNavItem[] = [
-  { href: "/intern/dashboard", label: "แดชบอร์ด" },
-  { href: "/intern/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
-  { href: "/intern/notifications", label: "การแจ้งเตือน" },
-  { href: "/intern/activity-logs", label: "บันทึกกิจกรรม" },
+  { href: "/dashboard", label: "แดชบอร์ด" },
+  { href: "/admin/students", label: "รายชื่อนักศึกษา", match: "prefix" },
+  { href: "/notifications", label: "การแจ้งเตือน" },
+  { href: "/activity-logs", label: "บันทึกกิจกรรม" },
 ];
 
 function BellIcon() {
@@ -212,7 +212,7 @@ function buildNotificationsHref(input: {
 
   const queryString = searchParams.toString();
 
-  return queryString ? `/intern/notifications?${queryString}` : "/intern/notifications";
+  return queryString ? `/notifications?${queryString}` : "/notifications";
 }
 
 function getNotificationsFilterQuery(input: {
@@ -338,9 +338,9 @@ export function AdminNotificationsPage({
 
   return (
     <AdminLayoutShell
-      currentPath="/intern/notifications"
+      currentPath="/notifications"
       currentUser={currentUser}
-      homeHref="/intern/dashboard"
+      homeHref="/dashboard"
       logoutAction={logoutAction}
       navItems={ADMIN_NAV_ITEMS}
       roleLabel={roleLabel}

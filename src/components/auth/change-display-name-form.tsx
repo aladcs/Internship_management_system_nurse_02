@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { changeDisplayNameAction } from "@/app/intern/account/name/actions";
-import { initialChangeDisplayNameActionState } from "@/app/intern/account/name/action-state";
+import { changeDisplayNameAction } from "@/app/account/name/actions";
+import { initialChangeDisplayNameActionState } from "@/app/account/name/action-state";
 
 type ChangeDisplayNameFormProps = {
   backHref: string;
