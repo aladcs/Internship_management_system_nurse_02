@@ -581,9 +581,7 @@ export function AdminStudentDetailPage({
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
                   ตรวจสอบข้อมูลการฝึกงานของ <span className="text-(--color-admin)">{student.firstName}</span>
                 </h1>
-                <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                  ตรวจสอบโปรไฟล์ ประวัติการศึกษา รายละเอียดการฝึกงาน และไฟล์ประกอบ พร้อมอัปเดตสถานะการฝึกงานให้ตรงกับความคืบหน้าจริง
-                </p>
+                
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -601,7 +599,7 @@ export function AdminStudentDetailPage({
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Review Actions</p>
+              {/* <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Review Actions</p> */}
               <div className="mt-3 space-y-3">
                 {hasStatusActions ? (
                   <div className="space-y-3">

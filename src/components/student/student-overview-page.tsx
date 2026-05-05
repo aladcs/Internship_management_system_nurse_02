@@ -270,9 +270,7 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-base font-semibold text-slate-950">รูปโปรไฟล์</h3>
-            <p className="mt-1 text-sm leading-relaxed text-slate-600">
-              ดาวน์โหลดรูปโปรไฟล์ล่าสุดของคุณหรือกลับไปแก้ไขได้จากหน้าฟอร์ม
-            </p>
+           
           </div>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-student ring-1 ring-orange-100">
             <CameraIcon />
@@ -292,9 +290,9 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
               <p className="text-sm font-semibold text-slate-900">
                 {student.profileImage ? student.profileImage.name : "ยังไม่มีรูปโปรไฟล์"}
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              {/* <p className="mt-1 text-sm leading-relaxed text-slate-600">
                 {student.profileImage ? "ใช้รูปนี้สำหรับโปรไฟล์นักศึกษาในระบบ" : "เพิ่มรูปโปรไฟล์ได้จากหน้าแบบฟอร์ม"}
-              </p>
+              </p> */}
             </div>
           </div>
 
@@ -538,12 +536,10 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
                   ยินดีต้อนรับกลับ, <span className="text-(--color-student)">{student.firstName}</span>
                 </h1>
-                <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                  ตรวจสอบความคืบหน้าการฝึกงาน ยืนยันข้อมูลที่มีอยู่ในระบบ และดำเนินการกับแบบฟอร์มต่อได้เมื่อยังอนุญาตให้แก้ไข
-                </p>
+                
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              {/* <div className="flex flex-wrap items-center gap-3">
                 <span className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold ring-1 ${getStatusClasses(student.status)}`}>
                   {student.statusLabel}
                 </span>
@@ -553,7 +549,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                     {student.completionNote}
                   </span>
                 ) : null}
-              </div>
+              </div> */}
 
               {statusNotice ? (
                 <div className={`rounded-[28px] border px-5 py-4 ${statusNotice.tone}`}>

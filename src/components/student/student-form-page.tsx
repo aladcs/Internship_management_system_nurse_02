@@ -1196,7 +1196,7 @@ export function StudentFormPage({
               <FieldShell label="แผนก / หน่วยงาน" htmlFor="departmentUnit" required error={state.fieldErrors.departmentUnit}>
                 <TextInput id="departmentUnit" name="departmentUnit" value={formValues.departmentUnit} onChange={(event) => updateFormValue("departmentUnit", event.target.value)} placeholder="แผนกหรือหน่วยงาน" error={state.fieldErrors.departmentUnit} inputFocusClass={theme.inputFocus} />
               </FieldShell>
-              <FieldShell label="ชื่อผู้ควบคุม" htmlFor="supervisorName" required error={state.fieldErrors.supervisorName}>
+              <FieldShell label="ชื่อผู้ดูแล" htmlFor="supervisorName" required error={state.fieldErrors.supervisorName}>
                 <TextInput id="supervisorName" name="supervisorName" value={formValues.supervisorName} onChange={(event) => updateFormValue("supervisorName", event.target.value)} placeholder="ชื่อผู้ควบคุม" error={state.fieldErrors.supervisorName} inputFocusClass={theme.inputFocus} />
               </FieldShell>
               <FieldShell label="วันเริ่มฝึกงาน" htmlFor="startDate" required error={state.fieldErrors.startDate}>
