@@ -383,7 +383,7 @@ function AttachmentsSection({ student }: { student: AdminStudentDetailPageProps[
   return (
     <SectionShell
       title="ไฟล์และเอกสารแนบ"
-      description="รูปโปรไฟล์และไฟล์อัปโหลดที่เกี่ยวข้องกับข้อมูลฝึกงานของนักศึกษา"
+      description=""
       icon={<FileIcon />}
     >
       <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
@@ -676,7 +676,7 @@ export function AdminStudentDetailPage({
                   <AccordionContent>
                     <SummaryCard
                       title="ข้อมูลส่วนตัว"
-                      description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
+                      description=""
                       icon={<SummaryIcon />}
                       items={student.personal}
                     />
@@ -690,7 +690,7 @@ export function AdminStudentDetailPage({
                   <AccordionContent>
                     <SummaryCard
                       title="ประวัติการศึกษา"
-                      description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
+                      description=""
                       icon={<AcademicIcon />}
                       items={student.education}
                     />
@@ -704,7 +704,7 @@ export function AdminStudentDetailPage({
                   <AccordionContent>
                     <SummaryCard
                       title="รายละเอียดการฝึกงาน"
-                      description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
+                      description=""
                       icon={<CalendarIcon />}
                       items={student.internship}
                     />
@@ -734,7 +734,7 @@ export function AdminStudentDetailPage({
                   <AccordionContent>
                     <ListCard
                       title="ประวัติการรีวิว"
-                      description="รายการเหตุผลหรือข้อคิดเห็นที่ผู้ดูแลใช้ประกอบการส่งกลับให้แก้ไข"
+                      description=""
                       emptyTitle="ยังไม่มีประวัติการรีวิว"
                       emptyDescription="เมื่อผู้ดูแลส่งกลับให้แก้ไขพร้อมเหตุผล รายการจะปรากฏที่นี่"
                       items={student.reviewHistory.map((comment) => ({
@@ -761,7 +761,7 @@ export function AdminStudentDetailPage({
                   <AccordionContent>
                     <ListCard
                       title="บันทึกกิจกรรม"
-                      description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
+                      description=""
                       emptyTitle="ยังไม่มีกิจกรรม"
                       emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"
                       items={student.activityLog.map((entry) => ({
@@ -781,7 +781,7 @@ export function AdminStudentDetailPage({
                 <DesktopSectionCard>
                   <SummaryCard
                     title="ข้อมูลส่วนตัว"
-                    description="ข้อมูลประจำตัวและการติดต่อหลักที่เก็บไว้สำหรับนักศึกษาคนนี้"
+                    description=""
                     icon={<SummaryIcon />}
                     items={student.personal}
                   />
@@ -789,7 +789,7 @@ export function AdminStudentDetailPage({
                 <DesktopSectionCard>
                   <SummaryCard
                     title="ประวัติการศึกษา"
-                    description="ข้อมูลทางการศึกษาที่ใช้ประกอบการส่งข้อมูลฝึกงานนี้"
+                    description=""
                     icon={<AcademicIcon />}
                     items={student.education}
                   />
@@ -797,7 +797,7 @@ export function AdminStudentDetailPage({
                 <DesktopSectionCard>
                   <SummaryCard
                     title="รายละเอียดการฝึกงาน"
-                    description="รายละเอียดสถานที่ฝึกงานและบริบทการตรวจสอบปัจจุบันของข้อมูลนี้"
+                    description=""
                     icon={<CalendarIcon />}
                     items={student.internship}
                   />
@@ -811,7 +811,7 @@ export function AdminStudentDetailPage({
                 <DesktopSectionCard>
                   <ListCard
                     title="ประวัติการรีวิว"
-                    description="รายการเหตุผลหรือข้อคิดเห็นที่ผู้ดูแลใช้ประกอบการส่งกลับให้แก้ไข"
+                    description=""
                     emptyTitle="ยังไม่มีประวัติการรีวิว"
                     emptyDescription="เมื่อผู้ดูแลส่งกลับให้แก้ไขพร้อมเหตุผล รายการจะปรากฏที่นี่"
                     items={student.reviewHistory.map((comment) => ({
@@ -825,7 +825,7 @@ export function AdminStudentDetailPage({
                 <DesktopSectionCard>
                   <ListCard
                     title="บันทึกกิจกรรม"
-                    description="กิจกรรมล่าสุดของนักศึกษาและผู้ดูแลที่เกี่ยวข้องกับข้อมูลฝึกงานชุดนี้"
+                    description=""
                     emptyTitle="ยังไม่มีกิจกรรม"
                     emptyDescription="เมื่อมีการส่งฟอร์ม แก้ไขไฟล์ หรือเปลี่ยนสถานะ รายการจะปรากฏที่นี่"
                     items={student.activityLog.map((entry) => ({
