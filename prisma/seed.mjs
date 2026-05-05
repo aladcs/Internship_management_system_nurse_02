@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
+
+const { loadEnvConfig } = nextEnv;
 
 loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 

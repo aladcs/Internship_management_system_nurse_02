@@ -11,6 +11,8 @@ RUN npm ci
 
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
+ARG DATABASE_URL="postgresql://postgres:postgres@db:5432/internship_management_system"
+ENV DATABASE_URL=${DATABASE_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
