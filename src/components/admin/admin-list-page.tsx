@@ -203,6 +203,38 @@ function ResultCount({ count }: { count: number }) {
   );
 }
 
+function SearchField({
+  initialValue,
+  onSearchChange,
+}: {
+  initialValue: string;
+  onSearchChange: (value: string) => void;
+}) {
+  const [searchDraft, setSearchDraft] = useState(initialValue);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      onSearchChange(searchDraft);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [onSearchChange, searchDraft]);
+
+  return (
+    <label className="relative block w-full max-w-md text-slate-500">
+      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+        <SearchIcon />
+      </span>
+      <input
+        value={searchDraft}
+        onChange={(event) => setSearchDraft(event.target.value)}
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
+        placeholder="ค้นหาจากชื่อหรืออีเมล"
+      />
+    </label>
+  );
+}
+
 function ActionButton({
   children,
   pendingLabel = "กำลังบันทึก...",
@@ -248,12 +280,6 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (state.status === "created" && state.admin) {
-      onCreated(state.admin);
-    }
-  }, [onCreated, state.admin, state.status]);
-
-  useEffect(() => {
     if (state.status === "updated" && state.admin) {
       onUpdated(state.admin);
       onClose();
@@ -277,6 +303,16 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
 
     await navigator.clipboard.writeText(state.generatedPassword);
     setCopied(true);
+  }
+
+  function handleCreatedDone() {
+    if (!state.admin) {
+      onClose();
+      return;
+    }
+
+    onCreated(state.admin);
+    onClose();
   }
 
   if (state.status === "created" && state.generatedPassword && state.admin) {
@@ -313,7 +349,7 @@ function AdminDialog({ mode, admin, onClose, onCreated, onUpdated }: AdminDialog
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleCreatedDone}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-(--color-admin) px-5 text-sm font-semibold text-white shadow-sm shadow-admin/20 transition hover:brightness-95"
             >
               เสร็จสิ้น
@@ -547,16 +583,12 @@ function ResetAdminPasswordDialog({ admin, onClose }: ResetPasswordDialogProps) 
   );
 }
 
-export function AdminListPage({
-  ...props
-}: AdminListPageProps) {
-  const listKey = `${props.currentPage}:${props.searchQuery}:${props.admins.map((admin) => admin.id).join(",")}`;
-
-  return <AdminListPageContent key={listKey} {...props} />;
+export function AdminListPage(props: AdminListPageProps) {
+  return <AdminListPageContent {...props} />;
 }
 
 function AdminListPageContent({
-  admins: initialAdmins,
+  admins,
   currentPage,
   currentUser,
   hasAnyAdmins,
@@ -565,8 +597,6 @@ function AdminListPageContent({
   totalPages,
 }: AdminListPageProps) {
   const router = useRouter();
-  const [admins, setAdmins] = useState(() => initialAdmins);
-  const [searchDraft, setSearchDraft] = useState(() => searchQuery);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminListItem | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState<AdminListItem | null>(null);
@@ -577,51 +607,24 @@ function AdminListPageContent({
     [currentPage, totalPages],
   );
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      if (searchDraft === searchQuery) {
-        return;
-      }
-
-      router.replace(
-        buildAdminListHref({
-          searchQuery: searchDraft,
-        }),
-      );
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [router, searchDraft, searchQuery]);
-
   function handleCreatedAdmin(admin: AdminListItem) {
-    if (!searchQuery && currentPage === 1) {
-      setAdmins((currentAdmins) => {
-        if (currentAdmins.some((currentAdmin) => currentAdmin.id === admin.id)) {
-          return currentAdmins;
-        }
+    void admin;
 
-        return [admin, ...currentAdmins].slice(0, 10);
-      });
+    if (searchQuery || currentPage !== 1) {
+      router.push("/admins");
+      return;
     }
 
     router.refresh();
   }
 
-  function handleUpdatedAdmin(admin: AdminListItem) {
-    setAdmins((currentAdmins) =>
-      currentAdmins.map((currentAdmin) =>
-        currentAdmin.id === admin.id ? admin : currentAdmin,
-      ),
-    );
-
+  function handleUpdatedAdmin(_admin: AdminListItem) {
+    void _admin;
     router.refresh();
   }
 
-  function handleDeletedAdmin(adminId: string) {
-    setAdmins((currentAdmins) =>
-      currentAdmins.filter((currentAdmin) => currentAdmin.id !== adminId),
-    );
-
+  function handleDeletedAdmin(_adminId: string) {
+    void _adminId;
     router.refresh();
   }
 
@@ -665,17 +668,21 @@ function AdminListPageContent({
         <section className="mt-8 overflow-hidden rounded-4xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <label className="relative block w-full max-w-md text-slate-500">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                  <SearchIcon />
-                </span>
-                <input
-                  value={searchDraft}
-                  onChange={(event) => setSearchDraft(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-(--color-admin) focus:bg-white focus:ring-4 focus:ring-admin/10"
-                  placeholder="ค้นหาจากชื่อหรืออีเมล"
-                />
-              </label>
+              <SearchField
+                key={searchQuery}
+                initialValue={searchQuery}
+                onSearchChange={(value) => {
+                  if (value === searchQuery) {
+                    return;
+                  }
+
+                  router.replace(
+                    buildAdminListHref({
+                      searchQuery: value,
+                    }),
+                  );
+                }}
+              />
               <ResultCount count={totalCount} />
             </div>
 

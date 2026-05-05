@@ -128,7 +128,6 @@ export default async function InternAdminsPage({ searchParams }: InternAdminsPag
 
   return (
     <AdminListPage
-      key={`${currentPage}:${searchQuery ?? ""}:${filteredAdminCount}`}
       admins={admins.map(toAdminListItem)}
       currentPage={currentPage}
       currentUser={{
