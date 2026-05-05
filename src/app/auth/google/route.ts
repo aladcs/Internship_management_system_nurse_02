@@ -6,10 +6,12 @@ import {
   GOOGLE_OAUTH_CALLBACK_PATH,
   getGoogleOAuthConfig,
 } from "@/lib/auth/google-oauth";
+import { createPkceCodeChallenge, createPkceCodeVerifier } from "@/lib/auth/oauth-pkce";
 import { normalizeOAuthNextPath } from "@/lib/auth/oauth-login";
 
 const STATE_COOKIE_NAME = "google_oauth_state";
 const NEXT_COOKIE_NAME = "google_oauth_next";
+const PKCE_COOKIE_NAME = "google_oauth_pkce_verifier";
 const STATE_TTL_SECONDS = 60 * 10;
 
 function createLoginRedirect(request: NextRequest, code: string) {
@@ -29,6 +31,8 @@ export async function GET(request: NextRequest) {
   }
 
   const state = randomBytes(24).toString("base64url");
+  const codeVerifier = createPkceCodeVerifier();
+  const codeChallenge = createPkceCodeChallenge(codeVerifier);
   const nextPath = normalizeOAuthNextPath(request.nextUrl.searchParams.get("next"));
   const authorizationUrl = new URL(config.authorizeUrl);
 
@@ -40,6 +44,8 @@ export async function GET(request: NextRequest) {
   authorizationUrl.searchParams.set("access_type", "online");
   authorizationUrl.searchParams.set("include_granted_scopes", "true");
   authorizationUrl.searchParams.set("prompt", "select_account");
+  authorizationUrl.searchParams.set("code_challenge", codeChallenge);
+  authorizationUrl.searchParams.set("code_challenge_method", "S256");
 
   const response = NextResponse.redirect(authorizationUrl);
 
@@ -52,6 +58,14 @@ export async function GET(request: NextRequest) {
   });
 
   response.cookies.set(NEXT_COOKIE_NAME, nextPath ?? "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH,
+    maxAge: STATE_TTL_SECONDS,
+  });
+
+  response.cookies.set(PKCE_COOKIE_NAME, codeVerifier, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

@@ -12,6 +12,10 @@ import { clearSession, readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { generatePassword, hashPassword } from "@/lib/auth/password";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
+
+const CREATE_ADMIN_RATE_LIMIT_WINDOW_MS = 1000 * 60 * 10;
+const CREATE_ADMIN_RATE_LIMIT_PER_ACTOR = 5;
 
 function normalizeName(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
@@ -147,6 +151,24 @@ export async function saveAdminAction(
       fieldErrors: {},
       values: { name: updatedAdmin.name ?? "", email: updatedAdmin.email },
       admin: toAdminListItem(updatedAdmin),
+      generatedPassword: null,
+    };
+  }
+
+  const createAdminLimit = consumeRateLimit({
+    bucket: "create-admin:actor",
+    key: session.userId,
+    limit: CREATE_ADMIN_RATE_LIMIT_PER_ACTOR,
+    windowMs: CREATE_ADMIN_RATE_LIMIT_WINDOW_MS,
+  });
+
+  if (!createAdminLimit.allowed) {
+    return {
+      status: "error",
+      message: "สร้างบัญชีผู้ดูแลระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง",
+      fieldErrors: {},
+      values: { name, email },
+      admin: null,
       generatedPassword: null,
     };
   }

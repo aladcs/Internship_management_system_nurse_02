@@ -148,13 +148,14 @@ Recommended action:
 ## Prioritized Fix Order
 
 1. Keep the legacy profile-image route protected through the API ownership checks
-2. Keep login throttling in place and monitor whether a distributed store is needed for multi-instance deployments
-3. Keep file-signature validation for all student uploads
-4. Upgrade Next.js once a stable release bundles fixed PostCSS
-5. Upgrade Prisma once its dependency chain no longer pulls the vulnerable `@hono/node-server`
+2. Keep login, upload, and account-creation throttling in place and monitor whether a distributed store is needed for multi-instance deployments
+3. Keep session-version invalidation and PKCE enabled across auth flows
+4. Keep file-signature validation for all student uploads
+5. Upgrade Next.js once a stable release bundles fixed PostCSS
+6. Upgrade Prisma once its dependency chain no longer pulls the vulnerable `@hono/node-server`
 
 ## Notes and Limits
 
 - This review covered source inspection and dependency triage only
 - No penetration testing, exploit development, or browser automation fuzzing was performed
-- The login rate limiter is process-local; it materially improves protection now but is not a substitute for a shared limiter in horizontally scaled production deployments
+- The current login, upload, and account-creation rate limiters are process-local; they materially improve protection now but are not a substitute for a shared limiter in horizontally scaled production deployments

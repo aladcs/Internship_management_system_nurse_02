@@ -17,7 +17,7 @@ Scope:
 
 - `pass`: Session cookies are signed and verified in `src/lib/auth/session-token.ts`
 - `pass`: Server-side code does not trust client-supplied role, id, or email claims for authorization decisions
-- `partial`: Old session formats are invalidated only by signature/shape failure; there is no explicit session version field
+- `pass`: Session tokens now carry a version claim and can be invalidated explicitly through `AUTH_SESSION_VERSION`
 
 ## Authorization
 
@@ -28,7 +28,7 @@ Scope:
 ## OAuth and Login Flows
 
 - `pass`: Google and CMU OAuth authorize/callback flows validate `state`
-- `partial`: PKCE is not implemented in the current OAuth flows
+- `pass`: Google and CMU OAuth flows now use PKCE with `S256`
 - `pass`: Login and callback errors are mapped to controlled codes without exposing raw provider responses
 
 ## Uploads and Storage
@@ -52,7 +52,7 @@ Scope:
 ## Abuse Controls
 
 - `pass`: Login is now rate-limited in `src/app/login/actions.ts`
-- `partial`: Upload and account-creation flows do not yet have dedicated throttling
+- `pass`: Upload and account-creation flows now have in-process throttling
 - `partial`: Repeated privileged mutations are not separately throttled
 
 ## Injection and Rendering
@@ -75,7 +75,5 @@ Scope:
 
 ## Follow-up
 
-- Add a session version claim if you want explicit session invalidation on auth model changes
-- Consider PKCE for OAuth flows
 - Consider shared/distributed throttling for login in multi-instance production
-- Consider throttling upload and account-creation paths
+- Consider shared/distributed throttling for upload and account-creation paths in multi-instance production

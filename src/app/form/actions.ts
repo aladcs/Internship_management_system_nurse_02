@@ -21,6 +21,7 @@ import { createAdminNotificationEvent } from "@/lib/admin/notifications";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { isStudentEditableStatus } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import {
   getPrivateStorageRoot,
   resolveStoredAssetAbsolutePath,
@@ -37,6 +38,8 @@ const MAX_PORTFOLIO_FILE_COUNT = 5;
 const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_PORTFOLIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_PROFILE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const UPLOAD_RATE_LIMIT_WINDOW_MS = 1000 * 60 * 10;
+const UPLOAD_RATE_LIMIT_PER_ACTOR = 12;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const JPEG_SIGNATURE = [0xff, 0xd8, 0xff];
 const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d];
@@ -347,6 +350,25 @@ export async function saveStudentFormAction(
     .getAll("portfolioAttachments")
     .filter((value): value is File => value instanceof File && value.size > 0);
   const newFiles = [...newAttachmentFiles, ...newPortfolioFiles];
+  const hasIncomingUpload = Boolean(newProfileImage) || newFiles.length > 0;
+
+  if (hasIncomingUpload) {
+    const uploadRateLimit = consumeRateLimit({
+      bucket: "upload-form:actor",
+      key: session.userId,
+      limit: UPLOAD_RATE_LIMIT_PER_ACTOR,
+      windowMs: UPLOAD_RATE_LIMIT_WINDOW_MS,
+    });
+
+    if (!uploadRateLimit.allowed) {
+      return {
+        status: "error",
+        message: "อัปโหลดไฟล์บ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง",
+        fieldErrors: {},
+        values,
+      };
+    }
+  }
 
   if (newAttachmentFiles.length > MAX_ATTACHMENT_FILE_COUNT) {
     fieldErrors.attachments = `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`;

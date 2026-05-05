@@ -14,8 +14,11 @@ import { readSession } from "@/lib/auth/session";
 import { generatePassword, hashPassword } from "@/lib/auth/password";
 import { getRoleRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 
 const EMPTY_STUDENT_NAME = "ยังไม่ได้กรอกชื่อ";
+const CREATE_STUDENT_RATE_LIMIT_WINDOW_MS = 1000 * 60 * 10;
+const CREATE_STUDENT_RATE_LIMIT_PER_ACTOR = 10;
 
 function normalizeEmail(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().toLowerCase();
@@ -133,6 +136,24 @@ export async function saveStudentAction(
       fieldErrors: {
         email: "มีบัญชีที่ใช้อีเมลนี้อยู่แล้ว",
       },
+      values: { email },
+      student: null,
+      generatedPassword: null,
+    };
+  }
+
+  const createStudentLimit = consumeRateLimit({
+    bucket: "create-student:actor",
+    key: session.userId,
+    limit: CREATE_STUDENT_RATE_LIMIT_PER_ACTOR,
+    windowMs: CREATE_STUDENT_RATE_LIMIT_WINDOW_MS,
+  });
+
+  if (!createStudentLimit.allowed) {
+    return {
+      status: "error",
+      message: "สร้างบัญชีนักศึกษาบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง",
+      fieldErrors: {},
       values: { email },
       student: null,
       generatedPassword: null,

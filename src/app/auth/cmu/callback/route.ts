@@ -9,6 +9,7 @@ import { normalizeOAuthNextPath, signInOAuthUser } from "@/lib/auth/oauth-login"
 
 const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
 const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
+const PKCE_COOKIE_NAME = "cmu_entra_oauth_pkce_verifier";
 
 type TokenResponse = {
   access_token?: string;
@@ -44,6 +45,14 @@ function clearStateCookie(response: NextResponse, path: string) {
   });
 
   response.cookies.set(NEXT_COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path,
+    expires: new Date(0),
+  });
+
+  response.cookies.set(PKCE_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -112,6 +121,7 @@ async function exchangeCodeForAccessToken(
   tokenUrl: string,
   clientId: string,
   clientSecret: string,
+  codeVerifier: string,
 ) {
   const response = await fetch(tokenUrl, {
     method: "POST",
@@ -125,6 +135,7 @@ async function exchangeCodeForAccessToken(
       redirect_uri: redirectUri,
       client_id: clientId,
       client_secret: clientSecret,
+      code_verifier: codeVerifier,
     }),
     cache: "no-store",
   });
@@ -187,6 +198,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const storedState = request.cookies.get(STATE_COOKIE_NAME)?.value;
+  const codeVerifier = request.cookies.get(PKCE_COOKIE_NAME)?.value;
   const nextPath = normalizeOAuthNextPath(
     request.cookies.get(NEXT_COOKIE_NAME)?.value ?? null,
   );
@@ -203,7 +215,7 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  if (!code || !state || !storedState || storedState !== state) {
+  if (!code || !state || !storedState || storedState !== state || !codeVerifier) {
     const response = NextResponse.redirect(createLoginRedirect(request, "invalid_state"));
     clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
 
@@ -216,6 +228,7 @@ export async function GET(request: NextRequest) {
     config.tokenUrl,
     config.clientId,
     config.clientSecret,
+    codeVerifier,
   );
 
   if (!accessToken) {

@@ -6,10 +6,12 @@ import {
   CMU_ENTRA_CALLBACK_PATH,
   getCmuEntraConfig,
 } from "@/lib/auth/cmu-entra";
+import { createPkceCodeChallenge, createPkceCodeVerifier } from "@/lib/auth/oauth-pkce";
 import { normalizeOAuthNextPath } from "@/lib/auth/oauth-login";
 
 const STATE_COOKIE_NAME = "cmu_entra_oauth_state";
 const NEXT_COOKIE_NAME = "cmu_entra_oauth_next";
+const PKCE_COOKIE_NAME = "cmu_entra_oauth_pkce_verifier";
 const STATE_TTL_SECONDS = 60 * 10;
 
 function createLoginRedirect(request: NextRequest, code: string) {
@@ -29,6 +31,8 @@ export async function GET(request: NextRequest) {
   }
 
   const state = randomBytes(24).toString("base64url");
+  const codeVerifier = createPkceCodeVerifier();
+  const codeChallenge = createPkceCodeChallenge(codeVerifier);
   const nextPath = normalizeOAuthNextPath(request.nextUrl.searchParams.get("next"));
   const authorizationUrl = new URL(config.authorizeUrl);
 
@@ -38,6 +42,8 @@ export async function GET(request: NextRequest) {
   authorizationUrl.searchParams.set("scope", config.scope);
   authorizationUrl.searchParams.set("state", state);
   authorizationUrl.searchParams.set("response_mode", "query");
+  authorizationUrl.searchParams.set("code_challenge", codeChallenge);
+  authorizationUrl.searchParams.set("code_challenge_method", "S256");
 
   const response = NextResponse.redirect(authorizationUrl);
 
@@ -50,6 +56,14 @@ export async function GET(request: NextRequest) {
   });
 
   response.cookies.set(NEXT_COOKIE_NAME, nextPath ?? "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: config.callbackPath || CMU_ENTRA_CALLBACK_PATH,
+    maxAge: STATE_TTL_SECONDS,
+  });
+
+  response.cookies.set(PKCE_COOKIE_NAME, codeVerifier, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

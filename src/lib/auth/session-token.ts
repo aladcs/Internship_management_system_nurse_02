@@ -4,6 +4,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const SESSION_COOKIE_NAME = "internship_management_session";
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 7;
+const SESSION_VERSION = process.env.AUTH_SESSION_VERSION?.trim() || "1";
 
 export type AuthSession = {
   userId: string;
@@ -16,6 +17,7 @@ export type AuthSession = {
 
 type SessionPayload = Omit<AuthSession, "expiresAt"> & {
   exp: number;
+  ver: string;
 };
 
 function getAuthSecret() {
@@ -56,7 +58,11 @@ export function createSessionToken(
   expiresAt = Date.now() + SESSION_DURATION_MS,
 ) {
   const payload = encodeBase64Url(
-    JSON.stringify({ ...session, exp: expiresAt } satisfies SessionPayload),
+    JSON.stringify({
+      ...session,
+      exp: expiresAt,
+      ver: SESSION_VERSION,
+    } satisfies SessionPayload),
   );
   const signature = signValue(payload);
 
@@ -84,6 +90,10 @@ export function verifySessionToken(token: string | undefined) {
     const parsed = JSON.parse(decodeBase64Url(payload)) as SessionPayload;
 
     if (parsed.exp <= Date.now()) {
+      return null;
+    }
+
+    if (parsed.ver !== SESSION_VERSION) {
       return null;
     }
 
