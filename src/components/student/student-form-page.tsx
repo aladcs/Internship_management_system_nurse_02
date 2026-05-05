@@ -629,14 +629,6 @@ export function StudentFormPage({
     }
   }
 
-  function handlePreviewProfileImage() {
-    if (!visibleProfileImage) {
-      return;
-    }
-
-    window.open(visibleProfileImage.src, "_blank", "noopener,noreferrer");
-  }
-
   function syncInputFiles(input: HTMLInputElement | null, files: File[]) {
     const dataTransfer = new DataTransfer();
 
@@ -1023,7 +1015,7 @@ export function StudentFormPage({
           <SectionCard
             icon={<CameraIcon />}
             title="รูปโปรไฟล์นักศึกษา"
-            description="นักศึกษาหรือผู้ดูแลสามารถอัปโหลด เปลี่ยน ดูตัวอย่าง หรือเอารูปโปรไฟล์ออกได้จากส่วนนี้"
+            description="นักศึกษาหรือผู้ดูแลสามารถอัปโหลด เปลี่ยน ดาวน์โหลด หรือเอารูปโปรไฟล์ออกได้จากส่วนนี้"
             accentTileClass={theme.accentTile}
             className="xl:col-span-5"
           >
@@ -1045,11 +1037,12 @@ export function StudentFormPage({
                       src={visibleProfileImage.src}
                       alt={visibleProfileImage.name}
                       fill
+                      sizes="112px"
                       className="object-cover"
                       unoptimized={
                         visibleProfileImage.src.startsWith("blob:") ||
-                        visibleProfileImage.src.startsWith("/uploads/") ||
-                        visibleProfileImage.src.startsWith("/api/")
+                        visibleProfileImage.src.includes("/uploads/") ||
+                        visibleProfileImage.src.includes("/api/")
                       }
                     />
                   ) : (
@@ -1075,14 +1068,6 @@ export function StudentFormPage({
                   className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-sm font-semibold text-white transition hover:brightness-95 ${theme.primaryButton}`}
                 >
                   {visibleProfileImage ? "เปลี่ยนรูป" : "เพิ่มรูป"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePreviewProfileImage}
-                  disabled={!visibleProfileImage}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  ดูตัวอย่าง
                 </button>
                 <a
                   href={selectedProfileImagePreview ? selectedProfileImagePreview : profileImage?.downloadHref ?? "#"}

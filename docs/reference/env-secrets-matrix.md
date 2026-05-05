@@ -11,7 +11,7 @@ This file records the meaning and expected handling of environment values so fut
 - `DATABASE_URL`
   - Purpose: Prisma and app database connectivity
   - Scope: required for app and Prisma CLI
-  - Recommended location: `.env` for shared local fallback, `.env.production` or deployment secrets for production
+  - Recommended location: `.env.local` locally, `.env.production` or deployment secrets for production
 
 ### Notification Integrations
 
@@ -59,8 +59,7 @@ Recommended location:
 
 ## Placement Rules
 
-- Keep shared local infrastructure defaults in `.env`.
-- Put local app-only secrets in `.env.local`.
+- Put local app and database values in `.env.local`.
 - Put deployment-specific values in `.env.production` or your hosting platform's secret manager.
 - Prisma config and seed should load env with Next's loader so `.env.local` and `.env.production` remain effective outside the Next runtime.
 - Treat optional integration secrets as truly optional in the app logic.

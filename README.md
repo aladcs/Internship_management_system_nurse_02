@@ -6,7 +6,6 @@ This repository now includes a production Docker setup for the app and PostgreSQ
 
 Required files before deploy:
 
-- `.env` for shared Postgres container values used by Compose
 - `.env.production` for app runtime secrets and production `DATABASE_URL`
 
 If you use the bundled Postgres service from `docker-compose.prod.yml`, set `DATABASE_URL` host to `db`.
@@ -56,23 +55,21 @@ Useful local regression surfaces after seeding:
 
 This project now separates environment files by responsibility:
 
-- `.env` keeps shared local infrastructure defaults used by Docker Compose and Prisma fallback.
-- `.env.local` keeps local app runtime values such as `APP_BASE_URL`, `AUTH_SECRET`, and optional local OAuth credentials.
+- `.env.local` keeps local development values, including `DATABASE_URL`, optional Docker/Postgres defaults, `APP_BASE_URL`, `AUTH_SECRET`, and optional local OAuth credentials.
 - `.env.production` is the production scaffold. Fill it only on the deployment target, or map the same keys through your hosting platform's secret manager.
 - `.env.example` and `.env.production.example` are safe templates that document the required keys without storing real secrets.
 
 Operationally:
 
-- `next dev` reads `.env.local` before `.env`.
-- `next build` and `next start` read `.env.production`, `.env.local`, then `.env`.
+- `next dev` reads `.env.local`.
+- `next build` and `next start` read `.env.production`, then `.env.local` if present.
 - Prisma config and the seed script now use Next's env loader too, so the same split applies to `prisma generate` and `prisma db seed`.
 
 Recommended local setup:
 
-1. Keep shared Postgres and pgAdmin defaults in `.env`.
-2. Put app-only local secrets in `.env.local`.
-3. Put production secrets in your server or platform environment, using `.env.production` only as a key checklist when you self-host.
-4. Keep `.env.example` and `.env.production.example` updated whenever you add, remove, or rename environment variables.
+1. Keep local app and database values in `.env.local`.
+2. Put production secrets in your server or platform environment, using `.env.production` only as a key checklist when you self-host.
+3. Keep `.env.example` and `.env.production.example` updated whenever you add, remove, or rename environment variables.
 
 ## Getting Started
 

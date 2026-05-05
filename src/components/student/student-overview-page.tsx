@@ -281,7 +281,14 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
           <div className="flex items-center gap-4">
             <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-orange-100 bg-student/10 text-(--color-student)">
               {student.profileImage ? (
-                <Image src={student.profileImage.src} alt={student.profileImage.name} fill className="object-cover" unoptimized />
+                <Image
+                  src={student.profileImage.src}
+                  alt={student.profileImage.name}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                  unoptimized
+                />
               ) : (
                 <span className="text-2xl font-semibold text-white/95">{student.displayName.slice(0, 1).toUpperCase()}</span>
               )}
