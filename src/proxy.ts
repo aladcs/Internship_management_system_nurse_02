@@ -14,6 +14,7 @@ const PUBLIC_INTERN_PREFIXES = [
   "/auth/cmu/callback",
   "/auth/google",
   "/auth/google/callback",
+  "/auth/session/sync",
   "/api/auth/callback",
   "/api/student-profile-images",
   "/api/student-files",

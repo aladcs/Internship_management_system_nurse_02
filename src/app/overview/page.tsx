@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { StudentOverviewPage, type StudentOverviewPageProps } from "@/components/student/student-overview-page";
+import { withAppBasePath } from "@/lib/app-paths";
 import { readSession } from "@/lib/auth/session";
 import { formatThaiDate, formatThaiDateTime } from "@/lib/date-format";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { formatInternshipStatusLabel, isStudentEditableStatus } from "@/lib/internship-status";
 import { prisma } from "@/lib/prisma";
 import { getStudentAttachmentDownloadHref } from "@/lib/student-file-path";
-import { clearSession } from "@/lib/auth/session";
 import {
   getStudentProfileImageDownloadHref,
   getStudentProfileImageSrc,
@@ -92,6 +92,12 @@ function getFirstName(student: {
   }
 
   return student.user.email.split("@")[0];
+}
+
+function buildSessionSyncHref() {
+  const syncUrl = new URL(withAppBasePath("/auth/session/sync"), "http://localhost");
+
+  return syncUrl.pathname;
 }
 
 export default async function InternOverviewPage() {
@@ -200,8 +206,7 @@ export default async function InternOverviewPage() {
   });
 
   if (!student) {
-    await clearSession();
-    redirect("/login?cmu=student_profile_missing");
+    redirect(buildSessionSyncHref());
   }
 
   const canEdit = isStudentEditableStatus(student.internshipStatus);

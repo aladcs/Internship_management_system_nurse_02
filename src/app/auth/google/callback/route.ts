@@ -189,7 +189,9 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  const response = NextResponse.redirect(new URL(result.redirectPath, request.url));
+  const response = NextResponse.redirect(
+    new URL(withAppBasePath(result.redirectPath), request.url),
+  );
   clearStateCookie(response, config.callbackPath || GOOGLE_OAUTH_CALLBACK_PATH);
 
   return response;

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { acceptStudentTosAction, logoutAction } from "@/app/tos/actions";
 import { StudentTosAcceptancePanel } from "@/components/student/student-tos-acceptance-panel";
-import { clearSession, createSession, readSession } from "@/lib/auth/session";
+import { withAppBasePath } from "@/lib/app-paths";
+import { readSession } from "@/lib/auth/session";
 import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
 
@@ -41,6 +42,13 @@ function getStudentDisplayName(student: {
   return student.user.name?.trim() || profileName || student.user.email;
 }
 
+function buildSessionSyncHref(nextPath: string) {
+  const syncUrl = new URL(withAppBasePath("/auth/session/sync"), "http://localhost");
+  syncUrl.searchParams.set("next", nextPath);
+
+  return `${syncUrl.pathname}${syncUrl.search}`;
+}
+
 export default async function InternStudentTosPage({ searchParams }: TosPageProps) {
   const session = await readSession();
 
@@ -73,22 +81,11 @@ export default async function InternStudentTosPage({ searchParams }: TosPageProp
   });
 
   if (!student) {
-    await clearSession();
-    redirect("/login?cmu=student_profile_missing");
+    redirect(buildSessionSyncHref("/login?cmu=student_profile_missing"));
   }
 
   if (student.tosAcceptedAt) {
-    if (!session.studentHasAcceptedTos) {
-      await createSession({
-        userId: session.userId,
-        email: session.email,
-        role: session.role,
-        name: session.name,
-        studentHasAcceptedTos: true,
-      });
-    }
-
-    redirect("/overview");
+    redirect(buildSessionSyncHref("/overview"));
   }
 
   const errorMessage = errorCode ? ERROR_MESSAGES[errorCode] ?? null : null;

@@ -358,6 +358,35 @@ function ActionIconButton({
   );
 }
 
+async function copyTextToClipboard(value: string) {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  if (typeof document === "undefined") {
+    throw new Error("Clipboard is not available in this environment.");
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = value;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "-9999px";
+  textArea.style.left = "-9999px";
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textArea);
+
+  if (!copied) {
+    throw new Error("Unable to copy text to the clipboard.");
+  }
+}
+
 function StudentDialog({ onClose, onCreated }: StudentDialogProps) {
   const [state, formAction] = useActionState(saveStudentAction, {
     ...initialSaveStudentActionState,
@@ -382,7 +411,7 @@ function StudentDialog({ onClose, onCreated }: StudentDialogProps) {
       return;
     }
 
-    await navigator.clipboard.writeText(state.generatedPassword);
+    await copyTextToClipboard(state.generatedPassword);
     setCopied(true);
   }
 

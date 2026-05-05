@@ -6,8 +6,7 @@ import { BRAND_LOGO_PATH, withAppBasePath } from "@/lib/app-paths";
 import { CMU_ENTRA_LOGIN_PATH, isCmuEntraConfigured } from "@/lib/auth/cmu-entra";
 import { GOOGLE_OAUTH_LOGIN_PATH, isGoogleOAuthConfigured } from "@/lib/auth/google-oauth";
 import { getAuthenticatedRedirectPath } from "@/lib/auth/roles";
-import { clearSession, createSession, readSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/prisma";
+import { readSession } from "@/lib/auth/session";
 
 const statusChips = [
   {
@@ -79,13 +78,23 @@ function buildOAuthLoginHref(basePath: string, nextPath: string | null) {
   return `${loginUrl.pathname}${loginUrl.search}`;
 }
 
+function buildSessionSyncHref(nextPath: string | null) {
+  const syncUrl = new URL(withAppBasePath("/auth/session/sync"), "http://localhost");
+
+  if (nextPath) {
+    syncUrl.searchParams.set("next", nextPath);
+  }
+
+  return `${syncUrl.pathname}${syncUrl.search}`;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await readSession();
   const resolvedSearchParams = (await searchParams) ?? {};
   const googleErrorCode = readSearchParam(resolvedSearchParams, "google");
   const cmuErrorCode = readSearchParam(resolvedSearchParams, "cmu");
   const nextPath = readSearchParam(resolvedSearchParams, "next");
-  let initialError = googleErrorCode
+  const initialError = googleErrorCode
     ? GOOGLE_LOGIN_ERRORS[googleErrorCode] ?? null
     : cmuErrorCode
       ? CMU_LOGIN_ERRORS[cmuErrorCode] ?? null
@@ -96,39 +105,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   if (session) {
     if (session.role === "student") {
-      const studentProfile = await prisma.student.findUnique({
-        where: {
-          userId: session.userId,
-        },
-        select: {
-          id: true,
-          tosAcceptedAt: true,
-        },
-      });
-
-      if (!studentProfile) {
-        await clearSession();
-        initialError ??= CMU_LOGIN_ERRORS.student_profile_missing;
-      } else {
-        const studentHasAcceptedTos = Boolean(studentProfile.tosAcceptedAt);
-
-        if (studentHasAcceptedTos !== Boolean(session.studentHasAcceptedTos)) {
-          await createSession({
-            userId: session.userId,
-            email: session.email,
-            role: session.role,
-            name: session.name,
-            studentHasAcceptedTos,
-          });
-        }
-
-        redirect(
-          getAuthenticatedRedirectPath({
-            role: session.role,
-            studentHasAcceptedTos,
-          }),
-        );
-      }
+      redirect(buildSessionSyncHref(nextPath));
     } else {
       redirect(getAuthenticatedRedirectPath(session));
     }

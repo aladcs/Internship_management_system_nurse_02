@@ -5,7 +5,8 @@ import {
   type StudentFormValues,
 } from "@/app/form/action-state";
 import { StudentFormPage, type StudentFormPageProps } from "@/components/student/student-form-page";
-import { clearSession, readSession } from "@/lib/auth/session";
+import { withAppBasePath } from "@/lib/app-paths";
+import { readSession } from "@/lib/auth/session";
 import { getRoleRedirectPath, STUDENT_TOS_PATH } from "@/lib/auth/roles";
 import { formatThaiDateTime } from "@/lib/date-format";
 import { prisma } from "@/lib/prisma";
@@ -38,6 +39,12 @@ function formatFileSize(sizeBytes: number | null) {
   }
 
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function buildSessionSyncHref() {
+  const syncUrl = new URL(withAppBasePath("/auth/session/sync"), "http://localhost");
+
+  return syncUrl.pathname;
 }
 
 export default async function InternFormPage() {
@@ -129,8 +136,7 @@ export default async function InternFormPage() {
   });
 
   if (!student) {
-    await clearSession();
-    redirect("/login?cmu=student_profile_missing");
+    redirect(buildSessionSyncHref());
   }
 
   const initialValues: StudentFormValues = {

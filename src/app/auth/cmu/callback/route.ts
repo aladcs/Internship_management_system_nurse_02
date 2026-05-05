@@ -141,6 +141,17 @@ async function exchangeCodeForAccessToken(
   });
 
   if (!response.ok) {
+    const responseBody = await response.text().catch(() => "");
+
+    console.error("CMU Entra token exchange failed", {
+      status: response.status,
+      statusText: response.statusText,
+      tokenUrl,
+      redirectUri,
+      clientId,
+      responseBody,
+    });
+
     return null;
   }
 
@@ -262,7 +273,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(
-    new URL(result.redirectPath, request.url),
+    new URL(withAppBasePath(result.redirectPath), request.url),
   );
   clearStateCookie(response, config.callbackPath || CMU_ENTRA_CALLBACK_PATH);
 
