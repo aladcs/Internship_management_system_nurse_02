@@ -1015,7 +1015,7 @@ export function StudentFormPage({
           <SectionCard
             icon={<CameraIcon />}
             title="รูปโปรไฟล์นักศึกษา"
-            description="นักศึกษาหรือผู้ดูแลสามารถอัปโหลด เปลี่ยน ดาวน์โหลด หรือเอารูปโปรไฟล์ออกได้จากส่วนนี้"
+            description=""
             accentTileClass={theme.accentTile}
             className="xl:col-span-5"
           >
@@ -1105,7 +1105,7 @@ export function StudentFormPage({
           <SectionCard
             icon={<UserIcon />}
             title="ข้อมูลส่วนตัว"
-            description="กรอกรายละเอียดส่วนตัวหลักที่ใช้ในข้อมูลการฝึกงานและการติดต่อ"
+            description=""
             accentTileClass={theme.accentTile}
             className="xl:col-span-7"
           >
@@ -1142,7 +1142,7 @@ export function StudentFormPage({
           <SectionCard
             icon={<AcademicIcon />}
             title="ข้อมูลการศึกษา"
-            description="ระบุข้อมูลการศึกษาให้ถูกต้องเพื่อให้ผู้ดูแลตรวจสอบบริบทการฝึกงานได้อย่างเหมาะสม"
+            description=""
             accentTileClass={theme.accentTile}
             className="xl:col-span-6"
           >
@@ -1171,7 +1171,7 @@ export function StudentFormPage({
           <SectionCard
             icon={<BriefcaseIcon />}
             title="รายละเอียดการฝึกงาน"
-            description="ระบุรายละเอียดหลักของสถานที่ฝึกงานและช่วงเวลาการติดตามตรวจสอบ"
+            description=""
             accentTileClass={theme.accentTile}
             className="xl:col-span-6"
           >
@@ -1202,7 +1202,7 @@ export function StudentFormPage({
           <SectionCard
             icon={<FileIcon />}
             title="ไฟล์แนบ"
-            description="แยกอัปโหลดเอกสารประกอบการฝึกงานและแฟ้มสะสมผลงานเป็นคนละพื้นที่ เพื่อกำหนดประเภทไฟล์และขนาดได้ชัดเจน"
+            description=""
             accentTileClass={theme.accentTile}
             className="xl:col-span-12"
           >
@@ -1344,7 +1344,6 @@ export function StudentFormPage({
                 <div className="mt-5 space-y-3">
                   <div>
                     <h3 className="text-lg font-semibold text-slate-950">ไฟล์ที่อัปโหลดแล้ว</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">ไฟล์ที่บันทึกไว้ก่อนหน้านี้จะแสดงรวมกันในส่วนนี้ และยังสามารถลบออกได้ก่อนบันทึก</p>
                   </div>
                   {visibleExistingFiles.map((file) => (
                     <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">

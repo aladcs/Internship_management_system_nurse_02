@@ -54,6 +54,20 @@ const ROLE_PROTECTED_PREFIXES = [
   },
 ] as const;
 
+function applySecurityHeaders(response: NextResponse) {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set(
+    "Content-Security-Policy",
+    "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+  );
+
+  return response;
+}
+
 function getRequiredRole(pathname: string): readonly UserRole[] | null {
   return ROLE_PROTECTED_PREFIXES.find(({ prefix }) => pathname.startsWith(prefix))?.roles ?? null;
 }
@@ -73,14 +87,14 @@ function redirectToLogin(request: NextRequest) {
   const response = NextResponse.redirect(loginUrl);
   response.cookies.delete(SESSION_COOKIE_NAME);
 
-  return response;
+  return applySecurityHeaders(response);
 }
 
 export function proxy(request: NextRequest) {
   const pathname = stripAppBasePath(request.nextUrl.pathname);
 
   if (isPublicInternPath(pathname)) {
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
   const requiredRole = getRequiredRole(pathname);
@@ -88,7 +102,9 @@ export function proxy(request: NextRequest) {
   const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
   if (!session) {
-    return isAppExternalPath(request.nextUrl.pathname) ? redirectToLogin(request) : NextResponse.next();
+    return isAppExternalPath(request.nextUrl.pathname)
+      ? redirectToLogin(request)
+      : applySecurityHeaders(NextResponse.next());
   }
 
   if (!requiredRole) {
@@ -98,27 +114,39 @@ export function proxy(request: NextRequest) {
       isAppExternalPath(request.nextUrl.pathname) &&
       !pathname.startsWith(STUDENT_TOS_PATH)
     ) {
-      return NextResponse.redirect(new URL(withAppBasePath(STUDENT_TOS_PATH), request.url));
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL(withAppBasePath(STUDENT_TOS_PATH), request.url)),
+      );
     }
 
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
   if (!requiredRole.includes(session.role)) {
-    return NextResponse.redirect(new URL(withAppBasePath(getAuthenticatedRedirectPath(session)), request.url));
+    return applySecurityHeaders(
+      NextResponse.redirect(
+        new URL(withAppBasePath(getAuthenticatedRedirectPath(session)), request.url),
+      ),
+    );
   }
 
   if (session.role === "student") {
     if (!session.studentHasAcceptedTos && !pathname.startsWith(STUDENT_TOS_PATH)) {
-      return NextResponse.redirect(new URL(withAppBasePath(STUDENT_TOS_PATH), request.url));
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL(withAppBasePath(STUDENT_TOS_PATH), request.url)),
+      );
     }
 
     if (session.studentHasAcceptedTos && pathname.startsWith(STUDENT_TOS_PATH)) {
-      return NextResponse.redirect(new URL(withAppBasePath(getRoleRedirectPath(session.role)), request.url));
+      return applySecurityHeaders(
+        NextResponse.redirect(
+          new URL(withAppBasePath(getRoleRedirectPath(session.role)), request.url),
+        ),
+      );
     }
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(NextResponse.next());
 }
 
 export const config = {

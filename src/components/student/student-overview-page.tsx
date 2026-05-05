@@ -88,15 +88,6 @@ function MenuIcon() {
   );
 }
 
-function SparklesIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-4 w-4">
-      <path d="M10 2.5 11.45 7l4.55 1.45L11.45 9.9 10 14.5 8.55 9.9 4 8.45 8.55 7 10 2.5Z" />
-      <path d="m15.5 12.5.7 2.05 2.05.7-2.05.7-.7 2.05-.7-2.05-2.05-.7 2.05-.7.7-2.05Z" />
-    </svg>
-  );
-}
-
 function LockIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true" className="h-5 w-5">
@@ -173,26 +164,6 @@ type SectionShellProps = {
   tone?: SectionTone;
 };
 
-function getStatusClasses(status: StudentOverviewPageProps["student"]["status"]) {
-  if (status === "draft") {
-    return "bg-slate-100 text-slate-700 ring-slate-200";
-  }
-
-  if (status === "pending") {
-    return "bg-amber-100 text-amber-800 ring-amber-200";
-  }
-
-  if (status === "needs_fix") {
-    return "bg-rose-100 text-rose-800 ring-rose-200";
-  }
-
-  if (status === "in_progress") {
-    return "bg-sky-100 text-sky-800 ring-sky-200";
-  }
-
-  return "bg-emerald-100 text-emerald-800 ring-emerald-200";
-}
-
 function SummaryCard({
   title,
   description,
@@ -263,7 +234,7 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
   return (
     <SectionShell
       title="ไฟล์และเอกสารแนบ"
-      description="รูปโปรไฟล์และไฟล์ที่อัปโหลดสำหรับข้อมูลการฝึกงานของคุณ"
+      description=""
       icon={<FileIcon />}
     >
       <div className="rounded-[26px] bg-slate-50/80 p-4 sm:p-5">
@@ -623,7 +594,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   <AccordionContent>
                     <SummaryCard
                       title="ข้อมูลส่วนตัว"
-                      description="รายละเอียดโปรไฟล์หลักของคุณตามที่ปรากฏอยู่ในระบบฝึกงาน"
+                      description=""
                       icon={<SummaryIcon />}
                       items={student.personal}
                     />
@@ -637,7 +608,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   <AccordionContent>
                     <SummaryCard
                       title="ประวัติการศึกษา"
-                      description="ข้อมูลการศึกษาที่ใช้ประกอบบันทึกการฝึกงานของคุณ"
+                      description=""
                       icon={<AcademicIcon />}
                       items={student.education}
                     />
@@ -651,7 +622,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
                   <AccordionContent>
                     <SummaryCard
                       title="รายละเอียดการฝึกงาน"
-                      description="สรุปข้อมูลสถานที่ฝึกงานและสถานะการตรวจสอบปัจจุบันของคุณ"
+                      description=""
                       icon={<CalendarIcon />}
                       items={student.internship}
                     />
@@ -673,7 +644,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               <DesktopDataCard>
                 <SummaryCard
                   title="ข้อมูลส่วนตัว"
-                  description="รายละเอียดโปรไฟล์หลักของคุณตามที่ปรากฏอยู่ในระบบฝึกงาน"
+                  description=""
                   icon={<SummaryIcon />}
                   items={student.personal}
                   tone="admin"
@@ -682,7 +653,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               <DesktopDataCard>
                 <SummaryCard
                   title="ประวัติการศึกษา"
-                  description="ข้อมูลการศึกษาที่ใช้ประกอบบันทึกการฝึกงานของคุณ"
+                  description=""
                   icon={<AcademicIcon />}
                   items={student.education}
                   tone="admin"
@@ -691,7 +662,7 @@ export function StudentOverviewPage({ currentUser, student }: StudentOverviewPag
               <DesktopDataCard>
                 <SummaryCard
                   title="รายละเอียดการฝึกงาน"
-                  description="สรุปข้อมูลสถานที่ฝึกงานและสถานะการตรวจสอบปัจจุบันของคุณ"
+                  description=""
                   icon={<CalendarIcon />}
                   items={student.internship}
                   tone="admin"

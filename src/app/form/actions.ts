@@ -37,6 +37,11 @@ const MAX_PORTFOLIO_FILE_COUNT = 5;
 const MAX_ATTACHMENT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_PORTFOLIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_PROFILE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const JPEG_SIGNATURE = [0xff, 0xd8, 0xff];
+const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d];
+
+type FileSignatureType = "jpeg" | "pdf" | "png" | "unknown";
 
 function normalizeText(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
@@ -112,6 +117,37 @@ function countFileChanges(input: {
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+function matchesSignature(input: Uint8Array, signature: readonly number[]) {
+  return signature.every((value, index) => input[index] === value);
+}
+
+async function detectFileSignature(file: File): Promise<FileSignatureType> {
+  const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+
+  if (matchesSignature(bytes, PNG_SIGNATURE)) {
+    return "png";
+  }
+
+  if (matchesSignature(bytes, JPEG_SIGNATURE)) {
+    return "jpeg";
+  }
+
+  if (matchesSignature(bytes, PDF_SIGNATURE)) {
+    return "pdf";
+  }
+
+  return "unknown";
+}
+
+async function hasExpectedFileSignature(
+  file: File,
+  allowedTypes: readonly FileSignatureType[],
+) {
+  const detectedType = await detectFileSignature(file);
+
+  return allowedTypes.includes(detectedType);
 }
 
 async function requireStudentOrAdminSession() {
@@ -299,6 +335,8 @@ export async function saveStudentFormAction(
       fieldErrors.profileImage = "รูปโปรไฟล์ต้องเป็นไฟล์ JPG หรือ PNG เท่านั้น";
     } else if (newProfileImage.size > MAX_PROFILE_IMAGE_SIZE_BYTES) {
       fieldErrors.profileImage = "รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB";
+    } else if (!(await hasExpectedFileSignature(newProfileImage, ["jpeg", "png"]))) {
+      fieldErrors.profileImage = "รูปโปรไฟล์ไม่ผ่านการตรวจสอบความปลอดภัยของไฟล์";
     }
   }
 
@@ -328,6 +366,11 @@ export async function saveStudentFormAction(
       fieldErrors.attachments = "เอกสารประกอบการฝึกงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 5 MB";
       break;
     }
+
+    if (!(await hasExpectedFileSignature(file, ["pdf", "jpeg", "png"]))) {
+      fieldErrors.attachments = "ไฟล์เอกสารบางรายการไม่ผ่านการตรวจสอบความปลอดภัยของไฟล์";
+      break;
+    }
   }
 
   for (const file of newPortfolioFiles) {
@@ -338,6 +381,11 @@ export async function saveStudentFormAction(
 
     if (file.size > MAX_PORTFOLIO_FILE_SIZE_BYTES) {
       fieldErrors.portfolioAttachments = "แฟ้มสะสมผลงานแต่ละไฟล์ต้องมีขนาดไม่เกิน 10 MB";
+      break;
+    }
+
+    if (!(await hasExpectedFileSignature(file, ["pdf"]))) {
+      fieldErrors.portfolioAttachments = "แฟ้มสะสมผลงานบางรายการไม่ผ่านการตรวจสอบความปลอดภัยของไฟล์";
       break;
     }
   }

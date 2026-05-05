@@ -96,7 +96,9 @@ export async function GET(
               "Content-Disposition": `attachment; filename="${fileName.replace(/"/g, "")}"`,
             }
           : {}),
-        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Cache-Control": "private, no-store",
+        Vary: "Cookie",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

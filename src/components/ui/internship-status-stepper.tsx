@@ -106,7 +106,7 @@ export function InternshipStatusStepper({ currentStatus, tone, className }: Inte
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status timeline</p>
+          {/* <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status timeline</p> */}
           <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-950">ติดตามความคืบหน้าการฝึกงาน</h2>
         </div>
         <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${tone === "student" ? "bg-orange-50 text-orange-700 ring-1 ring-orange-100" : "bg-admin/8 text-(--color-admin) ring-1 ring-admin/10"}`}>
@@ -133,7 +133,7 @@ export function InternshipStatusStepper({ currentStatus, tone, className }: Inte
 
                   <div className="mt-4 max-w-35 space-y-1 px-2">
                     <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${toneClasses.eyebrow}`}>
-                      {state === "completed" ? "Completed" : state === "current" ? "Current" : "Upcoming"}
+                      {state === "completed" ? "เสร็จแล้ว" : state === "current" ? "ปัจจุบัน" : "ถัดไป"}
                     </p>
                     <p className={`text-sm font-semibold leading-5 ${toneClasses.label}`}>{step.label}</p>
                   </div>

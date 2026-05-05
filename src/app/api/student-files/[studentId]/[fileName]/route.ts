@@ -68,6 +68,7 @@ export async function GET(
     },
     select: {
       filePath: true,
+      mimeType: true,
     },
   });
 
@@ -82,13 +83,15 @@ export async function GET(
   try {
     await access(absolutePath);
     const fileBuffer = await readFile(absolutePath);
-    const ext = path.extname(fileName).toLowerCase();
+    const storedMimeType = uploadedFile?.mimeType?.trim() || null;
     const contentType =
-      ext === ".pdf"
+      storedMimeType
+        ? storedMimeType
+        : path.extname(fileName).toLowerCase() === ".pdf"
         ? "application/pdf"
-        : ext === ".png"
+        : path.extname(fileName).toLowerCase() === ".png"
           ? "image/png"
-          : ext === ".jpg" || ext === ".jpeg"
+          : path.extname(fileName).toLowerCase() === ".jpg" || path.extname(fileName).toLowerCase() === ".jpeg"
             ? "image/jpeg"
             : "application/octet-stream";
 
@@ -96,7 +99,9 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${fileName.replace(/"/g, "")}"`,
-        "Cache-Control": "private, max-age=0, must-revalidate",
+        "Cache-Control": "private, no-store",
+        Vary: "Cookie",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {
