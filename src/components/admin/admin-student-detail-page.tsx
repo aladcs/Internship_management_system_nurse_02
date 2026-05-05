@@ -517,9 +517,7 @@ export function AdminStudentDetailPage({
   student,
 }: AdminStudentDetailPageProps) {
   const [confirmStatus, setConfirmStatus] = useState<InternshipStatus | null>(null);
-  const [openSections, setOpenSections] = useState<string[]>(() =>
-    typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches ? ["personal"] : [],
-  );
+  const [openSections, setOpenSections] = useState<string[]>([]);
   const [reviewMessage, setReviewMessage] = useState("");
   const [statusState, formAction] = useActionState<UpdateStudentStatusActionState, FormData>(
     updateStudentStatusAction,
@@ -599,7 +597,7 @@ export function AdminStudentDetailPage({
             </div>
 
             <div className="w-full max-w-sm shrink-0 rounded-[28px] border border-white/70 bg-white/75 p-4 shadow-lg shadow-admin/10 backdrop-blur sm:p-5">
-              {/* <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Review Actions</p> */}
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">การดำเนินการหลัก</p>
               <div className="mt-3 space-y-3">
                 {hasStatusActions ? (
                   <div className="space-y-3">

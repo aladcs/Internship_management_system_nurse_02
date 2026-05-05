@@ -362,9 +362,7 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
 
 export function StudentOverviewPage({ currentUser, student }: StudentOverviewPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [openSections, setOpenSections] = useState<string[]>(() =>
-    typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches ? ["personal"] : [],
-  );
+  const [openSections, setOpenSections] = useState<string[]>([]);
 
   const ctaLabel =
     student.status === "needs_fix"
