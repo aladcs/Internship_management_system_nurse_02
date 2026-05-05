@@ -1037,6 +1037,7 @@ export function StudentFormPage({
                       src={visibleProfileImage.src}
                       alt={visibleProfileImage.name}
                       fill
+                      loading="eager"
                       sizes="112px"
                       className="object-cover"
                       unoptimized={
