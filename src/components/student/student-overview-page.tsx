@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { InternshipStatus } from "@prisma/client";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { logoutAction } from "@/app/overview/actions";
 import { AccountMenu } from "@/components/auth/account-menu";
 import {
@@ -364,13 +364,9 @@ function AttachmentsSection({ student }: { student: StudentOverviewPageProps["st
 
 export function StudentOverviewPage({ currentUser, student }: StudentOverviewPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [openSections, setOpenSections] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (window.matchMedia("(min-width: 768px)").matches) {
-      setOpenSections(["personal"]);
-    }
-  }, []);
+  const [openSections, setOpenSections] = useState<string[]>(() =>
+    typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches ? ["personal"] : [],
+  );
 
   const ctaLabel =
     student.status === "needs_fix"

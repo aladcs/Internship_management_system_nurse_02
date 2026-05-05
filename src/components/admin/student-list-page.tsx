@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ModalFrame } from "@/components/admin/modal-frame";
 import type { InternshipStatus } from "@prisma/client";
@@ -221,24 +221,6 @@ function getStatusClasses(status: InternshipStatus) {
   }
 
   return "bg-emerald-100 text-emerald-800 ring-emerald-200";
-}
-
-function ResultCount({ count }: { count: number }) {
-  return (
-    <p className="text-sm text-slate-500">
-      {count} {count === 1 ? "นักศึกษา" : "นักศึกษา"}
-    </p>
-  );
-}
-
-function FilterIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="h-4 w-4">
-      <path d="M3.5 5h13" />
-      <path d="M6.5 10h7" />
-      <path d="M8.75 15h2.5" />
-    </svg>
-  );
 }
 
 function ChevronLeftIcon() {
@@ -693,12 +675,12 @@ export function StudentListPage({
     [currentPage, totalPages],
   );
 
-  function applyFilters(nextValues?: {
+  const applyFilters = useCallback((nextValues?: {
     endDateFilter?: string;
     facultyFilter?: string;
     searchQuery?: string;
     startDateFilter?: string;
-  }) {
+  }) => {
     const href = buildStudentListHref({
       endDateFilter: nextValues?.endDateFilter ?? endDateDraft,
       facultyFilter: nextValues?.facultyFilter ?? facultyDraft,
@@ -708,7 +690,7 @@ export function StudentListPage({
     });
 
     router.replace(href);
-  }
+  }, [endDateDraft, facultyDraft, router, searchDraft, startDateDraft, statusFilter]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

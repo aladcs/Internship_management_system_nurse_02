@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useRef, useState, startTransition, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, startTransition, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { logoutAction } from "../../app/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "./admin-layout-shell";
@@ -337,6 +337,19 @@ function SummaryChip({ icon, label, value, subvalue }: SummaryChipProps) {
 }
 
 export function AdminActivityLogPage({
+  ...props
+}: AdminActivityLogPageProps) {
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+
+  return <AdminActivityLogPageContent key={searchParamsKey} searchParamsKey={searchParamsKey} {...props} />;
+}
+
+type AdminActivityLogPageContentProps = AdminActivityLogPageProps & {
+  searchParamsKey: string;
+};
+
+function AdminActivityLogPageContent({
   currentUser,
   activityLogs,
   currentPage,
@@ -344,15 +357,14 @@ export function AdminActivityLogPage({
   totalPages,
   filters,
   summary,
-}: AdminActivityLogPageProps) {
+  searchParamsKey,
+}: AdminActivityLogPageContentProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchParamsKey = searchParams.toString();
   const isSyncingFromUrlRef = useRef(false);
-  const [query, setQuery] = useState(filters.query);
-  const [roleFilter, setRoleFilter] = useState<ActivityRoleFilter>(filters.role);
-  const [categoryFilter, setCategoryFilter] = useState<ActivityCategoryFilter>(filters.category);
-  const [selectedDate, setSelectedDate] = useState(filters.date);
+  const [query, setQuery] = useState(() => filters.query);
+  const [roleFilter, setRoleFilter] = useState<ActivityRoleFilter>(() => filters.role);
+  const [categoryFilter, setCategoryFilter] = useState<ActivityCategoryFilter>(() => filters.category);
+  const [selectedDate, setSelectedDate] = useState(() => filters.date);
   const deferredQuery = useDeferredValue(query);
   const roleCounts = {
     all: totalCount,
@@ -396,76 +408,49 @@ export function AdminActivityLogPage({
     const nextRole = parseActivityRoleFromUrl(params.get("role"));
     const nextCategory = parseActivityCategoryFromUrl(params.get("category"));
     const nextDate = params.get("date") ?? "";
-    const shouldSync =
-      query !== nextQuery || roleFilter !== nextRole || categoryFilter !== nextCategory || selectedDate !== nextDate;
-
-    if (shouldSync) {
-      isSyncingFromUrlRef.current = true;
-    }
-
-    if (query !== nextQuery) {
-      setQuery(nextQuery);
-    }
-
-    if (roleFilter !== nextRole) {
-      setRoleFilter(nextRole);
-    }
-
-    if (categoryFilter !== nextCategory) {
-      setCategoryFilter(nextCategory);
-    }
-
-    if (selectedDate !== nextDate) {
-      setSelectedDate(nextDate);
-    }
-  }, [searchParamsKey]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParamsKey);
-    const nextQuery = params.get("q")?.trim() ?? "";
-    const nextRole = parseActivityRoleFromUrl(params.get("role"));
-    const nextCategory = parseActivityCategoryFromUrl(params.get("category"));
-    const nextDate = params.get("date") ?? "";
 
     if (query === nextQuery && roleFilter === nextRole && categoryFilter === nextCategory && selectedDate === nextDate) {
       isSyncingFromUrlRef.current = false;
     }
   }, [categoryFilter, query, roleFilter, searchParamsKey, selectedDate]);
 
-  function buildActivityLogsHref(input?: Partial<AdminActivityLogPageProps["filters"]> & { page?: number }) {
-    const searchParams = new URLSearchParams();
-    const nextFilters = {
-      query: input?.query ?? filters.query,
-      role: input?.role ?? filters.role,
-      category: input?.category ?? filters.category,
-      date: input?.date ?? filters.date,
-    };
-    const nextPage = input?.page ?? currentPage;
+  const buildActivityLogsHref = useMemo(
+    () => (input?: Partial<AdminActivityLogPageProps["filters"]> & { page?: number }) => {
+      const searchParams = new URLSearchParams();
+      const nextFilters = {
+        query: input?.query ?? filters.query,
+        role: input?.role ?? filters.role,
+        category: input?.category ?? filters.category,
+        date: input?.date ?? filters.date,
+      };
+      const nextPage = input?.page ?? currentPage;
 
-    if (nextPage > 1) {
-      searchParams.set("page", String(nextPage));
-    }
+      if (nextPage > 1) {
+        searchParams.set("page", String(nextPage));
+      }
 
-    if (nextFilters.query.trim()) {
-      searchParams.set("q", nextFilters.query.trim());
-    }
+      if (nextFilters.query.trim()) {
+        searchParams.set("q", nextFilters.query.trim());
+      }
 
-    if (nextFilters.role !== "all") {
-      searchParams.set("role", nextFilters.role);
-    }
+      if (nextFilters.role !== "all") {
+        searchParams.set("role", nextFilters.role);
+      }
 
-    if (nextFilters.category !== "all") {
-      searchParams.set("category", nextFilters.category);
-    }
+      if (nextFilters.category !== "all") {
+        searchParams.set("category", nextFilters.category);
+      }
 
-    if (nextFilters.date) {
-      searchParams.set("date", nextFilters.date);
-    }
+      if (nextFilters.date) {
+        searchParams.set("date", nextFilters.date);
+      }
 
-    const queryString = searchParams.toString();
+      const queryString = searchParams.toString();
 
-    return queryString ? `/activity-logs?${queryString}` : "/activity-logs";
-  }
+      return queryString ? `/activity-logs?${queryString}` : "/activity-logs";
+    },
+    [currentPage, filters],
+  );
 
   useEffect(() => {
     if (isSyncingFromUrlRef.current) {
@@ -494,7 +479,7 @@ export function AdminActivityLogPage({
         router.replace(nextHref, { scroll: false });
       });
     }
-  }, [categoryFilter, deferredQuery, roleFilter, router, searchParamsKey, selectedDate]);
+  }, [buildActivityLogsHref, categoryFilter, deferredQuery, roleFilter, router, searchParamsKey, selectedDate]);
 
   return (
     <AdminLayoutShell

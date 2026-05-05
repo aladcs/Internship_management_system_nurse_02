@@ -517,7 +517,9 @@ export function AdminStudentDetailPage({
   student,
 }: AdminStudentDetailPageProps) {
   const [confirmStatus, setConfirmStatus] = useState<InternshipStatus | null>(null);
-  const [openSections, setOpenSections] = useState<string[]>([]);
+  const [openSections, setOpenSections] = useState<string[]>(() =>
+    typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches ? ["personal"] : [],
+  );
   const [reviewMessage, setReviewMessage] = useState("");
   const [statusState, formAction] = useActionState<UpdateStudentStatusActionState, FormData>(
     updateStudentStatusAction,
@@ -533,12 +535,6 @@ export function AdminStudentDetailPage({
       router.refresh();
     }
   }, [router, statusState.status]);
-
-  useEffect(() => {
-    if (window.matchMedia("(min-width: 768px)").matches) {
-      setOpenSections(["personal"]);
-    }
-  }, []);
 
   const confirmAction = confirmStatus ? getStatusAction(confirmStatus) : null;
   const confirmStatusLabel = confirmStatus ? formatInternshipStatusLabel(confirmStatus) : null;

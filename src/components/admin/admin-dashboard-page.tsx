@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import type { InternshipStatus } from "@prisma/client";
-import { logoutAction, markAllNotificationsReadAction } from "@/app/dashboard/actions";
+import { logoutAction } from "@/app/dashboard/actions";
 import { AdminLayoutShell, type AdminShellNavItem } from "@/components/admin/admin-layout-shell";
-import { AdminNotificationFeed } from "@/components/admin/admin-notification-menu";
 import type { AdminNotificationItem } from "@/lib/admin/notifications";
 import { appShellClass } from "@/lib/page-shell";
 
@@ -154,7 +153,7 @@ export function AdminDashboardPage({
   recentStudents,
   notifications,
 }: AdminDashboardPageProps) {
-  const recentNotifications = notifications.slice(0, 5);
+  void notifications;
 
   return (
     <AdminLayoutShell

@@ -548,6 +548,14 @@ function ResetAdminPasswordDialog({ admin, onClose }: ResetPasswordDialogProps) 
 }
 
 export function AdminListPage({
+  ...props
+}: AdminListPageProps) {
+  const listKey = `${props.currentPage}:${props.searchQuery}:${props.admins.map((admin) => admin.id).join(",")}`;
+
+  return <AdminListPageContent key={listKey} {...props} />;
+}
+
+function AdminListPageContent({
   admins: initialAdmins,
   currentPage,
   currentUser,
@@ -557,8 +565,8 @@ export function AdminListPage({
   totalPages,
 }: AdminListPageProps) {
   const router = useRouter();
-  const [admins, setAdmins] = useState(initialAdmins);
-  const [searchDraft, setSearchDraft] = useState(searchQuery);
+  const [admins, setAdmins] = useState(() => initialAdmins);
+  const [searchDraft, setSearchDraft] = useState(() => searchQuery);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminListItem | null>(null);
   const [deletingAdmin, setDeletingAdmin] = useState<AdminListItem | null>(null);
@@ -568,14 +576,6 @@ export function AdminListPage({
     () => getPaginationPages(currentPage, totalPages),
     [currentPage, totalPages],
   );
-
-  useEffect(() => {
-    setAdmins(initialAdmins);
-  }, [initialAdmins]);
-
-  useEffect(() => {
-    setSearchDraft(searchQuery);
-  }, [searchQuery]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

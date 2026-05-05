@@ -148,7 +148,7 @@ export function AppDatePicker({
             id={id}
             type="button"
             disabled={disabled}
-            aria-invalid={error ? "true" : "false"}
+            data-invalid={error ? "true" : "false"}
             className={`relative w-full rounded-2xl border bg-slate-50 text-left text-slate-950 outline-none transition focus:bg-white focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 ${sizeClass} ${error ? "border-red-200 focus:border-red-300 focus:ring-red-100" : toneClasses.focus} ${className ?? ""}`}
           >
             <span className={`block truncate ${displayValue ? "text-slate-950" : "text-slate-400"}`}>

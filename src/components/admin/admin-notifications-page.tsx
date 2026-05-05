@@ -231,6 +231,19 @@ function getNotificationsFilterQuery(input: {
 }
 
 export function AdminNotificationsPage({
+  ...props
+}: AdminNotificationsPageProps) {
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+
+  return <AdminNotificationsPageContent key={searchParamsKey} searchParamsKey={searchParamsKey} {...props} />;
+}
+
+type AdminNotificationsPageContentProps = AdminNotificationsPageProps & {
+  searchParamsKey: string;
+};
+
+function AdminNotificationsPageContent({
   currentUser,
   notifications,
   allCount,
@@ -243,43 +256,18 @@ export function AdminNotificationsPage({
   typeFilter,
   dateFilter,
   roleLabel = "ผู้ดูแลระบบ",
-}: AdminNotificationsPageProps) {
+  searchParamsKey,
+}: AdminNotificationsPageContentProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchParamsKey = searchParams.toString();
   const isSyncingFromUrlRef = useRef(false);
-  const [query, setQuery] = useState(searchQuery);
-  const [selectedType, setSelectedType] = useState<AdminNotificationTypeFilter>(typeFilter);
-  const [selectedDate, setSelectedDate] = useState(dateFilter);
+  const [query, setQuery] = useState(() => searchQuery);
+  const [selectedType, setSelectedType] = useState<AdminNotificationTypeFilter>(() => typeFilter);
+  const [selectedDate, setSelectedDate] = useState(() => dateFilter);
   const deferredQuery = useDeferredValue(query);
   const groupedNotifications = groupNotificationsByDate(notifications);
   const selectedDateLabel = formatSelectedDateLabel(dateFilter);
   const hasSearch = searchQuery.trim().length > 0;
   const hasActiveFilters = hasSearch || typeFilter !== "all" || dateFilter.length > 0;
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParamsKey);
-    const nextQuery = params.get("q")?.trim() ?? "";
-    const nextType = parseNotificationTypeFromUrl(params.get("type"));
-    const nextDate = params.get("date") ?? "";
-    const shouldSync = query !== nextQuery || selectedType !== nextType || selectedDate !== nextDate;
-
-    if (shouldSync) {
-      isSyncingFromUrlRef.current = true;
-    }
-
-    if (query !== nextQuery) {
-      setQuery(nextQuery);
-    }
-
-    if (selectedType !== nextType) {
-      setSelectedType(nextType);
-    }
-
-    if (selectedDate !== nextDate) {
-      setSelectedDate(nextDate);
-    }
-  }, [searchParamsKey]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParamsKey);
