@@ -90,6 +90,7 @@ model Internship {
 model UploadedFile {
   id        String   @id @default(uuid()) @db.Uuid
   studentId String   @db.Uuid
+  category  UploadedFileCategory @default(general_attachment)
   fileName  String   @db.VarChar(255)
   filePath  String   @db.VarChar(1024)
   mimeType  String?  @db.VarChar(100)
@@ -207,4 +208,9 @@ enum NotificationType {
   form_updated_in_progress
   file_changed_in_progress
   status_changed
+}
+
+enum UploadedFileCategory {
+  general_attachment
+  portfolio_attachment
 }

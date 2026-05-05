@@ -9,6 +9,7 @@ import {
   type EducationLevel,
   type Gender,
   type InternshipStatus,
+  type UploadedFileCategory,
   type UserRole,
 } from "@prisma/client";
 import {
@@ -43,6 +44,8 @@ const UPLOAD_RATE_LIMIT_PER_ACTOR = 12;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const JPEG_SIGNATURE = [0xff, 0xd8, 0xff];
 const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46, 0x2d];
+const GENERAL_ATTACHMENT_CATEGORY = "general_attachment" satisfies UploadedFileCategory;
+const PORTFOLIO_ATTACHMENT_CATEGORY = "portfolio_attachment" satisfies UploadedFileCategory;
 
 type FileSignatureType = "jpeg" | "pdf" | "png" | "unknown";
 
@@ -201,6 +204,7 @@ export async function saveStudentFormAction(
       files: {
         select: {
           id: true,
+          category: true,
           filePath: true,
         },
       },
@@ -349,6 +353,12 @@ export async function saveStudentFormAction(
   const newPortfolioFiles = formData
     .getAll("portfolioAttachments")
     .filter((value): value is File => value instanceof File && value.size > 0);
+  const remainingAttachmentFileCount = student.files.filter(
+    (file) => !removeFileIds.includes(file.id) && file.category === GENERAL_ATTACHMENT_CATEGORY,
+  ).length;
+  const remainingPortfolioFileCount = student.files.filter(
+    (file) => !removeFileIds.includes(file.id) && file.category === PORTFOLIO_ATTACHMENT_CATEGORY,
+  ).length;
   const newFiles = [...newAttachmentFiles, ...newPortfolioFiles];
   const hasIncomingUpload = Boolean(newProfileImage) || newFiles.length > 0;
 
@@ -374,7 +384,15 @@ export async function saveStudentFormAction(
     fieldErrors.attachments = `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`;
   }
 
+  if (remainingAttachmentFileCount + newAttachmentFiles.length > MAX_ATTACHMENT_FILE_COUNT) {
+    fieldErrors.attachments = `อัปโหลดเอกสารประกอบการฝึกงานได้สูงสุด ${MAX_ATTACHMENT_FILE_COUNT} ไฟล์`;
+  }
+
   if (newPortfolioFiles.length > MAX_PORTFOLIO_FILE_COUNT) {
+    fieldErrors.portfolioAttachments = `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`;
+  }
+
+  if (remainingPortfolioFileCount + newPortfolioFiles.length > MAX_PORTFOLIO_FILE_COUNT) {
     fieldErrors.portfolioAttachments = `อัปโหลดแฟ้มสะสมผลงานได้สูงสุด ${MAX_PORTFOLIO_FILE_COUNT} ไฟล์`;
   }
 
@@ -459,6 +477,7 @@ export async function saveStudentFormAction(
     : null;
   const writtenFiles: Array<{
     absolutePath: string;
+    category: UploadedFileCategory;
     fileName: string;
     filePath: string;
     mimeType: string | null;
@@ -494,7 +513,7 @@ export async function saveStudentFormAction(
       };
     }
 
-    for (const file of newFiles) {
+    for (const file of newAttachmentFiles) {
       const safeName = sanitizeFileName(file.name || "attachment");
       const storedFileName = `${Date.now()}-${randomUUID()}-${safeName}`;
       const absolutePath = path.join(uploadedFileDirectory, storedFileName);
@@ -505,6 +524,26 @@ export async function saveStudentFormAction(
 
       writtenFiles.push({
         absolutePath,
+        category: GENERAL_ATTACHMENT_CATEGORY,
+        fileName: file.name,
+        filePath: storedPath,
+        mimeType: file.type || null,
+        sizeBytes: file.size,
+      });
+    }
+
+    for (const file of newPortfolioFiles) {
+      const safeName = sanitizeFileName(file.name || "attachment");
+      const storedFileName = `${Date.now()}-${randomUUID()}-${safeName}`;
+      const absolutePath = path.join(uploadedFileDirectory, storedFileName);
+      const storedPath = `/storage/student-files/${student.id}/${storedFileName}`;
+      const bytes = Buffer.from(await file.arrayBuffer());
+
+      await writeFile(absolutePath, bytes);
+
+      writtenFiles.push({
+        absolutePath,
+        category: PORTFOLIO_ATTACHMENT_CATEGORY,
         fileName: file.name,
         filePath: storedPath,
         mimeType: file.type || null,
@@ -600,6 +639,7 @@ export async function saveStudentFormAction(
         await tx.uploadedFile.createMany({
           data: writtenFiles.map((file) => ({
             studentId: student.id,
+            category: file.category,
             fileName: file.fileName,
             filePath: file.filePath,
             mimeType: file.mimeType,

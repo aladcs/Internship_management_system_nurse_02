@@ -845,7 +845,7 @@ export function AdminStudentDetailPage({
       {confirmStatus && confirmAction && confirmStatusLabel ? (
         <ModalFrame
           title="ยืนยันการเปลี่ยนสถานะ"
-          description={`คุณต้องการเปลี่ยนสถานะเป็น ${confirmStatusLabel} ใช่หรือไม่?`}
+          description={``}
         >
           <form
             action={formAction}
@@ -869,9 +869,7 @@ export function AdminStudentDetailPage({
                     placeholder="ระบุสิ่งที่นักศึกษาต้องแก้ไขหรือข้อมูลที่ยังขาด"
                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-admin/40 focus:ring-4 focus:ring-admin/10"
                   />
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    จำเป็นต้องระบุข้อความเมื่อส่งกลับให้แก้ไข และข้อความล่าสุดจะแสดงให้นักศึกษาเห็นในหน้าภาพรวมและแบบฟอร์ม
-                  </p>
+                 
                 </div>
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   ข้อความที่จะส่งให้นักศึกษา: {reviewMessage.trim() || "กรุณาระบุเหตุผลก่อนยืนยันการส่งกลับ"}

@@ -112,6 +112,7 @@ export default async function InternAdminStudentEditPage({
         },
         select: {
           id: true,
+          category: true,
           fileName: true,
           filePath: true,
           mimeType: true,
@@ -177,8 +178,9 @@ export default async function InternAdminStudentEditPage({
 
       return {
         id: file.id,
+        category: file.category,
         name: file.fileName,
-          href: getStudentAttachmentDownloadHref(file.filePath),
+        href: getStudentAttachmentDownloadHref(file.filePath),
         meta: metaParts.join(" • "),
       };
     }),

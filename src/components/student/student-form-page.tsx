@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { InternshipStatus } from "@prisma/client";
+import type { InternshipStatus, UploadedFileCategory } from "@prisma/client";
 import { startTransition, useActionState, useMemo, useRef, useState } from "react";
 import { type StudentFormActionState } from "@/app/form/action-state";
 import {
@@ -26,6 +26,7 @@ const CURRENT_YEAR = new Date().getUTCFullYear();
 
 type ExistingFileItem = {
   id: string;
+  category: UploadedFileCategory;
   name: string;
   href: string;
   meta: string;
@@ -542,6 +543,14 @@ export function StudentFormPage({
   const visibleExistingFiles = useMemo(
     () => existingFiles.filter((file) => !removedFileIds.includes(file.id)),
     [existingFiles, removedFileIds],
+  );
+  const visibleExistingAttachmentFiles = useMemo(
+    () => visibleExistingFiles.filter((file) => file.category === "general_attachment"),
+    [visibleExistingFiles],
+  );
+  const visibleExistingPortfolioFiles = useMemo(
+    () => visibleExistingFiles.filter((file) => file.category === "portfolio_attachment"),
+    [visibleExistingFiles],
   );
   const formNotice =
     !isAdminMode && student.status === "needs_fix"
@@ -1283,6 +1292,45 @@ export function StudentFormPage({
                     ))}
                   </div>
                 ) : null}
+
+                {visibleExistingAttachmentFiles.length > 0 ? (
+                  <div className="mt-5 space-y-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-950">ไฟล์เอกสารประกอบที่อัปโหลดแล้ว</h4>
+                    </div>
+                    {visibleExistingAttachmentFiles.map((file) => (
+                      <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <a
+                            href={file.href}
+                            download={file.name}
+                            className="flex items-start gap-3 rounded-2xl transition hover:opacity-85"
+                          >
+                            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                              <FileIcon />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+                              <p className="mt-2 hidden items-center gap-1 text-xs font-medium text-emerald-600 sm:inline-flex">
+                                <CheckIcon />
+                                อัปโหลดแล้ว กดเพื่อดาวน์โหลด
+                              </p>
+                            </div>
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => markExistingFileRemoved(file.id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                          aria-label={`ลบ ${file.name}`}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-3">
@@ -1339,45 +1387,45 @@ export function StudentFormPage({
                     ))}
                   </div>
                 ) : null}
-              </div>
-              {visibleExistingFiles.length > 0 ? (
-                <div className="mt-5 space-y-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-950">ไฟล์ที่อัปโหลดแล้ว</h3>
-                  </div>
-                  {visibleExistingFiles.map((file) => (
-                    <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <a
-                          href={file.href}
-                          download={file.name}
-                          className="flex items-start gap-3 rounded-2xl transition hover:opacity-85"
-                        >
-                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
-                            <FileIcon />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                            <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
-                            <p className="mt-2 hidden items-center gap-1 text-xs font-medium text-emerald-600 sm:inline-flex">
-                              <CheckIcon />
-                              อัปโหลดแล้ว กดเพื่อดาวน์โหลด
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => markExistingFileRemoved(file.id)}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-                        aria-label={`ลบ ${file.name}`}
-                      >
-                        <CloseIcon />
-                      </button>
+                {visibleExistingPortfolioFiles.length > 0 ? (
+                  <div className="mt-5 space-y-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-950">ไฟล์แฟ้มสะสมผลงานที่อัปโหลดแล้ว</h4>
                     </div>
-                  ))}
-                </div>
-              ) : null}
+                    {visibleExistingPortfolioFiles.map((file) => (
+                      <div key={file.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          <a
+                            href={file.href}
+                            download={file.name}
+                            className="flex items-start gap-3 rounded-2xl transition hover:opacity-85"
+                          >
+                            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${theme.accentTile}`}>
+                              <FileIcon />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-500">{file.meta}</p>
+                              <p className="mt-2 hidden items-center gap-1 text-xs font-medium text-emerald-600 sm:inline-flex">
+                                <CheckIcon />
+                                อัปโหลดแล้ว กดเพื่อดาวน์โหลด
+                              </p>
+                            </div>
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => markExistingFileRemoved(file.id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                          aria-label={`ลบ ${file.name}`}
+                        >
+                          <CloseIcon />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
 
               {removedFileIds.map((fileId) => (
                 <input key={fileId} type="hidden" name="removeFileIds" value={fileId} />
