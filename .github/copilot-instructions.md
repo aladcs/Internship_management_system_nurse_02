@@ -17,6 +17,11 @@ All implementation must follow:
 * docs/_features.md → feature roadmap
 * docs/ui/*.md → UI specification per page
 
+## Skills
+
+* When implementing any feature, always follow `.github/skills/implement-feature/SKILL.md`
+* Use other `.github/skills/*/SKILL.md` files only when relevant.
+
 ---
 
 ## ⚠️ Routing and Middleware Rules
