@@ -1,19 +1,19 @@
 ---
 name: placement-or-rotation-workflow
-description: 'Implement placement, rotation, or assignment workflows in academic systems. Use for practicum or ward assignments, site allocation, supervisor or preceptor mapping, schedule windows, placement statuses, and student-facing versus staff-facing placement views.'
+description: 'Implement placement, rotation, or assignment workflows in operational systems. Use for practicum, ward, shift, site, cohort, mentor, or assignment mapping; schedule windows; placement statuses; and participant-facing versus staff-facing assignment views.'
 argument-hint: '[placement or rotation workflow change]'
 ---
 
 # Placement Or Rotation Workflow
 
-Use this skill for systems that assign students to clinical sites, wards, units, rotations, supervisors, or practicum schedules.
+Use this skill for systems that assign people to sites, units, cohorts, rotations, mentors, or schedule-bound placements.
 
 ## Use When
 
 - Building practicum, clinical placement, or rotation assignment flows
-- Assigning students to wards, sites, cohorts, or preceptors
+- Assigning people to wards, sites, cohorts, mentors, or supervisors
 - Adding placement statuses, windows, or schedule-driven constraints
-- Creating staff review pages and student placement summary pages
+- Creating staff review pages and participant placement summary pages
 
 ## Quick Rules
 

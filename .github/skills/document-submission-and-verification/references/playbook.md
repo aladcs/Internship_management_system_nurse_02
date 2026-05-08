@@ -12,7 +12,7 @@
 ## Procedure
 
 1. Identify the submission unit.
-   - Per student, per request, per practicum, or per academic term.
+   - Per user, per request, per case, per assignment, or per time period.
 2. Define document requirements.
    - Required vs optional
    - Allowed file types and count

@@ -13,7 +13,7 @@
 - `targetPath` for direct navigation when possible
 - `entityType` and `entityId` for fallback resolution
 - Timestamp suitable for sorting and client filtering
-- Per-admin receipt/read state when multiple admins consume the same event
+- Per-recipient receipt/read state when multiple staff users consume the same event
 
 ## Procedure
 
@@ -23,7 +23,7 @@
    - Prefer `targetPath`.
    - Add `entityType` and `entityId` when needed.
 4. Fan out to recipients.
-   - Create receipt/read rows if the system tracks per-admin state.
+   - Create receipt/read rows if the system tracks per-recipient state.
 5. Trigger optional external delivery behind env/config checks.
 6. Revalidate affected UI surfaces.
    - Dashboard widgets

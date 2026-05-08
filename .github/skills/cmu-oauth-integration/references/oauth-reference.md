@@ -1,6 +1,6 @@
 # CMU OAuth Reference
 
-This reference captures the current CMU OAuth 2.0 behavior for the Nurse CMU AI Tutor project.
+This reference captures a reusable CMU OAuth 2.0 integration pattern for CMU-backed web apps. Adapt redirect targets, account-linking rules, and optional faculty gating to the current project.
 
 ## External Providers
 
@@ -33,18 +33,17 @@ This reference captures the current CMU OAuth 2.0 behavior for the Nurse CMU AI 
    - compare callback `state` with the `oauth_state` cookie
    - exchange the authorization `code` for an access token
    - fetch CMU basic profile data using the access token
-   - require `organization_code === "12"`
-   - upsert the local user record
+   - optionally require a specific `organization_code` or faculty rule
+   - link or upsert the local user record
    - reject inactive users
-   - issue app JWT cookies
+   - issue app auth cookies or JWTs
    - clear the `oauth_state` cookie
    - redirect by role and onboarding state
 
 3. Post-login redirect rules
-   - admin roles go to `/admin/dashboard`
-   - students missing ToS acceptance go to `/tos`
-   - students missing pretest completion go to `/pretest`
-   - all other successful student logins go to `/subjects`
+   - privileged roles often go to a dashboard or operations home
+   - users missing consent or onboarding go to a gate page
+   - all other successful users go to their normal role home
 
 ## CMU User Fields Used by the App
 
@@ -62,7 +61,7 @@ This reference captures the current CMU OAuth 2.0 behavior for the Nurse CMU AI 
 - `oauth_state_mismatch`
 - `oauth_token_failed`
 - `oauth_userinfo_failed`
-- `not_nursing_faculty`
+- `not_allowed_faculty`
 - `account_disabled`
 - `oauth_error`
 
@@ -75,4 +74,4 @@ This reference captures the current CMU OAuth 2.0 behavior for the Nurse CMU AI 
 
 ## Source of Truth
 
-This reference is derived from `docs/cmu-oauth.md`. Update both when the integration contract changes.
+This reference should be kept in sync with any repo-specific CMU OAuth documentation when the integration contract changes.

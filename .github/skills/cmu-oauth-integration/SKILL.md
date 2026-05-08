@@ -1,13 +1,13 @@
 ---
 name: cmu-oauth-integration
-description: 'Implement, modify, or review CMU OAuth 2.0 login in this Next.js app. Use when working on Microsoft Entra ID authorize or token exchange, CMU basicinfo user lookup, oauth_state cookies, callback validation, nursing faculty filtering, JWT cookie issuance, login error mapping, or CMU OAuth environment variables.'
+description: 'Implement, modify, or review CMU OAuth 2.0 login in a web app. Use when working on Microsoft Entra ID authorize or token exchange, CMU basicinfo user lookup, oauth_state cookies, callback validation, CMU organization or faculty filtering, session or JWT issuance, login error mapping, or CMU OAuth environment variables.'
 argument-hint: 'What part of the CMU OAuth flow needs work?'
 user-invocable: true
 ---
 
 # CMU OAuth Integration
 
-Use this skill when an agent needs to add, change, debug, or review the CMU Account login flow for this project.
+Use this skill when an agent needs to add, change, debug, or review a CMU Account login flow for any CMU-backed web project.
 
 ## What This Skill Covers
 
@@ -16,7 +16,7 @@ Use this skill when an agent needs to add, change, debug, or review the CMU Acco
 - Microsoft Entra ID authorize and token endpoints
 - CMU user profile lookup via `basicinfo`
 - `oauth_state` cookie generation and validation
-- Faculty gating for Nursing students only
+- Optional faculty, organization, or department gating
 - JWT cookie issuance and post-login redirect logic
 - Error code mapping back to the login page
 
@@ -52,11 +52,7 @@ Read these first when the task needs implementation detail:
    - login-page error handling
 
 2. Confirm the local integration boundary before editing.
-   Read the relevant target files in the repo rather than re-deriving the flow from scratch. Start from the owning route handler:
-   - authorize issues start at `src/app/api/auth/cmu/route.ts`
-   - callback issues start at `src/app/api/auth/cmu/callback/route.ts`
-   - cookie issuance issues start at `src/lib/auth.ts`
-   - login messaging issues start at `src/app/(auth)/login/page.tsx`
+   Read the relevant target files in the repo rather than re-deriving the flow from scratch. Start from the owning authorize route, callback route, session helper, or login surface for the current project.
 
 3. Preserve the required security model.
    Keep these invariants intact:
@@ -71,19 +67,18 @@ Read these first when the task needs implementation detail:
    - validate `state`
    - exchange `code` for an access token using the token endpoint
    - request CMU basic info with `Authorization: Bearer <token>`
-   - verify `organization_code === "12"`
-   - upsert the user as a student account when appropriate
+   - verify the required CMU organization or faculty rule when the product has one
+   - link or upsert the local user according to project access rules
    - reject inactive users
-   - issue app JWT cookies
+   - issue app session cookies or JWTs
    - clear the temporary `oauth_state` cookie
-   - redirect according to role, ToS, and pretest state
+   - redirect according to role and onboarding state
 
-5. Keep repo-specific redirect logic aligned with the rest of the app.
-   Expected destinations:
-   - `ADMIN` or `SUPER_ADMIN` -> `/admin/dashboard`
-   - student without accepted ToS -> `/tos`
-   - student without pretest completion -> `/pretest`
-   - otherwise -> `/subjects`
+5. Keep project-specific redirect logic aligned with the rest of the app.
+   Common examples:
+   - privileged roles -> dashboard or operations home
+   - users missing consent or onboarding -> required gate page
+   - otherwise -> normal role home
 
 6. Map failures to stable login error codes.
    Reuse the documented codes instead of inventing new ones unless the task explicitly requires a new UX path.
@@ -98,8 +93,8 @@ Read these first when the task needs implementation detail:
 
 - If the task is about route wiring before redirect to Microsoft, work in the authorize route.
 - If the task is about callback query params, token exchange, CMU API responses, or login failures after returning from Microsoft, work in the callback route.
-- If the task is about auth cookie names, expiry, secure flags, or JWT creation, inspect `src/lib/auth.ts` before changing route logic.
-- If the task is about what students see after failure, inspect the login page and its error-code mapping.
+- If the task is about auth cookie names, expiry, secure flags, or JWT creation, inspect the project's session helper before changing route logic.
+- If the task is about what users see after failure, inspect the login page and its error-code mapping.
 - If the task changes required environment variables, update both the implementation and `env.example` or docs that define deployment inputs.
 
 ## Quality Checks
@@ -109,10 +104,10 @@ The work is complete only when these are still true:
 - the authorize route constructs the correct Microsoft authorize URL
 - the callback refuses mismatched or missing `state`
 - the server exchanges the code and fetches CMU user info without exposing the client secret
-- non-Nursing users are rejected with the documented error code
+- disallowed CMU organizations or faculties are rejected with the documented error code when gating is enabled
 - inactive users remain blocked
-- successful logins issue the app JWT cookies and clear `oauth_state`
-- redirect targets still respect admin, ToS, and pretest rules
+- successful logins issue the app auth cookies and clear `oauth_state`
+- redirect targets still respect role and onboarding rules
 - docs or environment examples stay in sync with any contract changes
 
 ## Output Expectations

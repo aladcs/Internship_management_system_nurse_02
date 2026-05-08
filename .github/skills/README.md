@@ -1,6 +1,6 @@
 # Skills Index
 
-This folder contains reusable project skills for internal academic systems built with Next.js, Prisma, RBAC, staff-managed accounts, review workflows, and federated login.
+This folder contains reusable implementation skills for internal web apps with RBAC, managed accounts, review workflows, dashboards, Prisma-backed data, and federated login. Many examples use academic or internship language, but the patterns are intended to transfer to other role-based projects.
 
 Use this index to pick the right skill before opening a specific `SKILL.md`.
 
@@ -13,12 +13,12 @@ Use this index to pick the right skill before opening a specific `SKILL.md`.
 - `staff-managed-auth-accounts`
   - Use for pre-provisioned login, admin-created accounts, temporary passwords, and password reset RBAC.
 
-## Workflow And Student Submission
+## Workflow And Self-Service Submission
 
 - `internship-workflow-status-rules`
-  - Use for `draft`, `pending`, `needs_fix`, `in_progress`, `completed`, editability, and status transitions.
+  - Use for submit/review lifecycle states such as `draft`, `pending`, `needs_fix`, `in_progress`, `completed`, editability, and status transitions.
 - `student-form-with-file-upload`
-  - Use for long student forms, draft vs submit, upload/remove flows, and read-only mode.
+  - Use for long self-service forms, draft vs submit, upload/remove flows, and read-only mode.
 - `document-submission-and-verification`
   - Use for required document uploads, verification statuses, resubmission, and reviewer actions.
 - `consent-and-policy-acceptance-flow`
@@ -27,7 +27,7 @@ Use this index to pick the right skill before opening a specific `SKILL.md`.
 ## Review, Notifications, And Audit
 
 - `admin-notification-pattern`
-  - Use for DB-backed notifications, optional external fan-out, read state, and navigation metadata.
+  - Use for DB-backed staff or operator notifications, optional external fan-out, read state, and navigation metadata.
 - `review-comments-and-resolution-flow`
   - Use for reviewer comments, requested fixes, replies, open/resolved threads, and review side effects.
 - `activity-log-timeline-pattern`
@@ -53,7 +53,7 @@ Use this index to pick the right skill before opening a specific `SKILL.md`.
 
 ## How To Pick Quickly
 
-- Need one new feature page or route: start with `nextjs-prisma-rbac-slice`.
+- Need one new feature page or route: start with `nextjs-prisma-rbac-slice` or `implement-feature`.
 - Need DB or schema work: add `prisma-postgres-app-conventions`.
 - Need submit/review/editability behavior: check `internship-workflow-status-rules`, `student-form-with-file-upload`, or `document-submission-and-verification`.
 - Need comment, notification, or history side effects: check `review-comments-and-resolution-flow`, `admin-notification-pattern`, or `activity-log-timeline-pattern`.
@@ -64,3 +64,4 @@ Use this index to pick the right skill before opening a specific `SKILL.md`.
 
 - Each skill has a lightweight `SKILL.md` for discovery.
 - Detailed workflow guidance lives in `references/playbook.md` inside each skill folder.
+- Adapt role names, route paths, and product terms to the current repository instead of copying example labels literally.

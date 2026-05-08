@@ -1,19 +1,19 @@
 ---
 name: document-submission-and-verification
-description: 'Build or modify document submission and verification workflows in internal academic systems. Use for student or staff uploads, required-document completeness checks, verification status, resubmission rules, reviewer actions, and document-centered admin pages.'
+description: 'Build or modify document submission and verification workflows in internal systems. Use for self-service or staff uploads, required-document completeness checks, verification status, resubmission rules, reviewer actions, and document-centered operations pages.'
 argument-hint: '[document workflow or verification change]'
 ---
 
 # Document Submission And Verification
 
-Use this skill for internal systems where users submit required documents and staff verify completeness, validity, or approval status.
+Use this skill for internal systems where users submit required documents and reviewers verify completeness, validity, or approval status.
 
 ## Use When
 
 - Building upload-and-review flows for required documents
 - Adding completeness or verification statuses
 - Implementing resubmission after rejection or requested fixes
-- Creating admin pages centered on document review and verification
+- Creating operations pages centered on document review and verification
 
 ## Quick Rules
 

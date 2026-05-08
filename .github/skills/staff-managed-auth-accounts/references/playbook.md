@@ -4,9 +4,8 @@
 
 - Users log in only if their email already exists in the database.
 - There is no public registration flow.
-- `super_admin` can create, edit, delete, and reset `admin` accounts only.
-- `admin` can create, edit, delete, and reset `student` accounts only.
-- `student` cannot create accounts and cannot manage other users.
+- Higher-privilege roles create, edit, delete, and reset only the account types allowed by the product.
+- Self-service roles cannot create accounts and cannot manage other users.
 
 ## Password Handling
 

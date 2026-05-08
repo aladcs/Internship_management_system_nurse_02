@@ -1,6 +1,6 @@
 # CMU OAuth File Map
 
-Start from the nearest file that owns the requested behavior.
+Start from the nearest file that owns the requested behavior. Adapt these examples to the current project's route and auth layout.
 
 ## Main Files
 
@@ -13,11 +13,11 @@ Start from the nearest file that owns the requested behavior.
   - validates `state`
   - exchanges the authorization code for a token
   - fetches CMU user info
-  - checks faculty eligibility and account status
+  - checks organization or faculty eligibility and account status
   - issues cookies and redirects the user
 
 - `src/lib/auth.ts`
-  - signs JWT tokens
+  - signs session tokens or JWTs
   - sets auth cookies
 
 - `src/app/(auth)/login/page.tsx`
@@ -32,5 +32,5 @@ Start from the nearest file that owns the requested behavior.
 - Wrong redirect target after login: inspect the callback route first.
 - State mismatch or CSRF issue: inspect authorize and callback routes together.
 - Token or profile fetch failure: inspect callback request construction and env vars.
-- Cookie behavior or expiry issue: inspect `src/lib/auth.ts`.
+- Cookie behavior or expiry issue: inspect the session helper.
 - User-facing error text mismatch: inspect the login page.
